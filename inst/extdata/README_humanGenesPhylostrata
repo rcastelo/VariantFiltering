@@ -1,0 +1,66 @@
+## This README file explains how the phylostrata information
+## on genes was processed and stored into the package.
+
+## The original information is provided in Table S1 of the
+## article by Neme and Tautz, BMC Genomics, 14:117, 2013,
+## and stores phylostrata assignments to Ensembl Gene Identifiers
+## from Ensembl release 68. For this reason, the script below
+## uses the archived released 68 of Ensembl to assign
+## Entrez Gene Identifiers to the Ensembl Gene Identifiers
+## using the biomaRt package.
+
+## To run this script one should first download the Excel Workbook
+## file stored as Additional File 1 at BMC Genomics from the URL
+## http://genomebiology.com/content/supplementary/1471-2164-14-117-s1.xlsx
+## and export the sheet named 'Human-Ens68' to a tab-separated text file.
+## The script assumes the corresponding filename is 1471-2164-14-117-s1.txt
+
+library(biomaRt)
+
+humanEnsGenePhylostrata <- read.table("1471-2164-14-117-s1.txt",
+                                    header=TRUE, sep="\t", colClasses="character")
+
+ensembl68 <- useMart(host="jul2012.archive.ensembl.org",
+                     biomart="ENSEMBL_MART_ENSEMBL",
+                     dataset="hsapiens_gene_ensembl")
+
+res <- getBM(attributes=c("ensembl_gene_id", "entrezgene"), filters="ensembl_gene_id",
+             values=humanEnsGenePhylostrata$Ensembl.Gene.ID, mart=ensembl68)
+
+res <- split(res$entrezgene, res$ensembl_gene_id)
+
+stopifnot(identical(sort(names(res)), sort(humanEnsGenePhylostrata$Ensembl.Gene.ID))) ## QC
+
+res <- sapply(res, paste, collapse=",")
+
+humanEnsGenePhylostrata <- cbind(humanEnsGenePhylostrata,
+                               EntrezID=res[humanEnsGenePhylostrata$Ensembl.Gene.ID],
+                               stringsAsFactors=FALSE)
+rownames(humanEnsGenePhylostrata) <- humanEnsGenePhylostrata[["Ensembl.Gene.ID"]]
+
+humanEnsGenePhylostrata <- humanEnsGenePhylostrata[, c("EntrezID", "TaxID", "Oldest.Phylostratum", "Description")]
+humanEnsGenePhylostrata$Description <- gsub("Life before LCA of C", "c", humanEnsGenePhylostrata$Description)
+humanEnsGenePhylostrata$Description <- gsub("cellular organisms", "Cellular Organisms", humanEnsGenePhylostrata$Description)
+humanEnsGenePhylostrata$Description <- gsub("^.+ -  ", "", humanEnsGenePhylostrata$Description)
+colnames(humanEnsGenePhylostrata) <- c("EntrezID", "TaxID", "OldestPhylostratum", "Description")
+humanEnsGenePhylostrata$OldestPhylostratum <- as.integer(humanEnsGenePhylostrata$OldestPhylostratum)
+
+## create a table to translate Entrez Gene Identifiers to Ensembl Gene Identifiers
+allegs <- strsplit(humanEnsGenePhylostrata$EntrezID, ",")
+negsbyens <- sapply(allegs, length)
+allegs <- unlist(allegs, use.names=FALSE)
+entrezToPhylostrataEnsGene <- split(rep(rownames(humanEnsGenePhylostrata), times=negsbyens), allegs)
+
+## there may be multiple Ensembl IDs assigned to Entrez IDs, as long as the
+## oldest phylostrata among the multiple Ensembl IDs is the same for the common
+## Entrez ID, there is no problem. To be safe, however, we discard those Entrez
+## IDs for which oldest phylostrata are from different Ensembl IDs are different 
+## and therefore we can keep just one arbitrarily assignment of one of the
+## multiple Ensembl IDs to the common Entrez ID
+
+taxidbyegs <- lapply(entrezToPhylostrataEnsGene, function(x) humanEnsGenePhylostrata[x, "TaxID"])
+ntaxidbyegs <- sapply(taxidbyegs, function(x) length(unique(x)))
+entrezToPhylostrataEnsGene <- entrezToPhylostrataEnsGene[which(ntaxidbyegs == 1)]
+entrezToPhylostrataEnsGene <- sapply(entrezToPhylostrataEnsGene, function(x) x[1])
+
+save(humanEnsGenePhylostrata, entrezToPhylostrataEnsGene, file="humanEnsGenePhylostrata.rda")
