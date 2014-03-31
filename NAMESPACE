@@ -1,0 +1,150 @@
+useDynLib(VariantFiltering)
+
+import(methods)
+import(BiocGenerics)
+
+importFrom(BSgenome.Hsapiens.UCSC.hg19, Hsapiens)
+
+importClassesFrom(Biobase, AssayData)
+importClassesFrom(AnnotationDbi, AnnotationDb)
+importClassesFrom(BSgenome, GenomeDescription)
+importClassesFrom(RSQLite, SQLiteConnection)
+importClassesFrom(IRanges, Rle)
+importClassesFrom(VariantAnnotation, SpliceSiteVariants, PromoterVariants,
+                  FiveUTRVariants, ThreeUTRVariants, PolyPhenDb)
+importClassesFrom(GenomicRanges, GRanges, GRangesList, Seqinfo)
+importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
+importClassesFrom(Rsamtools, TabixFile, TabixFileList)
+
+importMethodsFrom(DBI, dbListFields)
+importMethodsFrom(RSQLite, dbConnect,
+                           dbDisconnect,
+                           dbGetQuery,
+                           dbBeginTransaction,
+                           dbGetPreparedQuery,
+                           dbCommit)
+importMethodsFrom(BSgenome, referenceGenome,
+                            organism,
+                            species,
+                            provider,
+                            providerVersion)
+importMethodsFrom(VariantAnnotation, readVcf,
+                                     scanVcfHeader,
+                                     ScanVcfParam,
+                                     info,
+                                     geno,
+                                     predictCoding,
+                                     locateVariants)
+importMethodsFrom(Rsamtools, headerTabix)
+importMethodsFrom(IRanges, elementLengths,
+                           start,
+                           width,
+                           nchar,
+                           unlist,
+                           which,
+                           order,
+                           split,
+                           queryHits,
+                           subjectHits,
+                           values,
+                           findOverlaps,
+                           as.vector,
+                           as.factor)
+importMethodsFrom(GenomicRanges, seqnames,
+                                 seqlengths,
+                                 seqinfo,
+                                 rowData)
+importMethodsFrom(Biostrings, unlist,
+                              reverseComplement)
+importMethodsFrom(AnnotationDbi, get,
+                                 select,
+                                 keytypes,
+                                 columns,
+                                 keys)
+importMethodsFrom(Rsamtools, path)
+
+importFrom(RSQLite, SQLite)
+importFrom(Rsamtools, TabixFile,
+                      TabixFileList,
+                      indexTabix,
+                      bgzip)
+importFrom(GenomicRanges, Seqinfo)
+importFrom(BiocParallel, bpparam,
+                         bpvec,
+                         bplapply)
+
+import(shiny)
+
+exportClasses(MafDb, PhastConsDb, GenePhylostrataDb,
+              VariantFilteringParam, VariantFilteringResults,
+              VariantFilteringResultsUI, VariantFilteringResultsAIM,
+              WeightMatrix)
+
+exportMethods(VariantFilteringParam,
+              annotateVariants,
+              width,
+              conservedPositions,
+              show,
+              xLinked,
+              autosomalRecessiveHomozygous,
+              autosomalDominant,
+              deNovo,
+              autosomalRecessiveHeterozygous,
+              unrelatedIndividuals,
+              allInheritanceModels,
+              wmScore,
+
+              ## specific for the VariantFilteringResults
+              inheritanceModel,
+              param,
+              allVariants,
+              filteredVariants,
+              selectIndividual, "selectIndividual<-",
+              dbSNPpresent, "dbSNPpresent<-",
+              OMIMpresent, "OMIMpresent<-",
+              variantType, "variantType<-",
+              aaChangeType, "aaChangeType<-",
+              MAFpop, "MAFpop<-",
+              naMAF, "naMAF<-",
+              maxMAF, "maxMAF<-",
+              minPhastCons, "minPhastCons<-",
+              minPhylostratum, "minPhylostratum<-",
+              minCRYP5ss, "minCRYP5ss<-",
+              minCRYP3ss, "minCRYP3ss<-",
+
+              ## specific for the MafDb class
+              knownVariantsMAFcols,
+              fetchKnownVariantsByID,
+              keytypes,
+              keys,
+              columns,
+              select,
+
+              ## specific for the PhastConsDb class
+              provider,
+              providerVersion,
+              referenceGenome,
+              organism,
+              ## species,
+              seqinfo,
+              seqnames,
+              seqlengths,
+              scores,
+
+              ## for the GenePhylostrataDb class
+              genePhylostratum,
+              genePhylostrata
+             )
+
+export(reportVariants,
+       readWm,
+       readAAradicalChangeMatrix,
+       codeAF2RAW,
+       decodeRAW2AF,
+
+       ## for the PhastConsDb class
+       PhastConsDb,
+
+       ## for the GenePhylostrata class
+       GenePhylostrataDb
+      )

@@ -1,0 +1,13 @@
+citHeader("To cite package 'VariantFiltering' in publications use:")
+
+citEntry(entry="Article",
+  author = personList(as.person("Dei M. Elurbe"),
+                      as.person("Montserrat Mila"),
+                      as.person("Robert Castelo")),
+  title = "VariantFiltering: filtering of coding and non-coding genetic variants",
+  journal = "in preparation",
+  year = "2014",
+  textVersion = paste("Elurbe, D.M., Mila, M. and Castelo, R.",
+                      "VariantFiltering: filtering of coding and non-coding genetic variants",
+                      "2014.")
+)

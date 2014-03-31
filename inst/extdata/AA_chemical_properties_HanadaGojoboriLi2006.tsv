@@ -1,0 +1,47 @@
+## This file contains the classification of amino acids with respect to different
+## chemical properties as defined in Table 1 from Hanada, Gojobori and Li, Radical
+## amino acid change versus positive selection in the evoultion of viral envelope
+## proteins, Gene, 385:83-88, 2006. The header line contains column names for the
+## amino acid, three-letter nomenclature and all the different chemical properties
+## which are grouped by Hanada et al. (2006) into polarity and volume (NeutralSmall,
+## PolarSmall, PolarLarge, NonpolarSmall and NonpolarLarge), charge and aromaticity
+## (Acidic, NeutralNonaromatic, NeutralAromatic and Basic) and charge and polarity
+## (NeutralPolar, AcidicPolar, BasicPolar and Nonpolar). Each of the subsequent rows
+## is associated to a amino acid where the first value specifies its IUPAC 1-letter
+## code, the second its full name and the third its 3-letter code. The rest of the
+## values each row are logical (TRUE/FALSE) and assign membership to the corresponding
+## chemical property. This file can be read and parsed with the function
+## 'readAAradicalChangeMatrix()' from the VariantFiltering package. This function builds
+## a squared symmetric matrix with as many rows and columns as amino acids and contains
+## logical values set to TRUE whenever the amino acid change implied by row and column
+## is considered radical and FALSE when considered conservative. Amino acid changes
+## within a chemical property are defined as conservative and radical otherwise.
+
+
+AminoAcid	Threeletter	NeutralSmall	PolarSmall	PolarLarge	NonpolarSmall	NonpolarLarge	Acidic	NeutralNonaromatic	NeutralAromatic	Basic	NeutralPolar	AcidicPolar	BasicPolar	Nonpolar
+A	Alanine	Ala	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+R	Arginine	Arg	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE
+N	Asparagine	Asn	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE
+D	Aspartic acid	Asp	FALSE	TRUE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE
+C	Cysteine	Cys	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE
+Q	Glutamic acid	Gln	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE
+E	Glutamine	Glu	FALSE	TRUE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE
+G	Glycine	Gly	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+H	Histidine	His	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE
+I	Isoleucine	Ile	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+L	Leucine	Leu	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+K	Lysine	Lys	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE
+M	Methionine	Met	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+F	Phenylalanine	Phe	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	TRUE
+P	Proline	Pro	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+S	Serine	Ser	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE
+T	Threonine	Thr	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE
+W	Tryptophan	Trp	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	TRUE
+Y	Tyrosine	Tyr	FALSE	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	TRUE	FALSE	FALSE	FALSE
+V	Valine	Val	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+U	Selenocysteine	Sec	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
+O	Pyrrolysine	Pyl	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
+B	AsparagineOrAsparticAcid	Asx	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
+Z	GlutamineOrGlutamicAcid	Glx	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
+J	LeucineOrIsoleucine	Xle	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
+X	Unknown	Xaa	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
