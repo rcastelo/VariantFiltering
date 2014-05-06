@@ -12,7 +12,8 @@ importClassesFrom(RSQLite, SQLiteConnection)
 importClassesFrom(IRanges, Rle)
 importClassesFrom(VariantAnnotation, SpliceSiteVariants, PromoterVariants,
                   FiveUTRVariants, ThreeUTRVariants, PolyPhenDb)
-importClassesFrom(GenomicRanges, GRanges, GRangesList, Seqinfo)
+importClassesFrom(GenomeInfoDb, Seqinfo)
+importClassesFrom(GenomicRanges, GRanges, GRangesList)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
 importClassesFrom(Rsamtools, TabixFile, TabixFileList)
 
@@ -50,10 +51,6 @@ importMethodsFrom(IRanges, elementLengths,
                            findOverlaps,
                            as.vector,
                            as.factor)
-importMethodsFrom(GenomicRanges, seqnames,
-                                 seqlengths,
-                                 seqinfo,
-                                 rowData)
 importMethodsFrom(Biostrings, unlist,
                               reverseComplement)
 importMethodsFrom(AnnotationDbi, get,
@@ -68,7 +65,8 @@ importFrom(Rsamtools, TabixFile,
                       TabixFileList,
                       indexTabix,
                       bgzip)
-importFrom(GenomicRanges, Seqinfo)
+importFrom(GenomeInfoDb, seqnames, seqlengths, seqinfo, Seqinfo)
+importFrom(GenomicRanges, rowData)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
