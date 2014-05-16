@@ -7,12 +7,11 @@ importFrom(BSgenome.Hsapiens.UCSC.hg19, Hsapiens)
 
 importClassesFrom(Biobase, AssayData)
 importClassesFrom(AnnotationDbi, AnnotationDb)
-importClassesFrom(BSgenome, GenomeDescription)
 importClassesFrom(RSQLite, SQLiteConnection)
 importClassesFrom(IRanges, Rle)
 importClassesFrom(VariantAnnotation, SpliceSiteVariants, PromoterVariants,
                   FiveUTRVariants, ThreeUTRVariants, PolyPhenDb)
-importClassesFrom(GenomeInfoDb, Seqinfo)
+importClassesFrom(GenomeInfoDb, Seqinfo, GenomeDescription)
 importClassesFrom(GenomicRanges, GRanges, GRangesList)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
 importClassesFrom(Rsamtools, TabixFile, TabixFileList)
