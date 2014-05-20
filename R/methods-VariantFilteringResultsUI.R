@@ -174,7 +174,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResultsUI"),
               if (is.na(minPhastCons(x)))
                 mtNoMinPhastCons <- match("phastCons", colnames(mcols(vars)))
               else {
-                rowsMask <- rowsMask & vars$phastCons >= minPhastcons(x)
+                rowsMask <- rowsMask & vars$phastCons >= minPhastCons(x)
                 rowsMask[is.na(rowsMask)] <- FALSE
               }
             }
