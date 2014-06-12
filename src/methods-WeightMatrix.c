@@ -229,6 +229,7 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
   for (i=0; i < MAXVARS; i++) {
     int j;
 
+    wm->ndeps[i] = 0;
     wm->w[i].weights = NULL;
     for (j=0; j < MAXVALS; j++)
       wm->w[i].next[j] = NULL;
@@ -253,12 +254,12 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
         char* q;
 
         q=token;
-        while ((*q++=tolower(*q)));        /* change keyword 'WM' to lowercase */
+        while ((*q=tolower(*q))) q++;      /* change keyword 'WM' to lowercase */
 
+        wm->nvars=0;
         if (!strcmp(token,"wm")) {
           int nv;
 
-          wm->nvars=0;
           while (sscanf(p," %[a-zA-Z0-9_] %d%n",token,&nv,&n) == 2) {
             strcpy(wm->vars[wm->nvars],token);
             wm->nvals[wm->nvars] = nv;
@@ -635,7 +636,7 @@ wm_score(WeightMatrix* wm, const char* record) {
       char* q;
 
       q=val;
-      while ((*q++=tolower(*q)));  /* put value in lowercase */
+      while ((*q=tolower(*q))) q++;  /* put value in lowercase */
       strcpy(values[i++],val);
       p+=n;
     } else
