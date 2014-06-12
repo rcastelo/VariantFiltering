@@ -606,9 +606,11 @@ wm_score(WeightMatrix* wm, const char* record) {
   double score;
 
   p=record;
-  while (*p)
-    if (*p++ == ',')
+  while (*p) {
+    if (*p == ',')
       ncommas++;
+    p++;
+  }
 
   if (ncommas > 0 && ncommas != wm->nvars-1)
     error("input weight matrix has %d positions while vector %s has %d\n", wm->nvars, record, ncommas+1);
