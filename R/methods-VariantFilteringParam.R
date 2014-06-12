@@ -31,9 +31,9 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                  stop(conditionMessage(err), call.=FALSE)
             })
 
-            maskGz <- grepl("vcf.gz$", vcfFilenames)
+            maskGz <- grepl("vcf.bgz$", vcfFilenames)
 
-            ## files that are no bgzipped should get bgzipped for the indexTabis() call below
+            ## files that are no bgzipped should get bgzipped for the indexTabix() call below
             if (any(!maskGz)) {
               maskVcf <- grepl("vcf$", vcfFilenames[!maskGz])
               if (!all(maskVcf))
@@ -42,7 +42,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                                               message(sprintf("Tabix compressing with bgzip %s", f))
                                               bgzip(f, overwrite=TRUE)
                                             })
-              vcfFilenames[!maskGz] <- paste0(vcfFilenames[!maskGz], ".gz")
+              vcfFilenames[!maskGz] <- paste0(vcfFilenames[!maskGz], ".bgz")
             }
 
             maskTbi <- .io_exists_mask(paste0(vcfFilenames, ".tbi"))

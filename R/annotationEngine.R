@@ -370,17 +370,19 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
 setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
           function(annObj, variantsGR, coding=TRUE) {
             if (!coding) {
-              PolyPhen2 <- rep(NA, length(variantsGR))
-              return(data.frame(PolyPhen2=PolyPhen2))
+              PolyPhen2 <- rep(NA_character_, length(variantsGR))
+              return(DataFrame(PolyPhen2=PolyPhen2))
             }
-            rsids <- unique(names(variantsGR)[grep("rs", names(variantsGR), fixed=TRUE)])
+            ## rsids <- unique(names(variantsGR)[grep("rs", names(variantsGR), fixed=TRUE)])
+            rsids <- unique(variantsGR$dbSNP)
             pp <- select(annObj, keys=rsids,
                          cols=c("TRAININGSET", "PREDICTION", "PPH2PROB"))
             mask <- pp$TRAININGSET == "humvar"
             pphumvar <- pp[mask, ]
   
             PolyPhen2 <- c()
-            for(i in names(variantsGR)) {
+            ## for(i in names(variantsGR)) {
+            for (i in variantsGR$dbSNP) {
               if (i %in% pphumvar$RSID) {
                 PolyPhen2 <- c(PolyPhen2, pphumvar$PREDICTION[match(i, pphumvar$RSID)])
               } else {
@@ -397,14 +399,17 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
           function(annObj, variantsGR, coding=TRUE) {
             if (!coding) {
-              PROVEAN <- rep(NA, length(variantsGR))
-              return(data.frame(PROVEAN=PROVEAN))
+              PROVEAN <- rep(NA_character_, length(variantsGR))
+              return(DataFrame(PROVEAN=PROVEAN))
             }
-            rsids <- unique(names(variantsGR)[grep("rs", names(variantsGR), fixed=TRUE)])
+            ## rsids <- unique(names(variantsGR)[grep("rs", names(variantsGR), fixed=TRUE)])
+            rsids <- unique(variantsGR$dbSNP)
             rsids <- gsub("rs", "", rsids)
             si <- select(annObj, keys=rsids, columns="PROVEANPRED")
             PROVEAN <- c()
-            for(i in names(variantsGR)) {
+            ## for(i in names(variantsGR)) {
+            for (i in variantsGR$dbSNP) {
+              i <- gsub("rs", "", i)
               if (i %in% si$DBSNPID) {
                 PROVEAN <- c(PROVEAN, si$PROVEANPRED[match(i, si$DBSNPID)])
               } else {
@@ -430,6 +435,17 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             uniqVarIDs <- unique(varIDs)
             if (length(varIDs) > 0) {
               uniqMAFvalues <- fetchKnownVariantsByID(annObj, uniqVarIDs)
+              whmissing <- which(is.na(uniqMAFvalues$chrom))
+              if (length(whmissing) > 0) {
+                missingdbsnpIDs <- variantsGR$dbSNP[match(uniqVarIDs[whmissing], varIDs)]
+                if (any(!is.na(missingdbsnpIDs))) {
+                  whmissing <- whmissing[!is.na(missingdbsnpIDs)]
+                  missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
+                  mafmissingdbsnpIDs <- fetchKnownVariantsByID(annObj, missingdbsnpIDs)
+                  mafmissingdbsnpIDs$varID <- uniqMAFvalues$varID[whmissing]
+                  uniqMAFvalues[whmissing, ] <- mafmissingdbsnpIDs
+                }
+              }
               mafValues <- uniqMAFvalues[match(varIDs, uniqMAFvalues$varID), ]
               mafValues <- mafValues[, mafCols, drop=FALSE]
             }

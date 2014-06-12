@@ -99,7 +99,7 @@ least a character vector of VCF filenames, as follows:
 <<>>=
 library(VariantFiltering)
 
-CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.gz")
+CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
 CEUped <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.ped")
 param <- VariantFilteringParam(vcfFilenames=CEUvcf, pedFilename=CEUped)
 param
