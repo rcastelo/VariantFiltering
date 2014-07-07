@@ -2,13 +2,13 @@ useDynLib(VariantFiltering)
 
 import(methods)
 import(BiocGenerics)
+import(S4Vectors)
 
 importFrom(BSgenome.Hsapiens.UCSC.hg19, Hsapiens)
 
 importClassesFrom(Biobase, AssayData)
 importClassesFrom(AnnotationDbi, AnnotationDb)
 importClassesFrom(RSQLite, SQLiteConnection)
-importClassesFrom(IRanges, Rle)
 importClassesFrom(VariantAnnotation, SpliceSiteVariants, PromoterVariants,
                   FiveUTRVariants, ThreeUTRVariants, PolyPhenDb)
 importClassesFrom(GenomeInfoDb, Seqinfo, GenomeDescription)
@@ -48,8 +48,7 @@ importMethodsFrom(IRanges, elementLengths,
                            subjectHits,
                            values,
                            findOverlaps,
-                           as.vector,
-                           as.factor)
+                           as.vector)
 importMethodsFrom(Biostrings, unlist,
                               reverseComplement)
 importMethodsFrom(AnnotationDbi, get,
