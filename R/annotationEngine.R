@@ -36,12 +36,21 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
-  if (!allTranscripts)
-    variantsGR_annotated <- variantsGR_annotated[!duplicated(mcols(variantsGR_annotated)[, c("QUERYID", "LOCATION", "GENEID")])]
+  if (!allTranscripts) {
+    selmcols <- c("QUERYID", "LOCATION", "GENEID")
+    dupsmask <- duplicated(mcols(variantsGR_annotated)[, selmcols])
+    variantsGR_annotated <- variantsGR_annotated[!dupsmask]
+  }
 
-  ## remove unnecessary (by now) metadata columns (QUERYID, PRECEDEID, FOLLOWID)
-  mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, c("LOCATION", "TXID", "CDSID", "GENEID",
-                                                           "REF", "ALT", "FILTER", "dbSNP")]
+  ## remove unnecessary (by now) metadata columns (LOCEND, QUERYID, PRECEDEID, FOLLOWID)
+  selmcols <- c("LOCATION", "LOCSTART", "TXID", "CDSID", "GENEID", "REF", "ALT", "FILTER", "dbSNP")
+  mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, selmcols]
+
+  ## annotate cDNA position where applicable
+  maskexonic <- variantsGR_annotated$LOCATION %in% c("coding", "fiveUTR", "threeUTR")
+  cDNAloc <- .cDNAloc(variantsGR_annotated[maskexonic], txdb)
+  variantsGR_annotated$cDNALOC <- rep(NA_integer_, length(variantsGR_annotated))
+  variantsGR_annotated$cDNALOC[maskexonic] <- cDNAloc
 
   ##############################
   ##                          ##

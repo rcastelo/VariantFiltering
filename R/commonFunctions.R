@@ -462,3 +462,24 @@ adjustForStrandSense <- function(variantsGR, alleles){
 
   adjustedAlleles
 }
+
+## get cDNA position
+## it expects that gr has a transcript identifier column called TXID
+## resulting from a previous call to locateVariants()
+.cDNAloc <- function(gr, txdb) {
+  if (!"TXID" %in% colnames(mcols(gr)))
+    stop("cDNApos: metadata column 'TXID' not found in input GRanges object.")
+
+  exonsbytx <- exonsBy(txdb, by="tx")
+  map <- mapCoords(gr, exonsbytx, eltHits=TRUE)
+  eolap <- map$eltHits
+  qolap <- map$queryHits
+  txids <- rep(names(exonsbytx), elementLengths(exonsbytx))[eolap]
+  res <- gr[qolap]
+  mcols(res) <- append(values(res),
+                       DataFrame(cDNALOC=ranges(map), TXID2=as.integer(txids)))
+  ## restrict results to cDNA positions of query TXID
+  res <- res[res$TXID == res$TXID2]
+
+  start(res$cDNALOC)
+}
