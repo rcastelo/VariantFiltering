@@ -64,7 +64,8 @@ importFrom(Rsamtools, TabixFile,
                       indexTabix,
                       bgzip)
 importFrom(GenomeInfoDb, seqnames, seqlengths, seqinfo, Seqinfo)
-importFrom(GenomicRanges, rowData)
+importFrom(GenomicRanges, rowData,
+                          mapCoords)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
