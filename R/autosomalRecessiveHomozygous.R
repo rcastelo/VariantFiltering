@@ -16,8 +16,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   genomeVersion <- unique(genome(txdb))
   # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
   
-  if (class(txdb) != "TranscriptDb")
-    stop("argument 'txdb' should be a 'TranscriptDb' object (see GenomicFeatures package)\n")
+  if (class(txdb) != "TxDb")
+    stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
   
   if (length(input_list) > 1) {
     multiSample <- FALSE

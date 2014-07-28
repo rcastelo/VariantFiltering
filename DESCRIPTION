@@ -5,7 +5,7 @@ Description: Filter genetic variants using different criteria such as
         inheritance model, amino acid change consequence, minimum
         allele frequencies across human populations, splice site
         strength, conservation, etc.
-Version: 1.1.10
+Version: 1.1.11
 Date: 2014-07-24
 Author: Dei M. Elurbe, Robert Castelo
 Maintainer: Robert Castelo <robert.castelo@upf.edu>

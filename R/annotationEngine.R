@@ -487,7 +487,7 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
             genelevel_annot
           })
 
-setMethod("annotateVariants", signature(annObj="TranscriptDb"),
+setMethod("annotateVariants", signature(annObj="TxDb"),
           function(annObj, variantsGR) {
 
             txlevel_annot <- DataFrame(TXNAME=character())

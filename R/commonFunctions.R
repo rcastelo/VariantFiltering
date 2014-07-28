@@ -352,7 +352,7 @@ pullout_shared_us <- function(gr_affected, control_list, filterTag=NA_character_
 
 ############
 
-## match chromosome names between the queryGRanges and a TranscriptDb object
+## match chromosome names between the queryGRanges and a TxDb object
 ## by renaming to the UCSC nomenclature any of the two input objects. This is
 ## done by simply pasting the 'chr' prefix. However, this does not handle other
 ## mismatches between unlocalized and unplaced sequences, alternate loci sequences
@@ -368,8 +368,8 @@ matchChromosomeNames <- function(variantsGRanges, txdb) {
   if (class(variantsGRanges) != "GRanges")
     stop("matchChromosomeNames: argument 'variantsGRanges' is not a GRanges object.")
 
-  if (class(txdb) != "TranscriptDb")
-    stop("matchChromosomeNames: argument 'txdb' is not a TranscriptDb object.")
+  if (class(txdb) != "TxDb")
+    stop("matchChromosomeNames: argument 'txdb' is not a TxDb object.")
 
   if (identical(seqlevels(variantsGRanges), seqlevels(txdb)))
     return(variantsGRanges)

@@ -101,10 +101,10 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
               tryCatch({
                 txdb <- get(txdb)
               }, error=function(err) {
-                stop(sprintf("The gene annotation package %s should automatically load a 'TranscriptDb' object with the same name as the package."))
+                stop(sprintf("The gene annotation package %s should automatically load a 'TxDb' object with the same name as the package."))
               })
-              if (!is(txdb, "TranscriptDb"))
-                stop(sprintf("The object loaded with name %s is not a 'TranscriptDb' object.", txdb))
+              if (!is(txdb, "TxDb"))
+                stop(sprintf("The object loaded with name %s is not a 'TxDb' object.", txdb))
             }
 
             if (!is.character(snpdb) && length(snpdb) != 1)
