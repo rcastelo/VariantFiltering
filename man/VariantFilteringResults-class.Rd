@@ -133,7 +133,7 @@ An \code{VariantFilteringResults} object contains the following annotation data 
   Consequence in the translation of the sequence
   }
   \item{TXNAME}{
-  Transcript name extracted from the \code{TranscriptDb} object defined at \code{txdb}
+  Transcript name extracted from the \code{TxDb} object defined at \code{txdb}
   }
   \item{CDS}{
   Reference and variant nucleotides in the cDNA

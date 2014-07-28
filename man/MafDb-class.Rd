@@ -9,7 +9,7 @@
 \alias{annotateVariants,PolyPhenDb-method}
 \alias{annotateVariants,PROVEANDb-method}
 \alias{annotateVariants,SNPlocs-method}
-\alias{annotateVariants,TranscriptDb-method}
+\alias{annotateVariants,TxDb-method}
 \alias{fetchKnownVariantsByID,MafDb-method}
 \alias{fetchKnownVariantsByID}
 \alias{knownVariantsMAFcols,MafDb-method}
