@@ -438,19 +438,26 @@ setMethod("filteredVariants", signature(x="VariantFilteringResultsAIM"),
             ## minimum allele frequency
             mtNoMAF <- NULL
             if (!is.na(match("MafDb", sapply(param(x)$otherAnnotations, class)))) {
-              vars$maxMAF <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
-              naMAFmask <- rep(TRUE, length(vars))
-              if (naMAF(x))
-                vars$maxMAF[is.na(vars$maxMAF)] <- -Inf
-              else
-                vars$maxMAF[is.na(vars$maxMAF)] <- Inf
+              vars$maxMAF <- rep(NA_real_, length(vars))
+              if (any(MAFpop(x))) {
+                vars$maxMAF <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
+                naMAFmask <- rep(TRUE, length(vars))
+                if (naMAF(x))
+                  vars$maxMAF[is.na(vars$maxMAF)] <- -Inf
+                else
+                  vars$maxMAF[is.na(vars$maxMAF)] <- Inf
 
-              rowsMask <- rowsMask & naMAFmask & vars$maxMAF <= maxMAF(x)
-              rowsMask[is.na(rowsMask)] <- FALSE
+                rowsMask <- rowsMask & naMAFmask & vars$maxMAF <= maxMAF(x)
+                rowsMask[is.na(rowsMask)] <- FALSE
 
-              vars$maxMAF[!is.finite(vars$maxMAF)] <- NA_real_
-              if (any(!MAFpop(x)))
-                mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
+                vars$maxMAF[!is.finite(vars$maxMAF)] <- NA_real_
+                if (any(!MAFpop(x)))
+                  mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
+              } else {
+                mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
+                if (!namaf(X))
+                  rowsMask <- rep(FALSE, length(vars))
+              }
             }
 
             ## nucleotide conservation
@@ -778,10 +785,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsAIM")
                 conditionalPanel(condition="input.tsp == 'protein'", selectInput("aaChangeType", "Amino acid change type:",
                                                                      choices=c("Any", "Radical", "Conservative"))),
                 ## MAF tab
+                conditionalPanel(condition="input.tsp == 'maf'", checkboxInput('naMAF', 'Keep variants without MAF', TRUE)),
                 conditionalPanel(condition="input.tsp == 'maf'", numericInput('maxMAF', 'Maximum MAF:', 1.00)),
                 conditionalPanel(condition="input.tsp == 'maf'", helpText("Note: the maximum MAF cutoff is applied on",
                                                                           "the following selected human populations:")),
-                conditionalPanel(condition="input.tsp == 'maf'", checkboxInput('naMAF', 'MAF NAs', TRUE)),
                 conditionalPanel(condition="input.tsp == 'maf'", checkboxInput('AFKG', 'All MAF KG', TRUE)),
                 conditionalPanel(condition="input.tsp == 'maf'", checkboxInput('AMR_AFKG', 'AMR MAF KG', TRUE)),
                 conditionalPanel(condition="input.tsp == 'maf'", checkboxInput('ASN_AFKG', 'ASN MAF KG', TRUE)),
@@ -822,6 +829,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsAIM")
                   tabPanel("Inheritance", tableOutput('tableInheritance'), value="inheritance"), 
                   tabPanel("Genome", tableOutput('tableGenome'), value="genome"),
                   tabPanel("Gene", tableOutput('tableGene'), value="gene"),
+                  tabPanel("Transcript", tableOutput('tableTranscript'), value="transcript"),
                   tabPanel("Protein", htmlOutput('tableProtein'), value="protein"),
                   ## if (!is.na(mtMafDb))
                     tabPanel("MAF", tableOutput('tableMAF'), value="maf"),
@@ -987,7 +995,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsAIM")
           for (i in names(mafMask)) ## unlisting a reactivevalues object does not work :(
             mafMask[i] <- input[[i]]
           MAFpop(vfResultsObj) <- mafMask
-          maxMAF(vfResultsObj) <- input$maxMAF
+          maxMAF(vfResultsObj) <- as.numeric(input$maxMAF)
           naMAF(vfResultsObj) <- input$naMAF
         }
 
@@ -1167,7 +1175,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsAIM")
         for (i in names(mafMask)) ## unlisting a reactivevalues object does not work :(
           mafMask[i] <- input[[i]]
         MAFpop(vfResultsObj) <- mafMask
-        maxMAF(vfResultsObj) <- input$maxMAF
+        maxMAF(vfResultsObj) <- as.numeric(input$maxMAF)
         naMAF(vfResultsObj) <- input$naMAF
       }
 
@@ -1253,7 +1261,11 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsAIM")
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableGene <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "CDS", "OMIM")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "OMIM")]
+    }, NA.string="NA",  sanitize.text.function=function(x){x})
+
+    output$tableTranscript <- renderTable({
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({

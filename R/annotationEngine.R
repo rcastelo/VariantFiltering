@@ -65,7 +65,8 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
 
   ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
-  mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, c("LOCATION", "REF", "ALT", "FILTER", "dbSNP")]
+  selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "FILTER", "dbSNP")
+  mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
   GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
                                        seqSource=Hsapiens, varAllele=unlist(variantsGR_annotated_coding_exp$ALT))
   
