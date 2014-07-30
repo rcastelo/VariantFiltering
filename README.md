@@ -1,4 +1,0 @@
-VariantFiltering
-================
-
-Bioconductor VariantFiltering package
