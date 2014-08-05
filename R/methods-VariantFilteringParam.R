@@ -58,9 +58,12 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
               }
             }
 
+            sampleNames <- character()
             tfl <- list()
-            for (i in seq(along=vcfFilenames))
+            for (i in seq(along=vcfFilenames)) {
+              sampleNames <- c(sampleNames, samples(scanVcfHeader(vcfFilenames[i])))
               tfl[[i]] <- TabixFile(vcfFilenames[i])
+            }
             tfl <- do.call(TabixFileList, tfl)
 
             ## read radical amino acid change matrix
@@ -88,9 +91,12 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                 stop(sprintf("The object loaded with name %s is not an 'OrgDb' object.", orgdb))
             }
 
-            if (!is.character(txdb) && length(txdb) != 1)
-              stop("argument 'txdb' should contain the name of a 'TxDb' transcript-centric annotation package.")
-            else {
+            if (!is.character(txdb) && !is(txdb, "TxDb"))
+              stop("argument 'txdb' should either be a character string with the name a 'TxDb' transcript-centric annotation package, or a 'TxDb' object itself.")
+            if (is.character(txdb)) {
+              if (length(txdb) > 1)
+                stop("when 'txdb' is a character string, it can only contain the name of one single 'TxDb' transcript-centric annotation package.")
+
               if (!txdb %in% installed.packages()[, "Package"])
                 stop(sprintf("please install the Bioconductor package %s.", txdb))
               if (!.isPkgLoaded(txdb)) {
@@ -148,7 +154,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             }
 
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl,
-                pedFilename=pedFilename, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
+                sampleNames=sampleNames, pedFilename=pedFilename, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
                 radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
                 otherAnnotations=otherannotations, allTranscripts=allTranscripts, filterTag=filterTag)
           })
@@ -159,9 +165,16 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat("  VCF file(s):")
             for (f in path(object$vcfFiles))
               cat(sprintf(" %s", basename(f)))
-            cat(sprintf("\n  PED file: %s\n", basename(object$pedFilename)))
+            sampleNames <- ifelse(length(object$sampleNames) <= 3, paste(object$sampleNames, collapse=", "),
+                                  paste(paste(head(object$sampleNames, n=3), collapse=", "), "...", sep=", "))
+            cat(sprintf("\n  Number of individuals: %d (%s)\n", length(object$sampleNames), sampleNames))
+            if (length(object$pedFilename) > 0)
+              cat(sprintf("  PED file: %s\n", basename(object$pedFilename)))
             cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
-            cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb$packageName))
+            if (length(object$txdb$packageName) > 0)
+              cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb$packageName))
+            else
+              cat(sprintf("  Transcript-centric annotation table: %s\n", metadata(object$txdb)[grep("Table", metadata(object$txdb)$name), "value"]))
             cat(sprintf("  SNP-centric annotation package: %s (%s %s)\n",
                         object$snpdb@data_pkgname, provider(object$snpdb), releaseName(object$snpdb)))
             cat(sprintf("  Radical/Conservative AA changes file: %s\n", basename(object$radicalAAchangeFilename)))
@@ -175,7 +188,7 @@ setMethod("show", signature(object="VariantFilteringParam"),
 setMethod("names", signature(x="VariantFilteringParam"),
           function(x) {
             n <- slotNames(x)
-            n[-grep(c("callObj", "callStr"), n)]
+            n[!n %in% c("callObj", "callStr")]
           })
 
 setMethod("$", signature(x="VariantFilteringParam"),
