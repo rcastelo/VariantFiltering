@@ -622,7 +622,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsUI"),
         else
           dbSNPpresent(vfResultsObj) <- NA_character_
 
-      ## gene selected
+        ## gene selected
           if (input$geneFlag)
               selectGene(vfResultsObj) <- input$selectGene
           else
@@ -707,7 +707,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsUI"),
         else
           dbSNPpresent(vfResultsObj) <- NA_character_
 
-      ## gene selected
+        ## gene selected
           if (input$geneFlag)
               selectGene(vfResultsObj) <- input$selectGene
           else

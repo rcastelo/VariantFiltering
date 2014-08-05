@@ -84,7 +84,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
 
   new("VariantFilteringResultsUI", callObj=callobj, callStr=callstr, inputParameters=param,
       inheritanceModel="unrelated individuals", variants=unrelated_annotated,
-      indselected=NA_character_, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      indselected=NA_character_, selectgene=NA_character_, dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantType="Any", aaChangeType="Any", MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minCRYP5ss=NA_real_, minCRYP3ss=NA_real_)
