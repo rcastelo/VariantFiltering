@@ -471,7 +471,7 @@ adjustForStrandSense <- function(variantsGR, alleles){
     stop("cDNApos: metadata column 'TXID' not found in input GRanges object.")
 
   exonsbytx <- exonsBy(txdb, by="tx")
-  map <- mapCoords(gr, exonsbytx, elt.Hits=TRUE)
+  map <- mapCoords(gr, exonsbytx, elt.hits=TRUE)
   eolap <- map$eltHits
   qolap <- map$queryHits
   txids <- rep(names(exonsbytx), elementLengths(exonsbytx))[eolap]
