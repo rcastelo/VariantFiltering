@@ -1,8 +1,31 @@
+CHANGES IN VERSION 1.2
+----------------------
+
+USER VISIBLE CHANGES
+
+    o Added the calculation of the position of each variant within the cDNA (when it applies), adding also a new 'Transcript' tab in the shiny app
+
+    o Showing the number of individuals in the 'VariantFilteringParam' object, taken from the input VCF file
+
+
+BUG FIXES
+
+    o Some bugfixes in the shiny app
+
+    o Replaced a .gz file in the 'extdata'f older by the corresponding .bgz file
+
+CHANGES IN VERSION 1.0
+----------------------
+
+USER VISIBLE CHANGES
+
+    o Several changes to meet requests from package reviewers.
+
 CHANGES IN VERSION 0.99
 -----------------------
 
 USER VISIBLE CHANGES
 
-    o Submission of the first version to the Bioconductor project
+    o Submission of the first version to the Bioconductor project.
 
 (start date: 26 September, 2013)
