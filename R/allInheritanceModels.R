@@ -16,6 +16,9 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   genomeVersion <- unique(genome(txdb))
   # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
   
+  if (missing(BPPARAM))
+    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
+  
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
   
@@ -45,12 +48,11 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   ## unaff_dad <- unaff[unaff[, 5] == 1, ][, 2]
   ## unaff_mom <- unaff[unaff[, 5] == 2, ][, 2]
   
-
+  message("Reading input VCF file into main memory.")
   vcf1 <- readVcf(unlist(input_list), genomeVersion)
 
   gr1 <- rowData(vcf1)
-  gr1 <- matchChromosomeNames(gr1, txdb)
-
+  gr1 <- matchChromosomes(gr1, txdb)
 
   ##########################
   ##                      ##

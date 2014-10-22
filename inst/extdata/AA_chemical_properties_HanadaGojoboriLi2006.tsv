@@ -16,6 +16,7 @@
 ## logical values set to TRUE whenever the amino acid change implied by row and column
 ## is considered radical and FALSE when considered conservative. Amino acid changes
 ## within a chemical property are defined as conservative and radical otherwise.
+## The stop codon is coded as * and any change involving * is considered radical
 
 
 AminoAcid	Threeletter	NeutralSmall	PolarSmall	PolarLarge	NonpolarSmall	NonpolarLarge	Acidic	NeutralNonaromatic	NeutralAromatic	Basic	NeutralPolar	AcidicPolar	BasicPolar	Nonpolar
@@ -45,3 +46,4 @@ B	AsparagineOrAsparticAcid	Asx	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FA
 Z	GlutamineOrGlutamicAcid	Glx	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
 J	LeucineOrIsoleucine	Xle	FALSE	FALSE	FALSE	TRUE	FALSE	FALSE	TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	TRUE
 X	Unknown	Xaa	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
+*	Stop	Sto	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE
