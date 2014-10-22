@@ -16,6 +16,9 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   genomeVersion <- unique(genome(txdb))
   # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
   
+  if (missing(BPPARAM))
+    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
+  
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
  
@@ -41,6 +44,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   }
   
   if (multiSample) {
+    message("Reading input VCF file into main memory.")
     vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion)
     
     unaffected <- two_ind_ms(vcf_vcf1, "0/0", unaff, filterTag)
@@ -71,6 +75,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     input_list_mother <- input_list[input_list_mother_vector]
     input_list_aff <- input_list[input_list_aff_vector]
     
+    message("Reading input VCF files into main memory.")
     vcf_carrier1 <- readVcf(unlist(input_list_father), filterTag, genomeVersion)
     vcf_carrier2 <- readVcf(unlist(input_list_mother), filterTag, genomeVersion)
     vcf_affected1 <- readVcf(unlist(input_list_aff), filterTag, genomeVersion)
@@ -92,7 +97,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     
   } 
   
-  denovo <- matchChromosomeNames(childDeNovo, txdb)
+  denovo <- matchChromosomes(childDeNovo, txdb)
     
   ##########################
   ##                      ##

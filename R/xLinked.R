@@ -16,6 +16,9 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   genomeVersion <- unique(genome(txdb))
   # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
   
+  if (missing(BPPARAM))
+    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
+  
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
  
@@ -36,6 +39,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   
   
   if (multiSample) {
+    message("Reading input VCF file into main memory.")
     vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion) 
     
     carrierFemales <- switch (nrow(carrier_female),
@@ -120,7 +124,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     xl_all <- affected_filtered[realcommonXlinked]
   }
   
-  xl_allchr <- matchChromosomeNames(xl_all, txdb)
+  xl_allchr <- matchChromosomes(xl_all, txdb)
   
   Xlist <- which(seqnames(xl_allchr) == "chrX")
   xlinked <- xl_allchr[Xlist]
