@@ -15,6 +15,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   
   genomeVersion <- unique(genome(txdb))
   # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
+
+  if (missing(BPPARAM))
+    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
   
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
@@ -37,22 +40,23 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   
   vcf_vcf1 <- NULL
   if (multiSample) {
+    message("Reading input VCF file into main memory.")
     vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion)
     
-    carriers <- switch (nrow(unaff),
-                        one_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
-                        two_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
-                        three_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
-                        four_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
-                        five_ind_ms(vcf_vcf1, "0/1", unaff, filterTag))
+    carriers <- switch(nrow(unaff),
+                       one_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
+                       two_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
+                       three_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
+                       four_ind_ms(vcf_vcf1, "0/1", unaff, filterTag),
+                       five_ind_ms(vcf_vcf1, "0/1", unaff, filterTag))
     
-    affected <- switch (nrow(aff)+1,
-                        stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                        one_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
-                        two_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
-                        three_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
-                        four_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
-                        five_ind_ms(vcf_vcf1, "1/1", aff, filterTag))
+    affected <- switch(nrow(aff)+1,
+                       stop("No affected individuals detected. Something might be wrong with the .ped file..."),
+                       one_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
+                       two_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
+                       three_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
+                       four_ind_ms(vcf_vcf1, "1/1", aff, filterTag),
+                       five_ind_ms(vcf_vcf1, "1/1", aff, filterTag))
   } else {
    
     ## by now we have to disable this
@@ -101,7 +105,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     recessive <- affected[realcommonrecessive]
   }
   
-  recessive <- matchChromosomeNames(recessive, txdb)
+  recessive <- matchChromosomes(recessive, txdb)
 
   ##########################
   ##                      ##

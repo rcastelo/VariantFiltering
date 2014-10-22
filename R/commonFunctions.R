@@ -352,53 +352,39 @@ pullout_shared_us <- function(gr_affected, control_list, filterTag=NA_character_
 
 ############
 
-## match chromosome names between the queryGRanges and a TxDb object
-## by renaming to the UCSC nomenclature any of the two input objects. This is
-## done by simply pasting the 'chr' prefix. However, this does not handle other
-## mismatches between unlocalized and unplaced sequences, alternate loci sequences
-## and mitochondrial sequences (M vs MT). The latter, though, seem to be different
-## between UCSC and b37 (see https://wiki.dnanexus.com/Scientific-Notes/human-genome),
-## and therefore, it may be sensible to leave it unmatched.
+## match chromosomes between an input GRanges object and a TxDb object
+## using functionality from the GenomeInfoDb package. Further, only
+## chromosomes in the input GRanges object that also occur in the input
+## TxDb object will be retained. Among those, their lengths will be compared
+## and those with different lengths will be discarded. This may happen between
+## identical versions of the genome obtained from different sites, as with
+## the mitochondrial chromosome from UCSC (older version) and b37 (newer version)
+## (see https://wiki.dnanexus.com/Scientific-Notes/human-genome), or between
+## different versions of the genome. When no chromosome match its length between
+## the input GRanges object and the input TxDb object, an error is prompt.
 
-## note that although the levels of the GRanges object are by returning the
-## updated object the levels of the input 'txdb' are renamed through the argument
-## itself (i.e., by reference)
-matchChromosomeNames <- function(variantsGRanges, txdb) {
-
-  if (class(variantsGRanges) != "GRanges")
-    stop("matchChromosomeNames: argument 'variantsGRanges' is not a GRanges object.")
-
-  if (class(txdb) != "TxDb")
-    stop("matchChromosomeNames: argument 'txdb' is not a TxDb object.")
-
-  if (identical(seqlevels(variantsGRanges), seqlevels(txdb)))
-    return(variantsGRanges)
-
-  vcfUCSC <- TRUE
-  if (substr(seqlevels(variantsGRanges), 1, 3)[1] != "chr")
-    vcfUCSC <- FALSE
-  
-  txdbUCSC <- TRUE
-  if (unique(substr(seqlevels(txdb), 1, 3)) != "chr")
-    txdbUCSC <- FALSE
-  
-  if (vcfUCSC == TRUE && txdbUCSC == FALSE) {
-    message("Renaming UCSC chromosome names from variants into b37 (1000 Genomes Project) nomenclature (mitochondrial, unlocalized, unplaced and alternate loci sequences may not be properly renamed)")
-    txdb <- renameSeqlevels(txdb, paste0("chr", seqlevels(txdb)))
-  } else if (vcfUCSC == FALSE && txdbUCSC == TRUE) {
-    message("Renaming b37 (1000 Genomes Project) chromosome names from variants into UCSC nomenclature (mitochondrial, unlocalized, unplaced and alternate loci sequences may not be properly renamed)")
-    variantsGRanges <- renameSeqlevels(variantsGRanges, paste0("chr", seqlevels(variantsGRanges)))
+matchChromosomes <- function(variantsGR, txdb) {
+  message("Discarding scaffold sequences.")
+  variantsGR <- keepStandardChromosomes(variantsGR)
+  message(sprintf("Switching to %s chromosome-names style.", seqlevelsStyle(txdb)))
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
+  slenVcf <- seqlengths(variantsGR)
+  slenTxDb <- seqlengths(txdb)
+  commonChr <- intersect(names(slenVcf), names(slenTxDb))
+  slenVcf <- slenVcf[commonChr]
+  slenTxDb <- slenTxDb[commonChr]
+  if (any(slenVcf != slenTxDb)) {
+    if (sum(slenVcf != slenTxDb) == 1) {
+      warning(sprintf("Chromosome %s has different lengths between input VCF and transcript-centric annotations. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
+    } else {
+      warning(sprintf("Chromosomes %s have different lengths between input VCF and transcript-centric annotations. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
+    }
+    if (sum(slenVcf == slenTxDb) == 0)
+      stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the transcript-centric annotations. Versions of the genome reference sequence may be different between the input VCF file and the transcript-centric annotation package.")
+    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenTxDb])
   }
 
-  if (!identical(seqlevels(variantsGRanges), seqlevels(txdb))) {
-    message("Discarding variants whose chromosome names do not match the UCSC nomenclature")
-    seqlevels(variantsGRanges) <- intersect(seqlevels(variantsGRanges), seqlevels(txdb))
-  }
-
-  ## complete the seqinfo data
-  isCircular(variantsGRanges) <- isCircular(txdb)[names(isCircular(variantsGRanges))]
-
-  variantsGRanges
+  variantsGR
 }
 
 

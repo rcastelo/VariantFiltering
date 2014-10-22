@@ -58,6 +58,8 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   
   # analysis
     
+  mom_comphet <- dad_comphet <- NULL
+
   if (multiSample) {
     vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion)
     
@@ -71,15 +73,13 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     }
     
     
-    affected <- switch (nrow(aff)+1,
-                        stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                        one_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                        two_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                        three_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                        four_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                        five_ind_ms(vcf_vcf1, "0/1", aff, filterTag))
-
-    
+    affected <- switch(nrow(aff)+1,
+                       stop("No affected individuals detected. Something might be wrong with the .ped file..."),
+                       one_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
+                       two_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
+                       three_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
+                       four_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
+                       five_ind_ms(vcf_vcf1, "0/1", aff, filterTag))
     
     realcommongen12 <- sharedVariants(gr_carr1, gr_carr2)
     realcommongen21 <- sharedVariants(gr_carr2, gr_carr1)
@@ -93,12 +93,11 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     homodiscard1 <- rowData(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr1[, 2]] == "1/1", ])
     homodiscard2 <- rowData(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr2[, 2]] == "1/1", ])
     
-    mom_comphet_n <- carr1[!names(carr1) %in% names(homodiscard2), ]
-    dad_comphet_n <- carr2[!names(carr2) %in% names(homodiscard1), ]
+    mom_comphet <- carr1[!names(carr1) %in% names(homodiscard2), ]
+    dad_comphet <- carr2[!names(carr2) %in% names(homodiscard1), ]
     
-    mom_comphet <- matchChromosomeNames(mom_comphet_n, txdb)
-    dad_comphet <- matchChromosomeNames(dad_comphet_n, txdb)
-    
+    mom_comphet <- matchChromosomes(mom_comphet, txdb)
+    dad_comphet <- matchChromosomes(dad_comphet, txdb)
     
   } else {
     
@@ -125,15 +124,13 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     vcf_carrier1 <- readVcf(unlist(input_list_mother), genomeVersion)
     vcf_carrier2 <- readVcf(unlist(input_list_father), genomeVersion)
     
-    affected <- switch (length(input_list_aff)+1,
-                        stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                        one_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                        two_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                        three_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                        four_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                        five_ind_us(input_list_aff, "0/1", filterTag, genomeVersion))
-
-  
+    affected <- switch(length(input_list_aff)+1,
+                       stop("No affected individuals detected. Something might be wrong with the .ped file..."),
+                       one_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
+                       two_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
+                       three_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
+                       four_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
+                       five_ind_us(input_list_aff, "0/1", filterTag, genomeVersion))
     
     gr_carr1 <- vcf2GR(vcf_carrier1, "0/1", filterTag)
     gr_carr2 <- vcf2GR(vcf_carrier2, "0/1", filterTag)
@@ -158,16 +155,14 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     homodiscard1 <- rowData(vcf_carrier1[geno(vcf_carrier1)$GT[, 1] == "1/1", ])
     homodiscard2 <- rowData(vcf_carrier2[geno(vcf_carrier2)$GT[, 1] == "1/1", ])
     
-    mom_comphet_n <- carr1[!names(carr1) %in% names(homodiscard2), ]
-    dad_comphet_n <- carr2[!names(carr2) %in% names(homodiscard1), ]
+    mom_comphet <- carr1[!names(carr1) %in% names(homodiscard2), ]
+    dad_comphet <- carr2[!names(carr2) %in% names(homodiscard1), ]
     
-    mom_comphet <- matchChromosomeNames(mom_comphet_n, txdb)
-    dad_comphet <- matchChromosomeNames(dad_comphet_n, txdb)
-    
+    mom_comphet <- matchChromosomes(mom_comphet, txdb)
+    dad_comphet <- matchChromosomes(dad_comphet, txdb)
   }
   
-
-  affected <- matchChromosomeNames(affected, txdb)
+  affected <- matchChromosomes(affected, txdb)
 
   ##########################
   ##                      ##

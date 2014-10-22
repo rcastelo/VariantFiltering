@@ -7,6 +7,44 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   
   ##############################
   ##                          ##
+  ## CLEAN UP VARIANT INFO    ##
+  ##                          ##
+  ##############################
+
+  ## clean the variant information landed on the 'names' of the input variantsGR 'GenomicRanges'
+  ## object to leave either dbSNP ids given to the input VCF in this field or a maximum of 20
+  ## characters
+  vnames <- names(variantsGR)
+  vnames2 <- vnames
+  vnames2 <- rep(NA_character_, length(vnames))
+
+  mt <- gregexpr("^[A-Z]+:[0-9]+_[ACGT/]+", vnames)
+  mtstart <- unlist(mt, use.names=FALSE)
+  mtlength <- sapply(mt, attr, "match.length")
+  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+
+  mt <- gregexpr("RS=[a-zA-Z]+[0-9]+", vnames)
+  mtstart <- sapply(mt, "[", 1)
+  mtlength <- sapply(mt, attr, "match.length")
+  mtlength <- sapply(mtlength, "[", 1)
+  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1]+3, mtlength[mtstart != -1])
+
+  wh <- nchar(vnames2) > 20
+  vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
+
+  names(variantsGR) <- vnames2
+
+  ##############################
+  ##                          ##
+  ## ANNOTATE TYPE OF VARIANT ##
+  ##                          ##
+  ##############################
+  
+  message("Annotating variant type (SNV, InDel, MNV)")
+  mcols(variantsGR) <- cbind(mcols(variantsGR), typeOfVariants(variantsGR))
+
+  ##############################
+  ##                          ##
   ##  SNP-CENTRIC ANNOTATIONS ##
   ##                          ##
   ##############################
@@ -30,9 +68,10 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   ## put back GRanges names which in general correspond to the variant identifier from the VCF file
   names(variantsGR_annotated) <- names(variantsGR)[variantsGR_annotated$QUERYID]
 
-  ## put back metadata columns of the REF and ALT alleles, the FILTER flag information and the dbSNP annotated identifier
+  ## put back metadata columns of the REF and ALT alleles, the variant TYPE, the FILTER flag information and
+  ## the dbSNP annotated identifier
   mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-                                 mcols(variantsGR[variantsGR_annotated$QUERYID])[, c("REF", "ALT", "FILTER", "dbSNP")])
+                                 mcols(variantsGR[variantsGR_annotated$QUERYID])[, c("REF", "ALT", "TYPE", "FILTER", "dbSNP")])
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
@@ -43,7 +82,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   }
 
   ## remove unnecessary (by now) metadata columns (LOCEND, QUERYID, PRECEDEID, FOLLOWID)
-  selmcols <- c("LOCATION", "LOCSTART", "TXID", "CDSID", "GENEID", "REF", "ALT", "FILTER", "dbSNP")
+  selmcols <- c("LOCATION", "LOCSTART", "TXID", "CDSID", "GENEID", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
   mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, selmcols]
 
   ## annotate cDNA position where applicable
@@ -65,10 +104,10 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
 
   ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
-  selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "FILTER", "dbSNP")
+  selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
   mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
   GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
-                                       seqSource=Hsapiens, varAllele=unlist(variantsGR_annotated_coding_exp$ALT))
+                                     seqSource=Hsapiens, varAllele=unlist(variantsGR_annotated_coding$ALT))
   
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated from the same gene but in different tx
@@ -92,15 +131,6 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   mcols(variantsGR_annotated_noncoding) <- cbind(mcols(variantsGR_annotated_noncoding), dummyDF)
   mcols(variantsGR_annotated_noncoding) <- mcols(variantsGR_annotated_noncoding)[, colnames(mcols(GRanges_coding_uq))]
   variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
-
-  ##############################
-  ##                          ##
-  ## ANNOTATE TYPE OF VARIANT ##
-  ##                          ##
-  ##############################
-  
-  message("Annotating variant type (SNV, InDel, MNV)")
-  variantsGR_annotated <- typeOfVariant(variantsGR_annotated)
 
   ################################################
   ##                                            ##
@@ -203,7 +233,9 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   ##############################################
   
   message("Annotating potential cryptic splice sites in intronic variants")
-  GRanges_intron_SNV <- variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron"]
+  eltlen <- elementLengths(variantsGR_annotated$ALT) ## DISCARD MULTIPLE ALT ALLELES BY NOW (SHOULD DO SOMETHING DIFFERENT)
+  GRanges_intron_SNV <- variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron" &
+                                             eltlen == 1] ## THIS MASK IS ALSO USED BELOW !!!
 
   ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
   ## and the column ALT is not adjusted - adapted from VariantAnnotation/R/methods-predictCoding.R
@@ -284,7 +316,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   CRYPss_intron_SNV$CRYP3ssREF[!is.na(CRYPss_intron_SNV$CRYP3ssALT)] <- round(GRanges_intron_SNV_acceptor_REF_scores, digits=2)
   
   ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR_annotated'
-  mcols(variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron",
+  mcols(variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron" & eltlen == 1,
                             colnames(CRYPss_intron_SNV)]) <- CRYPss_intron_SNV
 
   ###############################
@@ -323,9 +355,14 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
                                                  variantsGR_annotated$REF[variantsGR_annotated$LOCATION != "coding"]))
   altAllele <- adjustForStrandSense(variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"],
                                     variantsGR_annotated$ALT[variantsGR_annotated$LOCATION != "coding"])
-  altAllele <- sapply(bplapply(altAllele, as.character, BPPARAM=BPPARAM), paste, collapse=",")
+  eltlen <- elementLengths(altAllele)
+  altAlleleChr <- rep(NA_character_, length(altAllele))
+  altAlleleChr[eltlen == 1] <- as.character(unlist(altAllele[eltlen == 1]))
 
-  variantsGR_annotated$CDS[variantsGR_annotated$LOCATION != "coding"] <- paste(refAllele, "->", altAllele)
+  altAlleleChr[eltlen > 1] <- unlist(bplapply(altAllele[eltlen > 1], paste, collapse=", ", BPPARAM=BPPARAM),
+                                     use.names=FALSE)
+
+  variantsGR_annotated$CDS[variantsGR_annotated$LOCATION != "coding"] <- paste(refAllele, "->", altAlleleChr)
 
   ########################
   ##                    ##
@@ -363,12 +400,20 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
 ## an odd thing here is that getSNPlocs needs not the explicit SNPlocs object (annObj) as input argument
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
           function(annObj, variantsGR, BPPARAM=bpparam()) {
-            variantsGR_ch <- renameChromosomeNames2dbSNP(variantsGR)
-            minwalt <- sapply(variantsGR_ch$ALT, function(x) min(nchar(x)))
-            masksnp <- width(variantsGR_ch) == 1L & minwalt == 1L
-            rsids_list <- loc2rsid(variantsGR_ch[masksnp], BPPARAM=BPPARAM)
+            ## variantsGR_ch <- renameChromosomeNames2dbSNP(variantsGR)
+            if (!"TYPE" %in% colnames(mcols(variantsGR))) {
+              stop("Variant type (SNV, InDel, MNV) has not been annotated.")
+            }
+            seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
+            masksnp <- variantsGR$TYPE == "SNV"
+            rsids_list <- loc2rsid(variantsGR[masksnp], BPPARAM=BPPARAM)
             rsids <- rep(NA_character_, times=length(variantsGR))
-            rsids[masksnp] <- sapply(rsids_list, paste, collapse=", ")
+            elen <- elementLengths(rsids_list)
+            rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
+
+            ## paste together multiple dbSNP identifiers
+            rsids[masksnp][elen > 1] <- unlist(bplapply(rsids_list[elen > 1], paste, collapse=", ", BPPARAM=BPPARAM),
+                                               use.names=FALSE)
             rsids[rsids == ""] <- NA_character_
             return(DataFrame(dbSNP=rsids))
           })
@@ -430,23 +475,24 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 
             mafValues <- matrix(NA, nrow=length(variantsGR), ncol=length(mafCols),
                                 dimnames=list(NULL, mafCols))
-            varIDs <- names(variantsGR) ## in the future it should be using proper dbSNP IDs
+            varIDs <- variantsGR$dbSNP     ## fetch first by the annotated dbSNP identifier
             uniqVarIDs <- unique(varIDs)
+            uniqVarIDs <- uniqVarIDs[!is.na(uniqVarIDs)]
             if (length(varIDs) > 0) {
               uniqMAFvalues <- fetchKnownVariantsByID(annObj, uniqVarIDs)
-              whmissing <- which(is.na(uniqMAFvalues$chrom))
-              if (length(whmissing) > 0) {
-                missingdbsnpIDs <- variantsGR$dbSNP[match(uniqVarIDs[whmissing], varIDs)]
-                if (any(!is.na(missingdbsnpIDs))) {
-                  whmissing <- whmissing[!is.na(missingdbsnpIDs)]
-                  missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
-                  mafmissingdbsnpIDs <- fetchKnownVariantsByID(annObj, missingdbsnpIDs)
-                  mafmissingdbsnpIDs$varID <- uniqMAFvalues$varID[whmissing]
-                  uniqMAFvalues[whmissing, ] <- mafmissingdbsnpIDs
-                }
+              mt <- match(varIDs, uniqMAFvalues$varID)
+              mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
+
+              ## for missing entries then fetch by given identifier
+              varIDs <- names(variantsGR)
+              missingdbsnpIDs <- unique(c(varIDs[is.na(variantsGR$dbSNP)],
+                                          varIDs[!is.na(match(variantsGR$dbSNP, uniqMAFvalues$varID[is.na(uniqMAFvalues$chrom)]))]))
+              missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
+              if (length(missingdbsnpIDs) > 0) {
+                uniqMAFvalues <- fetchKnownVariantsByID(annObj, missingdbsnpIDs)
+                mt <- match(varIDs, uniqMAFvalues$varID)
+                mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
               }
-              mafValues <- uniqMAFvalues[match(varIDs, uniqMAFvalues$varID), ]
-              mafValues <- mafValues[, mafCols, drop=FALSE]
             }
 
             colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
@@ -545,7 +591,7 @@ readAAradicalChangeMatrix <- function(file) {
   aaProperties <- read.delim(file, comment.char="#")
   aaCodes <- rownames(aaProperties)
 
-  if (is.null(aaCodes) || any(is.na(match(aaCodes, LETTERS))))
+  if (is.null(aaCodes) || any(is.na(match(aaCodes, c(LETTERS, "*")))))
     stop(sprintf("Some row names in %s do not correspond to amino acid IUPAC one-letter codes.", file))
 
   classColumns <- apply(aaProperties[, 3:ncol(aaProperties)], 2, class)
@@ -577,42 +623,54 @@ readAAradicalChangeMatrix <- function(file) {
 ### PRIVATE FUNCTIONS
 ###
 
-typeOfVariant <- function(variantsGR) {
+typeOfVariants <- function(variantsGR) {
 
   type <- factor(levels=c("InDel", "MNV", "SNV"))
   if (length(variantsGR) > 0) {
-    wref <- width(variantsGR$REF)
-    ## By now take the shortest alternate allele for comparison with reference
-    ## this may require a different strategy in the future
-    walt <- sapply(variantsGR$ALT, function(x) min(width(x)))
+    ## variants with multiple alternate alleles should have all
+    ## alt alleles as SNV to be annotated as SNV
+    wref <- nchar(variantsGR$REF)
+    walt <- nchar(variantsGR$ALT)
     type <- factor(rep("SNV", times=length(wref)), levels=c("InDel", "MNV", "SNV"))
-    type[wref != walt] <- "InDel"
-    type[wref == walt & wref != 1] <- "MNV"
+    type[all(wref != walt)] <- "InDel"
+    type[all(wref == walt) & wref != 1] <- "MNV"
     type
   }
 
-  mcols(variantsGR) <- cbind(mcols(variantsGR), DataFrame(TYPE=type))
-  variantsGR
+  DataFrame(TYPE=type)
 }
 
-renameChromosomeNames2dbSNP <- function(queryGRanges) {
-
-  if (substr(seqlevels(queryGRanges), 1, 3)[1] == "chr") {
-    seqlevels(queryGRanges) <- sub("^chr", "ch", seqlevels(queryGRanges))
-  } else if (substr(seqlevels(queryGRanges), 1, 3)[1] != "ch") { ## "something else" here is assumed to be just names wo/ 'ch'
-    seqlevels(queryGRanges) <- paste0("ch", seqlevels(queryGRanges))
-  }
-
-  queryGRanges
-}
+## renameChromosomeNames2dbSNP <- function(queryGRanges) {
+## 
+##   if (substr(seqlevels(queryGRanges), 1, 3)[1] == "chr") {
+##     seqlevels(queryGRanges) <- sub("^chr", "ch", seqlevels(queryGRanges))
+##   } else if (substr(seqlevels(queryGRanges), 1, 3)[1] != "ch") { ## "something else" here is assumed to be just names wo/ 'ch'
+##     seqlevels(queryGRanges) <- paste0("ch", seqlevels(queryGRanges))
+##   }
+## 
+##   queryGRanges
+## }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
 loc2rsid <- function(locs, BPPARAM=bpparam()) {
+  getSNPcountFun <- getSNPlocsFun <- NULL
+  tryCatch({
+    getSNPcountFun <- get("getSNPcount", mode="function")
+  }, error=function(err) {
+    stop("'getSNPcount() function not found. This is a problem related to loading the SNP-centric package.")
+  })
+
+  tryCatch({
+    getSNPlocsFun <- get("getSNPlocs", mode="function")
+  }, error=function(err) {
+    stop("'getSNPlocs() function not found. This is a problem related to loading the SNP-centric package.")
+  })
+
   if (!is(locs, "GRanges"))
     stop("'locs' must be a GRanges object")
   if (!all(width(locs) == 1L))
     stop("all ranges in 'locs' must be of width 1")
-  common_seqlevels <- intersect(seqlevels(locs), names(getSNPcount()))
+  common_seqlevels <- intersect(seqlevels(locs), names(getSNPcountFun()))
   if (length(common_seqlevels) == 0L)
     stop("chromosome names (a.k.a. seqlevels) in 'locs' don't seem to ",
           "be\n  compatible with the chromosome names in the SNPlocs ",
@@ -632,7 +690,7 @@ loc2rsid <- function(locs, BPPARAM=bpparam()) {
                                ans2 <- vector("list", length=length(locs2))
                                if (length(locs2) == 0L || !(seqname %in% common_seqlevels))
                                    return(ans2)
-                               snplocs <- getSNPlocs(seqname, as.GRanges=TRUE)
+                               snplocs <- getSNPlocsFun(seqname, as.GRanges=TRUE)
                                hits <- findOverlaps(locs2, snplocs) ## findOverlaps on a GRanges faster than findMatches on a vector
                                ## hits <- findMatches(locs2, snplocs$loc)
                                if (length(hits) > 0) {
@@ -649,7 +707,8 @@ loc2rsid <- function(locs, BPPARAM=bpparam()) {
 
 ## annotate the amino acid substitution in a XposX format with X being the
 ## IUPAC amino acid code and pos the position along the protein, and whether
-##the change in amino acid can be considered chemically radical or conservative
+## the change in amino acid can be considered chemically radical or conservative
+## frameshifts and nonsense changes are considered directly radical
 aminoAcidChanges <- function(variantsGR, rAAch) {
   aachange <- aachangetype <- rep(NA_character_, length(variantsGR))
 
@@ -674,7 +733,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
   ## using the input logical matrix 'rAAch' whose cells should be set to true when the
   ## change is radical
   masksinglechanges <- nchar(refaa) == 1 & nchar(altaa) == 1
-  aachangetype[whnonsyn][masksinglechanges] <- ifelse(rAAch[cbind(refaa[masksinglechanges], refaa[masksinglechanges])],
+  aachangetype[whnonsyn][masksinglechanges] <- ifelse(rAAch[cbind(refaa[masksinglechanges], altaa[masksinglechanges])],
                                                       "Radical", "Conservative")
 
   ## annotate synonymous coding no-changes as "Conservative" and
@@ -686,6 +745,28 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
   locaa <- as.character(unlist(variantsGR[whsyn]$PROTEINLOC, use.names=FALSE))
   aachange[whsyn] <- paste0(refaa, locaa, altaa)
   aachangetype[whsyn] <- "Conservative"
+
+  ## annotate frameshift changes as "Radical"
+  whframeshift <- which(variantsGR$CONSEQUENCE == "frameshift")
+  locaa <- rep(NA_character_, length(length(whframeshift)))
+  refaa <- as.character(variantsGR[whframeshift]$REFAA)
+  altaa <- as.character(variantsGR[whframeshift]$VARAA)
+  elen <- elementLengths(variantsGR[whframeshift]$PROTEINLOC)
+  locaa[elen == 1] <- as.character(unlist(variantsGR[whnonsyn]$PROTEINLOC[elen == 1], use.names=FALSE))
+  ## location of a multiple amino acid replacement is denoted by its position range
+  locaa[elen > 1] <- sapply(variantsGR[whnonsyn]$PROTEINLOC[elen > 1],
+                                      function(x) paste(range(x), collapse="-"))
+  aachange[whframeshift] <- paste0(refaa, locaa, altaa)
+  aachangetype[whframeshift] <- "Radical"
+
+  ## annotate nonsense changes as "Radical"
+  whnonsense <- which(variantsGR$CONSEQUENCE == "nonsense")
+  locaa <- rep(NA_character_, length(length(whnonsense)))
+  refaa <- as.character(variantsGR[whnonsense]$REFAA)
+  altaa <- as.character(variantsGR[whnonsense]$VARAA)
+  locaa <- as.character(unlist(variantsGR[whnonsense]$PROTEINLOC, use.names=FALSE))
+  aachange[whnonsense] <- paste0(refaa, locaa, altaa)
+  aachangetype[whnonsense] <- "Radical"
 
   DataFrame(AAchange=aachange, AAchangeType=aachangetype)
 }

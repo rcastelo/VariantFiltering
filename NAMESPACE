@@ -28,6 +28,14 @@ importMethodsFrom(BSgenome, referenceGenome,
                             species,
                             provider,
                             providerVersion)
+importMethodsFrom(GenomeInfoDb, "seqinfo<-",
+                                seqlevels,
+                                "seqlevels<-",
+                                seqlevelsStyle,
+                                "seqlevelsStyle<-",
+                                "isCircular",
+                                "isCircular<-",
+                                releaseName)
 importMethodsFrom(VariantAnnotation, readVcf,
                                      scanVcfHeader,
                                      ScanVcfParam,
@@ -50,8 +58,15 @@ importMethodsFrom(IRanges, elementLengths,
                            values,
                            findOverlaps,
                            as.vector)
-importMethodsFrom(Biostrings, unlist,
-                              reverseComplement)
+importMethodsFrom(GenomicFeatures, exonsBy)
+importMethodsFrom(GenomicRanges, resize,
+                                 ranges)
+importMethodsFrom(Biostrings, getSeq,
+                              subseq,
+                              unlist,
+                              complement,
+                              reverseComplement,
+                              replaceAt)
 importMethodsFrom(AnnotationDbi, get,
                                  select,
                                  keytypes,
@@ -64,12 +79,27 @@ importFrom(Rsamtools, TabixFile,
                       TabixFileList,
                       indexTabix,
                       bgzip)
-importFrom(GenomeInfoDb, seqnames, seqlengths, seqinfo, Seqinfo)
-importFrom(GenomicRanges, rowData,
+importFrom(GenomeInfoDb, seqnames,
+                         keepStandardChromosomes,
+                         keepSeqlevels,
+                         renameSeqlevels,
+                         seqlengths,
+                         seqinfo,
+                         Seqinfo)
+importFrom(GenomicRanges, GRanges,
+                          rowData,
                           mapCoords)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
+importFrom(IRanges, IRanges,
+                    IntegerList,
+                    CharacterList)
+importFrom(Biostrings, DNAStringSet,
+                       AAStringSet, 
+                       DNAStringSetList)
+importFrom(VariantAnnotation, AllVariants,
+                              IntergenicVariants)
 
 import(shiny)
 
