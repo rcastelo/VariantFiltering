@@ -5,6 +5,9 @@
 annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatrix,
                              otherAnnotations, allTranscripts, BPPARAM=bpparam()) {
   
+  if (length(variantsGR) == 0)
+    stop("There are no variants to annotate.")
+
   ##############################
   ##                          ##
   ## CLEAN UP VARIANT INFO    ##
@@ -99,22 +102,24 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   
   message("Annotating coding variants VariantAnnotation::predictCoding()")
   ## following the help page of 'predictCoding()', expand to have one row per alternate allele
-  variantsGR_annotated_coding <- variantsGR_annotated[variantsGR_annotated$LOCATION == "coding"]
-  eltlen <- elementLengths(variantsGR_annotated_coding$ALT)
-  variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
+  if (any(variantsGR_annotated$LOCATION == "coding")) {
+    variantsGR_annotated_coding <- variantsGR_annotated[variantsGR_annotated$LOCATION == "coding"]
+    eltlen <- elementLengths(variantsGR_annotated_coding$ALT)
+    variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
 
-  ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
-  selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
-  mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
-  GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
-                                     seqSource=Hsapiens, varAllele=unlist(variantsGR_annotated_coding$ALT))
+    ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
+    selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
+    mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
+    GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
+                                       seqSource=Hsapiens, varAllele=unlist(variantsGR_annotated_coding$ALT))
   
-  ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
-  ## annotated from the same gene but in different tx
-  if (!allTranscripts)
-    GRanges_coding_uq <- GRanges_coding_uq[!duplicated(mcols(GRanges_coding_uq)[, c("QUERYID", "GENEID")])]
-  ## remove the QUERYID column to avoid any possible problem later in misusing this column
-  mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, -match("QUERYID", colnames(mcols(GRanges_coding_uq)))]
+    ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
+    ## annotated from the same gene but in different tx
+    if (!allTranscripts)
+      GRanges_coding_uq <- GRanges_coding_uq[!duplicated(mcols(GRanges_coding_uq)[, c("QUERYID", "GENEID")])]
+    ## remove the QUERYID column to avoid any possible problem later in misusing this column
+    mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, -match("QUERYID", colnames(mcols(GRanges_coding_uq)))]
+  }
  
   ## consolidate the annotations on coding variants, via 'predictCoding()', with the rest of non-coding
   ## variants in a single GRanges object, replacing the one named 'variantsGR_annotated'
@@ -129,8 +134,13 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
                        REFAA=AAStringSet(rep("", n.noncoding)),
                        VARAA=AAStringSet(rep("", n.noncoding)))
   mcols(variantsGR_annotated_noncoding) <- cbind(mcols(variantsGR_annotated_noncoding), dummyDF)
-  mcols(variantsGR_annotated_noncoding) <- mcols(variantsGR_annotated_noncoding)[, colnames(mcols(GRanges_coding_uq))]
-  variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
+  ## mcols(variantsGR_annotated_noncoding) <- mcols(variantsGR_annotated_noncoding)[, colnames(mcols(GRanges_coding_uq))]
+
+  if (any(variantsGR_annotated$LOCATION == "coding")) {
+    mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, colnames(mcols(variantsGR_annotated_noncoding))]
+    variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
+  } else
+    variantsGR_annotated <- variantsGR_annotated_noncoding
 
   ################################################
   ##                                            ##
@@ -148,83 +158,87 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), dummyDF)
 
   message("Annotating potential cryptic splice sites in coding synonymous variants")
-  GRanges_SY <- variantsGR_annotated[variantsGR_annotated$CONSEQUENCE %in% "synonymous"] ## %in% avoids NAs when comparing with them
+  eltlen <- elementLengths(variantsGR_annotated$ALT) ## DISCARD MULTIPLE ALT ALLELES BY NOW (SHOULD DO SOMETHING DIFFERENT)
 
-  # retrieve regions around the allele potentially involving cryptic donor sites
-  wregion <- width(wmDonorSites)*2-1
-  GRanges_SY_window_donor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
-  GRanges_SY_donor_strings <- getSeq(Hsapiens, GRanges_SY_window_donor)
+  if (any(variantsGR_annotated$CONSEQUENCE %in% "synonymous" & eltlen == 1)) {
+    GRanges_SY <- variantsGR_annotated[variantsGR_annotated$CONSEQUENCE %in% "synonymous" & eltlen == 1] ## %in% avoids NAs when comparing with them (THIS MASK IS ALSO USED BELOW !!)
+
+    # retrieve regions around the allele potentially involving cryptic donor sites
+    wregion <- width(wmDonorSites)*2-1
+    GRanges_SY_window_donor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
+    GRanges_SY_donor_strings <- getSeq(Hsapiens, GRanges_SY_window_donor)
     
-  # So here we do the same but creating a DNAStringSetList, from the varAllele column (DNAStringSet), which contains the ALT allele but strand adjusted
-  GRanges_SY_donor_ALT_strings <- replaceAt(GRanges_SY_donor_strings,
-                                            IRanges(width(wmDonorSites), width(wmDonorSites)),
-                                            DNAStringSetList(strsplit(as.character(GRanges_SY_window_donor$varAllele), split="", fixed=TRUE)))
+    # So here we do the same but creating a DNAStringSetList, from the varAllele column (DNAStringSet), which contains the ALT allele but strand adjusted
+    GRanges_SY_donor_ALT_strings <- replaceAt(GRanges_SY_donor_strings,
+                                              IRanges(width(wmDonorSites), width(wmDonorSites)),
+                                              DNAStringSetList(strsplit(as.character(GRanges_SY_window_donor$varAllele), split="", fixed=TRUE)))
   
-  # retrieve regions around the allele potentially involving cryptic acceptor sites
-  wregion <- width(wmAcceptorSites)*2-1
-  GRanges_SY_window_acceptor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
-  GRanges_SY_acceptor_strings <- getSeq(Hsapiens, GRanges_SY_window_acceptor)
-   
-  GRanges_SY_acceptor_ALT_strings <- replaceAt(GRanges_SY_acceptor_strings,
-                                               IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
-                                               DNAStringSetList(strsplit(as.character(GRanges_SY_window_acceptor$varAllele), split="", fixed=TRUE)))
+    # retrieve regions around the allele potentially involving cryptic acceptor sites
+    wregion <- width(wmAcceptorSites)*2-1
+    GRanges_SY_window_acceptor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
+    GRanges_SY_acceptor_strings <- getSeq(Hsapiens, GRanges_SY_window_acceptor)
+
+    GRanges_SY_acceptor_ALT_strings <- replaceAt(GRanges_SY_acceptor_strings,
+                                                 IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
+                                                 DNAStringSetList(strsplit(as.character(GRanges_SY_window_acceptor$varAllele), split="", fixed=TRUE)))
   
-  # score synonymous ALT alleles for donor splice sites
-  GRanges_SY_donor_ALT_scores <- bpvec(X=GRanges_SY_donor_ALT_strings,
-                                       FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
-  GRanges_SY_donor_ALT_scores <- matrix(GRanges_SY_donor_ALT_scores, ncol=width(wmDonorSites), byrow=TRUE)
-  GRanges_SY_donor_ALT_scores <- t(apply(GRanges_SY_donor_ALT_scores, 1, function(x) {
-                                      maxsco <- maxpos <- NA_real_
-                                      if (any(!is.na(x))) {
-                                        maxpos <- which.max(x)
-                                        maxsco <- x[maxpos]
-                                      }
-                                      c(maxsco, maxpos)
-                                    }))
+    # score synonymous ALT alleles for donor splice sites
+    GRanges_SY_donor_ALT_scores <- bpvec(X=GRanges_SY_donor_ALT_strings,
+                                         FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    GRanges_SY_donor_ALT_scores <- matrix(GRanges_SY_donor_ALT_scores, ncol=width(wmDonorSites), byrow=TRUE)
+    GRanges_SY_donor_ALT_scores <- t(apply(GRanges_SY_donor_ALT_scores, 1, function(x) {
+                                        maxsco <- maxpos <- NA_real_
+                                        if (any(!is.na(x))) {
+                                          maxpos <- which.max(x)
+                                          maxsco <- x[maxpos]
+                                        }
+                                        c(maxsco, maxpos)
+                                      }))
 
-  # score synonymous ALT alleles for acceptor splice sites
-  GRanges_SY_acceptor_ALT_scores <- bpvec(X=GRanges_SY_acceptor_ALT_strings,
-                                          FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
-  GRanges_SY_acceptor_ALT_scores <- matrix(GRanges_SY_acceptor_ALT_scores, ncol=width(wmAcceptorSites), byrow=TRUE)
-  GRanges_SY_acceptor_ALT_scores <- t(apply(GRanges_SY_acceptor_ALT_scores, 1, function(x) {
-                                      maxsco <- maxpos <- NA_real_
-                                      if (any(!is.na(x))) {
-                                        maxpos <- which.max(x)
-                                        maxsco <- x[maxpos]
-                                      }
-                                      c(maxsco, maxpos)
-                                    }))
+    # score synonymous ALT alleles for acceptor splice sites
+    GRanges_SY_acceptor_ALT_scores <- bpvec(X=GRanges_SY_acceptor_ALT_strings,
+                                            FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    GRanges_SY_acceptor_ALT_scores <- matrix(GRanges_SY_acceptor_ALT_scores, ncol=width(wmAcceptorSites), byrow=TRUE)
+    GRanges_SY_acceptor_ALT_scores <- t(apply(GRanges_SY_acceptor_ALT_scores, 1, function(x) {
+                                        maxsco <- maxpos <- NA_real_
+                                        if (any(!is.na(x))) {
+                                          maxpos <- which.max(x)
+                                          maxsco <- x[maxpos]
+                                        }
+                                        c(maxsco, maxpos)
+                                      }))
 
-  # score synonymous REF alleles at the site of the highest score with the ALT allele
-  posHighestSitesALT <- GRanges_SY_donor_ALT_scores[!is.na(GRanges_SY_donor_ALT_scores[, 2]), 2]
-  GRanges_SY_donor_strings_at_ALT <- subseq(GRanges_SY_donor_strings[!is.na(GRanges_SY_donor_ALT_scores[, 2])],
-                                              start=posHighestSitesALT, width=width(wmDonorSites))
-  GRanges_SY_donor_REF_scores <- bpvec(X=GRanges_SY_donor_strings_at_ALT,
-                                       FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    # score synonymous REF alleles at the site of the highest score with the ALT allele
+    posHighestSitesALT <- GRanges_SY_donor_ALT_scores[!is.na(GRanges_SY_donor_ALT_scores[, 2]), 2]
+    GRanges_SY_donor_strings_at_ALT <- subseq(GRanges_SY_donor_strings[!is.na(GRanges_SY_donor_ALT_scores[, 2])],
+                                                start=posHighestSitesALT, width=width(wmDonorSites))
+    GRanges_SY_donor_REF_scores <- bpvec(X=GRanges_SY_donor_strings_at_ALT,
+                                         FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+  
+    posHighestSitesALT <- GRanges_SY_acceptor_ALT_scores[!is.na(GRanges_SY_acceptor_ALT_scores[, 2]), 2]
+    GRanges_SY_acceptor_strings_at_ALT <- subseq(GRanges_SY_acceptor_strings[!is.na(GRanges_SY_acceptor_ALT_scores[, 2])],
+                                                   start=posHighestSitesALT, width=width(wmAcceptorSites))
+    GRanges_SY_acceptor_REF_scores <- bpvec(X=GRanges_SY_acceptor_strings_at_ALT,
+                                            FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
 
-  posHighestSitesALT <- GRanges_SY_acceptor_ALT_scores[!is.na(GRanges_SY_acceptor_ALT_scores[, 2]), 2]
-  GRanges_SY_acceptor_strings_at_ALT <- subseq(GRanges_SY_acceptor_strings[!is.na(GRanges_SY_acceptor_ALT_scores[, 2])],
-                                                 start=posHighestSitesALT, width=width(wmAcceptorSites))
-  GRanges_SY_acceptor_REF_scores <- bpvec(X=GRanges_SY_acceptor_strings_at_ALT,
-                                          FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    # store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
+    relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
+    relposdonor <- c(relposdonor, seq(1, width(wmDonorSites)-length(relposdonor)))
+    relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
+    relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
 
-  # store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
-  relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
-  relposdonor <- c(relposdonor, seq(1, width(wmDonorSites)-length(relposdonor)))
-  relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
-  relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
+    CRYPss_syn <- DataFrame(CRYP5ssREF=rep(NA, nrow(GRanges_SY_donor_ALT_scores)),
+                            CRYP5ssALT=round(GRanges_SY_donor_ALT_scores[, 1], digits=2),
+                            CRYP5ssPOS=relposdonor[width(wmDonorSites)-GRanges_SY_donor_ALT_scores[, 2]+1],
+                            CRYP3ssREF=rep(NA, nrow(GRanges_SY_acceptor_ALT_scores)),
+                            CRYP3ssALT=round(GRanges_SY_acceptor_ALT_scores[, 1], digits=2),
+                            CRYP3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_SY_acceptor_ALT_scores[, 2]+1])
+    CRYPss_syn$CRYP5ssREF[!is.na(CRYPss_syn$CRYP5ssALT)] <- round(GRanges_SY_donor_REF_scores, digits=2)
+    CRYPss_syn$CRYP3ssREF[!is.na(CRYPss_syn$CRYP3ssALT)] <- round(GRanges_SY_acceptor_REF_scores, digits=2)
 
-  CRYPss_syn <- DataFrame(CRYP5ssREF=rep(NA, nrow(GRanges_SY_donor_ALT_scores)),
-                          CRYP5ssALT=round(GRanges_SY_donor_ALT_scores[, 1], digits=2),
-                          CRYP5ssPOS=relposdonor[width(wmDonorSites)-GRanges_SY_donor_ALT_scores[, 2]+1],
-                          CRYP3ssREF=rep(NA, nrow(GRanges_SY_acceptor_ALT_scores)),
-                          CRYP3ssALT=round(GRanges_SY_acceptor_ALT_scores[, 1], digits=2),
-                          CRYP3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_SY_acceptor_ALT_scores[, 2]+1])
-  CRYPss_syn$CRYP5ssREF[!is.na(CRYPss_syn$CRYP5ssALT)] <- round(GRanges_SY_donor_REF_scores, digits=2)
-  CRYPss_syn$CRYP3ssREF[!is.na(CRYPss_syn$CRYP3ssALT)] <- round(GRanges_SY_acceptor_REF_scores, digits=2)
-
-  ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR_annotated'
-  mcols(variantsGR_annotated[variantsGR_annotated$CONSEQUENCE %in% "synonymous", colnames(CRYPss_syn)]) <- CRYPss_syn
+    ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR_annotated'
+    mcols(variantsGR_annotated[variantsGR_annotated$CONSEQUENCE %in% "synonymous" & eltlen == 1, colnames(CRYPss_syn)]) <- CRYPss_syn
+  }
   
   ##############################################
   ##                                          ##
@@ -234,90 +248,94 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   
   message("Annotating potential cryptic splice sites in intronic variants")
   eltlen <- elementLengths(variantsGR_annotated$ALT) ## DISCARD MULTIPLE ALT ALLELES BY NOW (SHOULD DO SOMETHING DIFFERENT)
-  GRanges_intron_SNV <- variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron" &
-                                             eltlen == 1] ## THIS MASK IS ALSO USED BELOW !!!
 
-  ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
-  ## and the column ALT is not adjusted - adapted from VariantAnnotation/R/methods-predictCoding.R
-  nstrand <- as.vector(strand(GRanges_intron_SNV) == "-")
-  altAlleleStrandAdjusted <- GRanges_intron_SNV$ALT
-  if (any(nstrand))
-    altAlleleStrandAdjusted[nstrand] <- relist(complement(unlist(altAlleleStrandAdjusted[nstrand])),
-                                               altAlleleStrandAdjusted[nstrand])
+  if (any(variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron" & eltlen == 1)) {
+    GRanges_intron_SNV <- variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" &
+                                               variantsGR_annotated$LOCATION == "intron" &
+                                               eltlen == 1] ## THIS MASK IS ALSO USED BELOW !!!
 
-  ## retrieve regions around the allele potentially involving cryptic donor sites
-  wregion <- width(wmDonorSites)*2-1
-  GRanges_intron_SNV_window_donor <- resize(GRanges_intron_SNV, width=width(GRanges_intron_SNV)+wregion-1, fix="center")
-  GRanges_intron_SNV_donor_strings <- getSeq(Hsapiens, GRanges_intron_SNV_window_donor)
-  GRanges_intron_SNV_donor_ALT_strings <- replaceAt(GRanges_intron_SNV_donor_strings,
-                                                    IRanges(width(wmDonorSites), width(wmDonorSites)),
-                                                    altAlleleStrandAdjusted)
+    ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
+    ## and the column ALT is not adjusted - adapted from VariantAnnotation/R/methods-predictCoding.R
+    nstrand <- as.vector(strand(GRanges_intron_SNV) == "-")
+    altAlleleStrandAdjusted <- GRanges_intron_SNV$ALT
+    if (any(nstrand))
+      altAlleleStrandAdjusted[nstrand] <- relist(complement(unlist(altAlleleStrandAdjusted[nstrand])),
+                                                 altAlleleStrandAdjusted[nstrand])
 
-  ## retrieve regions around the allele potentially involving cryptic acceptor sites
-  wregion <- width(wmAcceptorSites)*2-1
-  GRanges_intron_SNV_window_acceptor <- resize(GRanges_intron_SNV, width=width(GRanges_intron_SNV)+wregion-1, fix="center") 
-  GRanges_intron_SNV_acceptor_strings <- getSeq(Hsapiens, GRanges_intron_SNV_window_acceptor)
-  GRanges_intron_SNV_acceptor_ALT_strings <- replaceAt(GRanges_intron_SNV_acceptor_strings,
-                                                       IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
-                                                       altAlleleStrandAdjusted)
+    ## retrieve regions around the allele potentially involving cryptic donor sites
+    wregion <- width(wmDonorSites)*2-1
+    GRanges_intron_SNV_window_donor <- resize(GRanges_intron_SNV, width=width(GRanges_intron_SNV)+wregion-1, fix="center")
+    GRanges_intron_SNV_donor_strings <- getSeq(Hsapiens, GRanges_intron_SNV_window_donor)
+    GRanges_intron_SNV_donor_ALT_strings <- replaceAt(GRanges_intron_SNV_donor_strings,
+                                                      IRanges(width(wmDonorSites), width(wmDonorSites)),
+                                                      altAlleleStrandAdjusted)
 
-  ## score intronic ALT alleles for donor splice sites
-  GRanges_intron_SNV_donor_ALT_scores <- bpvec(X=GRanges_intron_SNV_donor_ALT_strings,
-                                               FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
-  GRanges_intron_SNV_donor_ALT_scores <- matrix(GRanges_intron_SNV_donor_ALT_scores, ncol=width(wmDonorSites), byrow=TRUE)
-  GRanges_intron_SNV_donor_ALT_scores <- t(apply(GRanges_intron_SNV_donor_ALT_scores, 1, function(x) {
-                                                   maxsco <- maxpos <- NA_real_
-                                                   if (any(!is.na(x))) {
-                                                     maxpos <- which.max(x)
-                                                     maxsco <- x[maxpos]
-                                                   }
-                                                   c(maxsco, maxpos)
-                                                 }))
+    ## retrieve regions around the allele potentially involving cryptic acceptor sites
+    wregion <- width(wmAcceptorSites)*2-1
+    GRanges_intron_SNV_window_acceptor <- resize(GRanges_intron_SNV, width=width(GRanges_intron_SNV)+wregion-1, fix="center") 
+    GRanges_intron_SNV_acceptor_strings <- getSeq(Hsapiens, GRanges_intron_SNV_window_acceptor)
+    GRanges_intron_SNV_acceptor_ALT_strings <- replaceAt(GRanges_intron_SNV_acceptor_strings,
+                                                         IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
+                                                         altAlleleStrandAdjusted)
 
-  ## score intronic ALT alleles for acceptor splice sites
-  GRanges_intron_SNV_acceptor_ALT_scores <- bpvec(X=GRanges_intron_SNV_acceptor_ALT_strings,
-                                                  FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
-  GRanges_intron_SNV_acceptor_ALT_scores <- matrix(GRanges_intron_SNV_acceptor_ALT_scores, ncol=width(wmAcceptorSites), byrow=TRUE)
-  GRanges_intron_SNV_acceptor_ALT_scores <- t(apply(GRanges_intron_SNV_acceptor_ALT_scores, 1, function(x) {
-                                                   maxsco <- maxpos <- NA_real_
-                                                   if (any(!is.na(x))) {
-                                                     maxpos <- which.max(x)
-                                                     maxsco <- x[maxpos]
-                                                   }
-                                                   c(maxsco, maxpos)
-                                                 }))
+    ## score intronic ALT alleles for donor splice sites
+    GRanges_intron_SNV_donor_ALT_scores <- bpvec(X=GRanges_intron_SNV_donor_ALT_strings,
+                                                 FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    GRanges_intron_SNV_donor_ALT_scores <- matrix(GRanges_intron_SNV_donor_ALT_scores, ncol=width(wmDonorSites), byrow=TRUE)
+    GRanges_intron_SNV_donor_ALT_scores <- t(apply(GRanges_intron_SNV_donor_ALT_scores, 1, function(x) {
+                                                     maxsco <- maxpos <- NA_real_
+                                                     if (any(!is.na(x))) {
+                                                       maxpos <- which.max(x)
+                                                       maxsco <- x[maxpos]
+                                                     }
+                                                     c(maxsco, maxpos)
+                                                   }))
+
+    ## score intronic ALT alleles for acceptor splice sites
+    GRanges_intron_SNV_acceptor_ALT_scores <- bpvec(X=GRanges_intron_SNV_acceptor_ALT_strings,
+                                                    FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    GRanges_intron_SNV_acceptor_ALT_scores <- matrix(GRanges_intron_SNV_acceptor_ALT_scores, ncol=width(wmAcceptorSites), byrow=TRUE)
+    GRanges_intron_SNV_acceptor_ALT_scores <- t(apply(GRanges_intron_SNV_acceptor_ALT_scores, 1, function(x) {
+                                                     maxsco <- maxpos <- NA_real_
+                                                     if (any(!is.na(x))) {
+                                                       maxpos <- which.max(x)
+                                                       maxsco <- x[maxpos]
+                                                     }
+                                                     c(maxsco, maxpos)
+                                                   }))
  
-  ## score intronic REF alleles at the site of the highest score with the ALT allele
-  posHighestSitesALT <- GRanges_intron_SNV_donor_ALT_scores[!is.na(GRanges_intron_SNV_donor_ALT_scores[, 2]), 2]
-  GRanges_intron_SNV_donor_strings_at_ALT <- subseq(GRanges_intron_SNV_donor_strings[!is.na(GRanges_intron_SNV_donor_ALT_scores[, 2])],
-                                                      start=posHighestSitesALT, width=width(wmDonorSites))
-  GRanges_intron_SNV_donor_REF_scores <- bpvec(X=GRanges_intron_SNV_donor_strings_at_ALT,
-                                               FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    ## score intronic REF alleles at the site of the highest score with the ALT allele
+    posHighestSitesALT <- GRanges_intron_SNV_donor_ALT_scores[!is.na(GRanges_intron_SNV_donor_ALT_scores[, 2]), 2]
+    GRanges_intron_SNV_donor_strings_at_ALT <- subseq(GRanges_intron_SNV_donor_strings[!is.na(GRanges_intron_SNV_donor_ALT_scores[, 2])],
+                                                        start=posHighestSitesALT, width=width(wmDonorSites))
+    GRanges_intron_SNV_donor_REF_scores <- bpvec(X=GRanges_intron_SNV_donor_strings_at_ALT,
+                                                 FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
 
-  posHighestSitesALT <- GRanges_intron_SNV_acceptor_ALT_scores[!is.na(GRanges_intron_SNV_acceptor_ALT_scores[, 2]), 2]
-  GRanges_intron_SNV_acceptor_strings_at_ALT <- subseq(GRanges_intron_SNV_acceptor_strings[!is.na(GRanges_intron_SNV_acceptor_ALT_scores[, 2])],
-                                                         start=posHighestSitesALT, width=width(wmAcceptorSites))
-  GRanges_intron_SNV_acceptor_REF_scores <- bpvec(X=GRanges_intron_SNV_acceptor_strings_at_ALT,
-                                                  FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    posHighestSitesALT <- GRanges_intron_SNV_acceptor_ALT_scores[!is.na(GRanges_intron_SNV_acceptor_ALT_scores[, 2]), 2]
+    GRanges_intron_SNV_acceptor_strings_at_ALT <- subseq(GRanges_intron_SNV_acceptor_strings[!is.na(GRanges_intron_SNV_acceptor_ALT_scores[, 2])],
+                                                           start=posHighestSitesALT, width=width(wmAcceptorSites))
+    GRanges_intron_SNV_acceptor_REF_scores <- bpvec(X=GRanges_intron_SNV_acceptor_strings_at_ALT,
+                                                    FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
 
-  ## store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
-  relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
-  relposdonor <- c(relposdonor, seq(1, width(wmDonorSites)-length(relposdonor)))
-  relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
-  relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
+    ## store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
+    relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
+    relposdonor <- c(relposdonor, seq(1, width(wmDonorSites)-length(relposdonor)))
+    relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
+    relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
 
-  CRYPss_intron_SNV <- data.frame(CRYP5ssREF=rep(NA, nrow(GRanges_intron_SNV_donor_ALT_scores)),
-                                  CRYP5ssALT=round(GRanges_intron_SNV_donor_ALT_scores[, 1], digits=2),
-                                  CRYP5ssPOS=relposdonor[width(wmDonorSites)-GRanges_intron_SNV_donor_ALT_scores[, 2]+1],
-                                  CRYP3ssREF=rep(NA, nrow(GRanges_intron_SNV_acceptor_ALT_scores)),
-                                  CRYP3ssALT=round(GRanges_intron_SNV_acceptor_ALT_scores[, 1], digits=2),
-                                  CRYP3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_intron_SNV_acceptor_ALT_scores[, 2]+1])
-  CRYPss_intron_SNV$CRYP5ssREF[!is.na(CRYPss_intron_SNV$CRYP5ssALT)] <- round(GRanges_intron_SNV_donor_REF_scores, digits=2)
-  CRYPss_intron_SNV$CRYP3ssREF[!is.na(CRYPss_intron_SNV$CRYP3ssALT)] <- round(GRanges_intron_SNV_acceptor_REF_scores, digits=2)
+    CRYPss_intron_SNV <- data.frame(CRYP5ssREF=rep(NA, nrow(GRanges_intron_SNV_donor_ALT_scores)),
+                                    CRYP5ssALT=round(GRanges_intron_SNV_donor_ALT_scores[, 1], digits=2),
+                                    CRYP5ssPOS=relposdonor[width(wmDonorSites)-GRanges_intron_SNV_donor_ALT_scores[, 2]+1],
+                                    CRYP3ssREF=rep(NA, nrow(GRanges_intron_SNV_acceptor_ALT_scores)),
+                                    CRYP3ssALT=round(GRanges_intron_SNV_acceptor_ALT_scores[, 1], digits=2),
+                                    CRYP3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_intron_SNV_acceptor_ALT_scores[, 2]+1])
+    CRYPss_intron_SNV$CRYP5ssREF[!is.na(CRYPss_intron_SNV$CRYP5ssALT)] <- round(GRanges_intron_SNV_donor_REF_scores, digits=2)
+    CRYPss_intron_SNV$CRYP3ssREF[!is.na(CRYPss_intron_SNV$CRYP3ssALT)] <- round(GRanges_intron_SNV_acceptor_REF_scores, digits=2)
   
-  ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR_annotated'
-  mcols(variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron" & eltlen == 1,
-                            colnames(CRYPss_intron_SNV)]) <- CRYPss_intron_SNV
+    ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR_annotated'
+    mcols(variantsGR_annotated[variantsGR_annotated$TYPE == "SNV" & variantsGR_annotated$LOCATION == "intron" & eltlen == 1,
+                              colnames(CRYPss_intron_SNV)]) <- CRYPss_intron_SNV
+  }
 
   ###############################
   ##                           ##
@@ -382,7 +400,9 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   for (i in seq(along=otherAnnotations)) {
     message(sprintf("Annotating with %s", names(otherAnnotations)[i]))
     mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-                                         annotateVariants(otherAnnotations[[i]], variantsGR_annotated))
+                                         annotateVariants(otherAnnotations[[i]],
+                                                          variantsGR_annotated,
+                                                          BPPARAM=BPPARAM))
   }
 
   ## restore the seqinfo data
@@ -423,7 +443,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
 ####
 
 setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
-          function(annObj, variantsGR, coding=TRUE) {
+          function(annObj, variantsGR, coding=TRUE, BPPARAM=bpparam()) {
             PolyPhen2 <- rep(NA_character_, length(variantsGR))
             if (!coding)
               return(DataFrame(PolyPhen2=PolyPhen2))
@@ -446,7 +466,7 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
-          function(annObj, variantsGR, coding=TRUE) {
+          function(annObj, variantsGR, coding=TRUE, BPPARAM=bpparam()) {
             PROVEAN <- rep(NA_character_, length(variantsGR))
             if (!coding)
               return(DataFrame(PROVEAN=PROVEAN))
@@ -468,7 +488,7 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
 
 ## revise this according to the previous two methods!!!
 setMethod("annotateVariants", signature(annObj="MafDb"),
-          function(annObj, variantsGR) {
+          function(annObj, variantsGR, BPPARAM=bpparam()) {
 
             ## get the MAF columns
             mafCols <- knownVariantsMAFcols(annObj) ## assumes all MAF column names contain 'AF'
@@ -509,7 +529,7 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 ####
 
 setMethod("annotateVariants", signature(annObj="OrgDb"),
-          function(annObj, variantsGR) {
+          function(annObj, variantsGR, BPPARAM=bpparam()) {
 
             genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
             entrezIDs <- variantsGR$GENEID
@@ -535,7 +555,7 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
           })
 
 setMethod("annotateVariants", signature(annObj="TxDb"),
-          function(annObj, variantsGR) {
+          function(annObj, variantsGR, BPPARAM=bpparam()) {
 
             txlevel_annot <- DataFrame(TXNAME=character())
             txIDs <- variantsGR$TXID
@@ -559,7 +579,7 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="PhastConsDb"),
-          function(annObj, variantsGR) {
+          function(annObj, variantsGR, BPPARAM=bpparam()) {
 
             sco <- scores(annObj, variantsGR)
 
@@ -571,7 +591,7 @@ setMethod("annotateVariants", signature(annObj="PhastConsDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
-          function(annObj, variantsGR) {
+          function(annObj, variantsGR, BPPARAM=bpparam()) {
 
             gps <- genePhylostratum(annObj, variantsGR$GENEID)
 

@@ -5,6 +5,7 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   callstr <- deparse(callobj)
   input_list <- as.list(path(param$vcfFiles))
 ##  ped <- param@pedFilename
+  sinfo <- param$seqInfos[[1]]
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
@@ -13,11 +14,10 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
   
-  genomeVersion <- unique(genome(txdb))
-  # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
+  genomeInfo <- sinfo
   
-  if (missing(BPPARAM))
-    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
+  if (!exists(as.character(substitute(BPPARAM))))
+    stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
   
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
@@ -49,7 +49,7 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   ## unaff_mom <- unaff[unaff[, 5] == 2, ][, 2]
   
   message("Reading input VCF file into main memory.")
-  vcf1 <- readVcf(unlist(input_list), genomeVersion)
+  vcf1 <- readVcf(unlist(input_list), genomeInfo)
 
   gr1 <- rowData(vcf1)
   gr1 <- matchChromosomes(gr1, txdb)
