@@ -59,12 +59,32 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             }
 
             sampleNames <- character()
+            seqinfos <- vector(mode="list", length=length(vcfFilenames))
             tfl <- list()
             for (i in seq(along=vcfFilenames)) {
-              sampleNames <- c(sampleNames, samples(scanVcfHeader(vcfFilenames[i])))
+              hd <- scanVcfHeader(vcfFilenames[i])
+              seqinfos[[i]] <- seqinfo(hd)
+              sampleNames <- c(sampleNames, samples(hd))
               tfl[[i]] <- TabixFile(vcfFilenames[i])
             }
             tfl <- do.call(TabixFileList, tfl)
+
+            ## check that the genome information is identical for all VCFs with genome information
+            wh <- which(sapply(seqinfos, length) > 0)
+            for (i in wh)
+              if (!identical(seqinfos[[i]], seqinfos[[wh[1]]]))
+                stop("Genome version for VCF file %s is different from VCF file %s\n",
+                     basename(vcfFilenames[i]), basename(vcfFilenames[wh[1]]))
+
+            ## those VCFs without genome information take the genome information from
+            ## VCFs with genome information (if any)
+            wh0 <- sapply(seqinfos, length) == 0
+            if (length(wh0) > 0 && length(wh) > 0) {
+              seqinfos[wh0] <- seqinfos[wh[1]]
+              warning(sprintf("Genome information missing in VCF file(s) %s is taken from VCF file %s.",
+                              paste(sapply(vcfFilenames[wh0], basename), collapse=", "),
+                              basename(vcfFilenames[wh[1]])))
+            }
 
             ## read radical amino acid change matrix
             radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
@@ -113,6 +133,14 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                 stop(sprintf("The object loaded with name %s is not a 'TxDb' object.", txdb))
             }
 
+            ## when no VCF has genome information, this information is taken from the TxDb package
+            wh0 <- sapply(seqinfos, length) == 0
+            if (length(wh0) > 0) {
+              seqinfos[wh0] <- seqinfo(txdb)
+              warning(sprintf("No genome information available from any VCF file. This information will be taken from the transcript-centric package %s, thus assuming a genome version %s with %s chromosome nomenclature\n",
+                      txdb$packageName, unique(genome(txdb)), seqlevelsStyle(txdb)))
+            }
+
             if (!is.character(snpdb) && length(snpdb) != 1)
               stop("argument 'snpdb' should contain the name of a 'SNPlocs' SNP-centric annotation package.")
             else {
@@ -153,7 +181,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
               otherannotations[[name]] <- get(name)
             }
 
-            new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl,
+            new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
                 sampleNames=sampleNames, pedFilename=pedFilename, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
                 radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
                 otherAnnotations=otherannotations, allTranscripts=allTranscripts, filterTag=filterTag)
@@ -165,8 +193,16 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat("  VCF file(s):")
             for (f in path(object$vcfFiles))
               cat(sprintf(" %s", basename(f)))
-            sampleNames <- ifelse(length(object$sampleNames) <= 3, paste(object$sampleNames, collapse=", "),
-                                  paste(paste(head(object$sampleNames, n=3), collapse=", "), "...", sep=", "))
+            sampleNames <- ifelse(length(object$sampleNames) <= 4, paste(object$sampleNames, collapse=", "),
+                                  paste(paste(head(object$sampleNames, n=4), collapse=", "), "...", sep=", "))
+            cat(sprintf("\n  Genome version(s):"))
+            for (i in seq(along=object$seqInfos))
+              if (length(object$seqInfos[[i]]) > 0)
+                cat(sprintf(" %s(%s)", paste(unique(genome(object$seqInfos[[i]])), collapse=","),
+                            seqlevelsStyle(object$seqInfos[[i]])))
+              else
+                cat(" NA")
+
             cat(sprintf("\n  Number of individuals: %d (%s)\n", length(object$sampleNames), sampleNames))
             if (length(object$pedFilename) > 0)
               cat(sprintf("  PED file: %s\n", basename(object$pedFilename)))
