@@ -5,6 +5,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   callstr <- deparse(callobj)
   input_list <- as.list(path(param$vcfFiles))
   ped <- param$pedFilename
+  sinfo <- param$seqInfos[[1]]
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
@@ -13,11 +14,10 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
  
-  genomeVersion <- unique(genome(txdb))
-  # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
+  genomeInfo <- sinfo
   
-  if (missing(BPPARAM))
-    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
+  if (!exists(as.character(substitute(BPPARAM))))
+    stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
   
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
@@ -45,7 +45,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   
   if (multiSample) {
     message("Reading input VCF file into main memory.")
-    vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion)
+    vcf_vcf1 <- readVcf(unlist(input_list), genomeInfo)
     
     unaffected <- two_ind_ms(vcf_vcf1, "0/0", unaff, filterTag)
     affected <- vcf2GR_2options(vcf_vcf1, "0/1", "1/1", aff[, 2], filterTag)
@@ -76,9 +76,9 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     input_list_aff <- input_list[input_list_aff_vector]
     
     message("Reading input VCF files into main memory.")
-    vcf_carrier1 <- readVcf(unlist(input_list_father), filterTag, genomeVersion)
-    vcf_carrier2 <- readVcf(unlist(input_list_mother), filterTag, genomeVersion)
-    vcf_affected1 <- readVcf(unlist(input_list_aff), filterTag, genomeVersion)
+    vcf_carrier1 <- readVcf(unlist(input_list_father), filterTag, genomeInfo)
+    vcf_carrier2 <- readVcf(unlist(input_list_mother), filterTag, genomeInfo)
+    vcf_affected1 <- readVcf(unlist(input_list_aff), filterTag, genomeInfo)
     
    
     # we are interested in comparing all changes too see which of them are inherited, so we don't filter by any genotypic status 

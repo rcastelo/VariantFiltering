@@ -6,6 +6,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   callstr <- deparse(callobj)
   input_list <- as.list(path(param$vcfFiles))
   ped <- param$pedFilename
+  sinfo <- param$seqInfos[[1]]
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
@@ -14,8 +15,10 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
 
-  genomeVersion <- unique(genome(txdb))
-  # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
+  genomeInfo <- sinfo
+  
+  if (!exists(as.character(substitute(BPPARAM))))
+    stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
   
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
@@ -61,7 +64,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   mom_comphet <- dad_comphet <- NULL
 
   if (multiSample) {
-    vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion)
+    vcf_vcf1 <- readVcf(unlist(input_list), genomeInfo)
     
     gr_carr1 <- one_ind_ms(vcf_vcf1, "0/1", row_carr1, filterTag)
     if (length(gr_carr1) < 1) {
@@ -121,16 +124,16 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     input_list_mother <- input_list[input_list_mother_vector]
     input_list_aff <- input_list[input_list_aff_vector] 
   
-    vcf_carrier1 <- readVcf(unlist(input_list_mother), genomeVersion)
-    vcf_carrier2 <- readVcf(unlist(input_list_father), genomeVersion)
+    vcf_carrier1 <- readVcf(unlist(input_list_mother), genomeInfo)
+    vcf_carrier2 <- readVcf(unlist(input_list_father), genomeInfo)
     
     affected <- switch(length(input_list_aff)+1,
                        stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                       one_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                       two_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                       three_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                       four_ind_us(input_list_aff, "0/1", filterTag, genomeVersion),
-                       five_ind_us(input_list_aff, "0/1", filterTag, genomeVersion))
+                       one_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
+                       two_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
+                       three_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
+                       four_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
+                       five_ind_us(input_list_aff, "0/1", filterTag, genomeInfo))
     
     gr_carr1 <- vcf2GR(vcf_carrier1, "0/1", filterTag)
     gr_carr2 <- vcf2GR(vcf_carrier2, "0/1", filterTag)

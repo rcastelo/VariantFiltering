@@ -153,17 +153,17 @@ five_ind_ms_2opt <- function(vcf, genot1, genot2, ind, filterTag=NA_character_) 
 # Unique sample
 #######################
 
-one_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd), genomeVersion)
+one_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd), genomeInfo)
   
   candidates <- vcf2GR(vcf_ind1, genot, 1, filterTag)
   
   return(candidates)
 } 
 
-two_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
+two_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
   
   gr_ind1 <- vcf2GR(vcf_ind1, genot, 1, filterTag)
   gr_ind2 <- vcf2GR(vcf_ind2, genot, 1, filterTag)
@@ -174,10 +174,10 @@ two_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
   return(candidates)
 } 
 
-three_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
-  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeVersion)
+three_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
+  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeInfo)
   
   gr_ind1 <- vcf2GR(vcf_ind1, genot, 1, filterTag)
   gr_ind2 <- vcf2GR(vcf_ind2, genot, 1, filterTag)
@@ -192,11 +192,11 @@ three_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
   return(candidates)
 } 
 
-four_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
-  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeVersion)
-  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeVersion)
+four_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
+  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeInfo)
+  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeInfo)
   
   gr_ind1 <- vcf2GR(vcf_ind1, genot, 1, filterTag)
   gr_ind2 <- vcf2GR(vcf_ind2, genot, 1, filterTag)
@@ -215,12 +215,12 @@ four_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
   return(candidates)
 } 
 
-five_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
-  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeVersion)
-  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeVersion)
-  vcf_ind5 <- readVcf(unlist(pwd[5]), genomeVersion)
+five_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
+  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeInfo)
+  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeInfo)
+  vcf_ind5 <- readVcf(unlist(pwd[5]), genomeInfo)
   
   gr_ind1 <- vcf2GR(vcf_ind1, genot, 1, filterTag)
   gr_ind2 <- vcf2GR(vcf_ind2, genot, 1, filterTag)
@@ -245,17 +245,17 @@ five_ind_us <- function(pwd, genot, filterTag=NA_character_, genomeVersion) {
 
 # these ones accept more than one genotipic status
 
-one_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd), genomeVersion)
+one_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd), genomeInfo)
   
   candidates <- vcf2GR_2options(vcf_ind1, genot1, genot2, 1, filterTag)
   
   return(candidates)
 } 
 
-two_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
+two_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
   
   gr_ind1 <- vcf2GR_2options(vcf_ind1, genot1, genot2, 1, filterTag)
   gr_ind2 <- vcf2GR_2options(vcf_ind2, genot1, genot2, 1, filterTag)
@@ -266,10 +266,10 @@ two_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genome
   return(candidates)
 }
 
-three_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
-  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeVersion)
+three_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
+  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeInfo)
   
   gr_ind1 <- vcf2GR_2options(vcf_ind1, genot1, genot2, 1, filterTag)
   gr_ind2 <- vcf2GR_2options(vcf_ind2, genot1, genot2, 1, filterTag)
@@ -284,11 +284,11 @@ three_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, geno
   return(candidates)
 }
 
-four_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
-  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeVersion)
-  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeVersion)
+four_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
+  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeInfo)
+  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeInfo)
   
   gr_ind1 <- vcf2GR_2options(vcf_ind1, genot1, genot2, 1, filterTag)
   gr_ind2 <- vcf2GR_2options(vcf_ind2, genot1, genot2, 1, filterTag)
@@ -307,12 +307,12 @@ four_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genom
   return(candidates)
 }
 
-five_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeVersion) {
-  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeVersion)
-  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeVersion)
-  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeVersion)
-  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeVersion)
-  vcf_ind5 <- readVcf(unlist(pwd[5]), genomeVersion)
+five_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genomeInfo) {
+  vcf_ind1 <- readVcf(unlist(pwd[1]), genomeInfo)
+  vcf_ind2 <- readVcf(unlist(pwd[2]), genomeInfo)
+  vcf_ind3 <- readVcf(unlist(pwd[3]), genomeInfo)
+  vcf_ind4 <- readVcf(unlist(pwd[4]), genomeInfo)
+  vcf_ind5 <- readVcf(unlist(pwd[5]), genomeInfo)
   
   gr_ind1 <- vcf2GR_2options(vcf_ind1, genot1, genot2, 1, filterTag)
   gr_ind2 <- vcf2GR_2options(vcf_ind2, genot1, genot2, 1, filterTag)
@@ -338,9 +338,9 @@ five_ind_us_2opt <- function(pwd, genot1, genot2, filterTag=NA_character_, genom
 ##############
 
 # this one creates a loop that discards shared variants with controls one by one
-pullout_shared_us <- function(gr_affected, control_list, filterTag=NA_character_, genomeVersion) {
+pullout_shared_us <- function(gr_affected, control_list, filterTag=NA_character_, genomeInfo) {
   for (i in unlist(control_list)) {
-    ind <- readVcf(i, genomeVersion)
+    ind <- readVcf(i, genomeInfo)
     gr_ind <- vcf2GR_2options(ind, "0/1", "1/1", 1, filterTag)
     
     realcommonind <- sharedVariants(gr_affected, gr_ind)
@@ -368,6 +368,7 @@ matchChromosomes <- function(variantsGR, txdb) {
   variantsGR <- keepStandardChromosomes(variantsGR)
   message(sprintf("Switching to %s chromosome-names style.", seqlevelsStyle(txdb)))
   seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
+  genome(variantsGR) <- genome(txdb)[intersect(names(genome(variantsGR)), names(genome(txdb)))]
   slenVcf <- seqlengths(variantsGR)
   slenTxDb <- seqlengths(txdb)
   commonChr <- intersect(names(slenVcf), names(slenTxDb))
@@ -410,7 +411,7 @@ vcf2GR <- function(vcf, genot, ind, filterTag){
 }
 
 
-vcf2GR_2options<- function(vcf, genot1, genot2, ind, filterTag){
+vcf2GR_2options <- function(vcf, genot1, genot2, ind, filterTag){
   maskgenvcf <- geno(vcf)$GT[, ind] == genot1 | geno(vcf)$GT[, ind] == genot2
   genvcf <- vcf[maskgenvcf, ]
   gr <- rowData(genvcf)
@@ -422,6 +423,8 @@ vcf2GR_2options<- function(vcf, genot1, genot2, ind, filterTag){
     gr <- gr[gr$FILTER %in% filterTag, ]
   gr
 }
+
+## this should be removed
 retrieveLostInfo <- function(GRbeforeLocateVariants, GRafterLocateVariants) {
   overgen12 <- findOverlaps(GRbeforeLocateVariants, GRafterLocateVariants, type="equal", ignore.strand=FALSE)
   commongen12 <- queryHits(overgen12)

@@ -5,6 +5,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   callstr <- deparse(callobj)
   input_list <- as.list(path(param$vcfFiles))
   ped <- param$pedFilename
+  sinfo <- param$seqInfos[[1]]
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
@@ -13,11 +14,10 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
   
-  genomeVersion <- unique(genome(txdb))
-  # now the version of the human genome that will be called will depend on the TxDb version used for the annotation
+  genomeInfo <- sinfo
   
-  if (missing(BPPARAM))
-    stop("Parallel back-end function given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the packge 'BiocParallel'.")
+  if (!exists(as.character(substitute(BPPARAM))))
+    stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
   
   if (class(txdb) != "TxDb")
     stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
@@ -40,7 +40,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   
   if (multiSample) {
     message("Reading input VCF file into main memory.")
-    vcf_vcf1 <- readVcf(unlist(input_list), genomeVersion) 
+    vcf_vcf1 <- readVcf(unlist(input_list), genomeInfo) 
     
     carrierFemales <- switch (nrow(carrier_female),
                               one_ind_ms(vcf_vcf1, "0/1", carrier_female, filterTag),
@@ -96,24 +96,24 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     input_list_aff_males <- input_list[input_list_aff_males_vector]
     
     carrierFemales <- switch (length(input_list_carrier_female),
-                              one_ind_us(input_list_carrier_female, "0/1", filterTag, genomeVersion),
-                              two_ind_us(input_list_carrier_female, "0/1", filterTag, genomeVersion),
-                              three_ind_us(input_list_carrier_female, "0/1", filterTag, genomeVersion),
-                              four_ind_us(input_list_carrier_female, "0/1", filterTag, genomeVersion),
-                              five_ind_us(input_list_carrier_female, "0/1", filterTag, genomeVersion))
+                              one_ind_us(input_list_carrier_female, "0/1", filterTag, genomeInfo),
+                              two_ind_us(input_list_carrier_female, "0/1", filterTag, genomeInfo),
+                              three_ind_us(input_list_carrier_female, "0/1", filterTag, genomeInfo),
+                              four_ind_us(input_list_carrier_female, "0/1", filterTag, genomeInfo),
+                              five_ind_us(input_list_carrier_female, "0/1", filterTag, genomeInfo))
     
     affected <- switch (length(input_list_aff_males)+1,
                         stop("No affected males detected. Something might be wrong with the .ped file..."),
-                        one_ind_us(input_list_aff_males, "1/1", filterTag, genomeVersion),
-                        two_ind_us(input_list_aff_males, "1/1", filterTag, genomeVersion),
-                        three_ind_us(input_list_aff_males, "1/1", filterTag, genomeVersion),
-                        four_ind_us(input_list_aff_males, "1/1", filterTag, genomeVersion),
-                        five_ind_us(input_list_aff_males, "1/1", filterTag, genomeVersion))
+                        one_ind_us(input_list_aff_males, "1/1", filterTag, genomeInfo),
+                        two_ind_us(input_list_aff_males, "1/1", filterTag, genomeInfo),
+                        three_ind_us(input_list_aff_males, "1/1", filterTag, genomeInfo),
+                        four_ind_us(input_list_aff_males, "1/1", filterTag, genomeInfo),
+                        five_ind_us(input_list_aff_males, "1/1", filterTag, genomeInfo))
     
     if (length(input_list_unaff_males) < 1) {
       affected_filtered <- affected
     } else {
-      affected_filtered <- pullout_shared_us(affected, input_list_unaff_males, filterTag, genomeVersion)
+      affected_filtered <- pullout_shared_us(affected, input_list_unaff_males, filterTag, genomeInfo)
     }
   }   
   
