@@ -368,7 +368,8 @@ matchChromosomes <- function(variantsGR, txdb) {
   variantsGR <- keepStandardChromosomes(variantsGR)
   message(sprintf("Switching to %s chromosome-names style.", seqlevelsStyle(txdb)))
   seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
-  genome(variantsGR) <- genome(txdb)[intersect(names(genome(variantsGR)), names(genome(txdb)))]
+  genome(variantsGR) <- genome(txdb)
+  ## genome(variantsGR) <- genome(txdb)[intersect(names(genome(variantsGR)), names(genome(txdb)))]
   slenVcf <- seqlengths(variantsGR)
   slenTxDb <- seqlengths(txdb)
   commonChr <- intersect(names(slenVcf), names(slenTxDb))

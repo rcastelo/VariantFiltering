@@ -33,12 +33,26 @@ setMethod("genePhylostratum", c("GenePhylostrataDb", "missing"),
 
 setMethod("genePhylostratum", c("GenePhylostrataDb", "character"),
           function(object, ids) {
-            if (substr(ids[1], 1, 4) != "ENSG") { ## if the input identifers are not Ensembl, Entrez ID is assumed
-              eg2ens <- get("entrezToPhylostrataEnsGene", envir=object@.data_cache)
-              ids <- eg2ens[ids]
+            n <- length(ids)
+            res <- data.frame(EntrezID=rep(NA_character_, n),
+                              TaxID=rep(NA_character_, n),
+                              OldestPhylostratum=rep(NA_integer_, n),
+                              Description=rep(NA_character_, n),
+                              stringsAsFactors=FALSE)
+
+            idsNotNA <- ids[!is.na(ids)]
+            if (length(idsNotNA) > 0) {
+              ## if the input identifers are not Ensembl, Entrez ID is assumed
+              if (substr(idsNotNA[1], 1, 4) != "ENSG") {
+                eg2ens <- get("entrezToPhylostrataEnsGene", envir=object@.data_cache)
+                ids <- eg2ens[ids]
+              }
+
+              gps <- genePhylostratum(object)
+              res[!is.na(ids), ] <- gps[idsNotNA, ]
             }
-            gps <- get("humanEnsGenePhylostrata", envir=object@.data_cache)
-            gps[ids, ]
+
+            res
           })
 
 setMethod("genePhylostrata", "GenePhylostrataDb",

@@ -22,7 +22,7 @@
 Class for annotation packages storing UCSC phastCons conservation scores.
 }
 \usage{
-\S4method{annotateVariants}{PhastConsDb}(annObj, variantsGR)
+\S4method{annotateVariants}{PhastConsDb}(annObj, variantsGR, BPPARAM)
 \S4method{scores}{PhastConsDb,GRanges}(object, gpos,
                                        summaryFun="mean",
                                        coercionFun="as.numeric")
@@ -30,6 +30,9 @@ Class for annotation packages storing UCSC phastCons conservation scores.
 \arguments{
   \item{annObj}{A \code{PhastConsDb} object.}
   \item{variantsGR}{A \code{GRanges} object with the variants to annotate.}
+  \item{BPPARAM}{An object of class \code{BiocParallelParam} specifying parameters related to
+    the parallel execution of this function. See function \code{\link[BiocParallel]{bpparam}()}
+    from the \code{BiocParallel} package.}
   \item{object}{A \code{PhastConsDb} object.}
   \item{gpos}{A \code{GRanges} object with positions from where to retrieve phastCons scores.}
   \item{summaryFun}{Function to summarize phastCons scores when more than one position is retrieved.
