@@ -35,6 +35,8 @@ importMethodsFrom(GenomeInfoDb, "seqinfo<-",
                                 "seqlevelsStyle<-",
                                 "isCircular",
                                 "isCircular<-",
+                                genome,
+                                "genome<-",
                                 releaseName)
 importMethodsFrom(VariantAnnotation, readVcf,
                                      scanVcfHeader,

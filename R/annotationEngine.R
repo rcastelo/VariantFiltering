@@ -5,8 +5,41 @@
 annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatrix,
                              otherAnnotations, allTranscripts, BPPARAM=bpparam()) {
   
-  if (length(variantsGR) == 0)
-    stop("There are no variants to annotate.")
+  if (length(variantsGR) == 0) {
+    variantsGR_annotated <- variantsGR
+    mcols(variantsGR_annotated) <- DataFrame(LOCATION=factor(),
+                                             LOCSTART=integer(),
+                                             TXID=integer(),
+                                             CDSID=integer(),
+                                             GENEID=character(),
+                                             REF=DNAStringSet(),
+                                             ALT=DNAStringSetList(),
+                                             TYPE=character(),
+                                             FILTER=character(),
+                                             dbSNP=character(),
+                                             cDNALOC=integer(),
+                                             varAllele=DNAStringSet(),
+                                             CDSLOC=IRanges(),
+                                             PROTEINLOC=IntegerList(),
+                                             CONSEQUENCE=factor(),
+                                             REFCODON=DNAStringSet(),
+                                             VARCODON=DNAStringSet(),
+                                             REFAA=AAStringSet(),
+                                             VARAA=AAStringSet(),
+                                             CRYP5ssREF=numeric(),
+                                             CRYP5ssALT=numeric(),
+                                             CRYP5ssPOS=numeric(),
+                                             CRYP3ssREF=numeric(),
+                                             CRYP3ssALT=numeric(),
+                                             CRYP3ssPOS=numeric(),
+                                             GENE=character(),
+                                             OMIM=character(),
+                                             TXNAME=character(),
+                                             CDS=character(),
+                                             AAchange=character(),
+                                             AAchangeType=character())
+    return(variantsGR_annotated)
+  }
 
   ##############################
   ##                          ##
