@@ -64,6 +64,8 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat(sprintf("    %s (%.1f%%) located in 3' UTR regions\n", sprintf(paddgts, vxloc["threeUTR"]), 100*vxloc["threeUTR"]/total))
             if (!is.na(match("intron", names(vxloc))))
               cat(sprintf("    %s (%.1f%%) located in intronic regions\n", sprintf(paddgts, vxloc["intron"]), 100*vxloc["intron"]/total))
+            if (!is.na(match("intergenic", names(vxloc))))
+              cat(sprintf("    %s (%.1f%%) located in intergenic regions\n", sprintf(paddgts, vxloc["intergenic"]), 100*vxloc["intergenic"]/total))
           })
 
 setMethod("param", signature(x="VariantFilteringResults"),
