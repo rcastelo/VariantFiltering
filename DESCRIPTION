@@ -5,11 +5,11 @@ Description: Filter genetic variants using different criteria such as
         inheritance model, amino acid change consequence, minimum
         allele frequencies across human populations, splice site
         strength, conservation, etc.
-Version: 1.3.3
+Version: 1.3.4
 Author: Dei M. Elurbe, Robert Castelo
 Maintainer: Robert Castelo <robert.castelo@upf.edu>
 Depends: R (>= 3.0.0), methods, BiocGenerics (>= 0.11.3)
-Imports: DBI, RSQLite (>= 0.8-1), Biobase, S4Vectors, IRanges (>= 1.99.17),
+Imports: DBI, RSQLite (>= 1.0.0), Biobase, S4Vectors, IRanges (>= 1.99.17),
         AnnotationDbi, BiocParallel, Biostrings (>= 2.33.11),
         GenomeInfoDb (>= 1.3.6), GenomicRanges (>= 1.17.19),
         GenomicFeatures, Rsamtools (>= 1.17.8), BSgenome,
