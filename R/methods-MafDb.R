@@ -100,12 +100,12 @@ load_taginfo <- function(mafdb) {
 }
 
 ## adapted from dbEasyPreparedQuery() in GenomicFeatures/R/utils.R
-dbEasyPreparedQuery <- function(conn, SQL, bind.data) {
+.dbEasyPreparedQuery <- function(conn, SQL, bind.data) {
   ## sqliteExecStatement() (SQLite backend for dbSendPreparedQuery()) fails
   ## when the nb of rows to insert is 0, hence the early bail out.
   if (nrow(bind.data) == 0L)
     return()
-  dbBeginTransaction(conn)
+  dbBegin(conn)
   dbGetPreparedQuery(conn, SQL, bind.data)
   dbCommit(conn)
 }
