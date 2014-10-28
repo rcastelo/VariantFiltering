@@ -20,7 +20,7 @@ importMethodsFrom(DBI, dbListFields)
 importMethodsFrom(RSQLite, dbConnect,
                            dbDisconnect,
                            dbGetQuery,
-                           dbBeginTransaction,
+                           dbBegin,
                            dbGetPreparedQuery,
                            dbCommit)
 importMethodsFrom(BSgenome, referenceGenome,
