@@ -25,7 +25,8 @@ Class for annotation packages storing UCSC phastCons conservation scores.
 \S4method{annotateVariants}{PhastConsDb}(annObj, variantsGR, BPPARAM)
 \S4method{scores}{PhastConsDb,GRanges}(object, gpos,
                                        summaryFun="mean",
-                                       coercionFun="as.numeric")
+                                       coercionFun="as.numeric",
+                                       caching=TRUE)
 }
 \arguments{
   \item{annObj}{A \code{PhastConsDb} object.}
@@ -39,6 +40,10 @@ Class for annotation packages storing UCSC phastCons conservation scores.
                     By default is set to the arithmetic mean.}
   \item{coercionFun}{Function to coerce the stored phastCons scores, before the summary function is
                      applied. By default phastCons scores are coerced to real values.}
+  \item{caching}{Flag setting whether phastCons scores per chromosome should be kept cached in memory
+                 (\code{TRUE}, default) or not (\code{FALSE}). The latter option minimizes the memory
+                 footprint but slows down the performance when the \code{scores()} method is called
+                 multiple times.}
 }
 \details{
 The \code{PhastConsDb} class and associated methods serve the purpose of creating annotation packages that store

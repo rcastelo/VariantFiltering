@@ -95,6 +95,7 @@ importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
 importFrom(IRanges, IRanges,
+                    RleList,
                     IntegerList,
                     CharacterList)
 importFrom(Biostrings, DNAStringSet,
