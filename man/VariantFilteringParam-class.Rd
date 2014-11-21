@@ -19,6 +19,7 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
 }
 \usage{
 \S4method{VariantFilteringParam}{character}(vcfFilenames, pedFilename=character(),
+                                            bsgenome="BSgenome.Hsapiens.UCSC.hg19",
                                             orgdb="org.Hs.eg.db",
                                             txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                                             snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
@@ -42,6 +43,9 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   }
   \item{pedFilename}{
   Character string of the pedigree file name in PED format.
+  }
+  \item{bsgenome}{
+  Character string of a genome annotation package (\code{BSgenome.Hsapiens.UCSC.hg19} by defautl).
   }
   \item{orgdb}{
   Character string of a gene-centric annotation package (\code{org.Hs.eg.db} by default).

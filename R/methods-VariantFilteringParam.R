@@ -1,10 +1,6 @@
-.isPkgLoaded <- function(name) {
-   (paste("package:", name, sep="") %in% search()) ## || (name %in% loadedNamespaces()) <- problematic with cleanEx()
-}
-
-
 setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
           function(vcfFilenames, pedFilename=character(),
+                   bsgenome="BSgenome.Hsapiens.UCSC.hg19",
                    orgdb="org.Hs.eg.db",
                    txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                    snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
@@ -91,25 +87,27 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## check that the given annotation packages are installed and can be loaded,
             ## load them and save the annotation object into the argument
-            if (!is.character(orgdb) && length(orgdb) != 1)
-              stop("argument 'orgdb' should contain the name of an 'OrgDb' gene-centric annotation package.")
-            else {
-              if (!orgdb %in% installed.packages()[, "Package"])
-                stop(sprintf("please install the Bioconductor package %s.", orgdb))
-              if (!.isPkgLoaded(orgdb)) {
-                message("Loading gene-centric annotation package ", orgdb)
-                if (!suppressPackageStartupMessages(require(orgdb, character.only=TRUE)))
-                  stop(sprintf("package %s could not be loaded.", orgdb))
-              }
-              tryCatch({
-                orgdb <- get(orgdb)
-              }, error=function(err) {
-                stop(sprintf("The gene annotation package %s should automatically load an 'OrgDb' object with the same name as the package."))
-              })
+            orgdb <- .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
 
-              if (!is(orgdb, "OrgDb"))
-                stop(sprintf("The object loaded with name %s is not an 'OrgDb' object.", orgdb))
-            }
+            ## if (!is.character(orgdb) && length(orgdb) != 1)
+            ##   stop("argument 'orgdb' should contain the name of an 'OrgDb' gene-centric annotation package.")
+            ## else {
+            ##   if (!orgdb %in% installed.packages()[, "Package"])
+            ##     stop(sprintf("please install the Bioconductor package %s.", orgdb))
+            ##   if (!.isPkgLoaded(orgdb)) {
+            ##     message("Loading gene-centric annotation package ", orgdb)
+            ##     if (!suppressPackageStartupMessages(require(orgdb, character.only=TRUE)))
+            ##       stop(sprintf("package %s could not be loaded.", orgdb))
+            ##   }
+            ##   tryCatch({
+            ##     orgdb <- get(orgdb)
+            ##   }, error=function(err) {
+            ##     stop(sprintf("The gene annotation package %s should automatically load an 'OrgDb' object with the same name as the package."))
+            ##   })
+
+            ##   if (!is(orgdb, "OrgDb"))
+            ##     stop(sprintf("The object loaded with name %s is not an 'OrgDb' object.", orgdb))
+            ## }
 
             if (!is.character(txdb) && !is(txdb, "TxDb"))
               stop("argument 'txdb' should either be a character string with the name a 'TxDb' transcript-centric annotation package, or a 'TxDb' object itself.")
@@ -182,9 +180,10 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             }
 
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
-                sampleNames=sampleNames, pedFilename=pedFilename, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
-                radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
-                otherAnnotations=otherannotations, allTranscripts=allTranscripts, filterTag=filterTag)
+                sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=Hsapiens, orgdb=orgdb, txdb=txdb,
+                snpdb=snpdb, radicalAAchangeFilename=radicalAAchangeFilename,
+                radicalAAchangeMatrix=radicalAAchangeMatrix, otherAnnotations=otherannotations,
+                allTranscripts=allTranscripts, filterTag=filterTag)
           })
 
 setMethod("show", signature(object="VariantFilteringParam"),
@@ -235,6 +234,44 @@ setMethod("$", signature(x="VariantFilteringParam"),
             slot(x, name)
           })
 
+
+## private functions
+
+.isPkgLoaded <- function(name) {
+   (paste("package:", name, sep="") %in% search()) ## || (name %in% loadedNamespaces()) <- problematic with cleanEx()
+}
+
+
+.loadAnnotationPackageObject <- function(pkgName, argName, pkgType) {
+
+  callobj <- match.call()
+  annotObj <- NULL
+
+  if (is.character(pkgName)) {
+    if (!pkgName %in% installed.packages()[, "Package"])
+      stop(sprintf("please install the Bioconductor package %s.", pkgName))
+    if (!.isPkgLoaded(pkgName)) {
+      message("Loading ", pkgType, " annotation package ", pkgName)
+      if (!suppressPackageStartupMessages(require(pkgName, character.only=TRUE)))
+        stop(sprintf("package %s could not be loaded.", pkgName))
+    }
+    tryCatch({
+      annotObj <- get(pkgName)
+    }, error=function(err) {
+      stop(sprintf("The gene annotation package %s should automatically load an %s object with the same name as the package.", pkgName, pkgType))
+    })
+  } else if (class(pkgName) != pkgType)
+    stop(sprintf("argument '%s' should either contain the name of an '%s' annotation package or be an '%s' annotation object itself.",
+         argName, pkgType, pkgType))
+  else
+    annotObj <- pkgName
+
+  if (!is(annotObj, pkgType))
+    stop(sprintf("The object loaded with name %s is not an '%s' object.",
+                 ifelse(is.character(pkgName), pkgName, gettext(callobj)[2])), pkgType)
+
+  annotObj
+}
 
 ## some utility functions copied from Rsamtools/R/utilities.R
 
