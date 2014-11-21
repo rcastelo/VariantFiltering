@@ -65,6 +65,12 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
   mtlength <- sapply(mtlength, "[", 1)
   vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1]+3, mtlength[mtstart != -1])
 
+  mt <- gregexpr("[a-zA-Z]+[0-9]+", vnames)
+  mtstart <- sapply(mt, "[", 1)
+  mtlength <- sapply(mt, attr, "match.length")
+  mtlength <- sapply(mtlength, "[", 1)
+  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+
   wh <- nchar(vnames2) > 20
   vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
 
