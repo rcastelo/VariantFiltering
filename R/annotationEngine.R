@@ -2,7 +2,7 @@
 ## input GRanges object. It uses different functions from this package and
 ## from the VariantAnnotation package
 
-annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatrix,
+annotationEngine <- function(variantsGR, bsgenome, orgdb, txdb, snpdb, radicalAAchangeMatrix,
                              otherAnnotations, allTranscripts, BPPARAM=bpparam()) {
   
   if (length(variantsGR) == 0) {
@@ -150,7 +150,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
     selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
     mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
     GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
-                                       seqSource=Hsapiens, varAllele=unlist(variantsGR_annotated_coding$ALT))
+                                       seqSource=bsgenome, varAllele=unlist(variantsGR_annotated_coding$ALT))
   
     ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
     ## annotated from the same gene but in different tx
@@ -205,7 +205,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
     # retrieve regions around the allele potentially involving cryptic donor sites
     wregion <- width(wmDonorSites)*2-1
     GRanges_SY_window_donor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
-    GRanges_SY_donor_strings <- getSeq(Hsapiens, GRanges_SY_window_donor)
+    GRanges_SY_donor_strings <- getSeq(bsgenome, GRanges_SY_window_donor)
     
     # So here we do the same but creating a DNAStringSetList, from the varAllele column (DNAStringSet), which contains the ALT allele but strand adjusted
     GRanges_SY_donor_ALT_strings <- replaceAt(GRanges_SY_donor_strings,
@@ -215,7 +215,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
     # retrieve regions around the allele potentially involving cryptic acceptor sites
     wregion <- width(wmAcceptorSites)*2-1
     GRanges_SY_window_acceptor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
-    GRanges_SY_acceptor_strings <- getSeq(Hsapiens, GRanges_SY_window_acceptor)
+    GRanges_SY_acceptor_strings <- getSeq(bsgenome, GRanges_SY_window_acceptor)
 
     GRanges_SY_acceptor_ALT_strings <- replaceAt(GRanges_SY_acceptor_strings,
                                                  IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
@@ -304,7 +304,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
     ## retrieve regions around the allele potentially involving cryptic donor sites
     wregion <- width(wmDonorSites)*2-1
     GRanges_intron_SNV_window_donor <- resize(GRanges_intron_SNV, width=width(GRanges_intron_SNV)+wregion-1, fix="center")
-    GRanges_intron_SNV_donor_strings <- getSeq(Hsapiens, GRanges_intron_SNV_window_donor)
+    GRanges_intron_SNV_donor_strings <- getSeq(bsgenome, GRanges_intron_SNV_window_donor)
     GRanges_intron_SNV_donor_ALT_strings <- replaceAt(GRanges_intron_SNV_donor_strings,
                                                       IRanges(width(wmDonorSites), width(wmDonorSites)),
                                                       altAlleleStrandAdjusted)
@@ -312,7 +312,7 @@ annotationEngine <- function(variantsGR, orgdb, txdb, snpdb, radicalAAchangeMatr
     ## retrieve regions around the allele potentially involving cryptic acceptor sites
     wregion <- width(wmAcceptorSites)*2-1
     GRanges_intron_SNV_window_acceptor <- resize(GRanges_intron_SNV, width=width(GRanges_intron_SNV)+wregion-1, fix="center") 
-    GRanges_intron_SNV_acceptor_strings <- getSeq(Hsapiens, GRanges_intron_SNV_window_acceptor)
+    GRanges_intron_SNV_acceptor_strings <- getSeq(bsgenome, GRanges_intron_SNV_window_acceptor)
     GRanges_intron_SNV_acceptor_ALT_strings <- replaceAt(GRanges_intron_SNV_acceptor_strings,
                                                          IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
                                                          altAlleleStrandAdjusted)
