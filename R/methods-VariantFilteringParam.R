@@ -74,7 +74,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## those VCFs without genome information take the genome information from
             ## VCFs with genome information (if any)
-            wh0 <- sapply(seqinfos, length) == 0
+            wh0 <- which(sapply(seqinfos, length) == 0)
             if (length(wh0) > 0 && length(wh) > 0) {
               seqinfos[wh0] <- seqinfos[wh[1]]
               warning(sprintf("Genome information missing in VCF file(s) %s is taken from VCF file %s.",
@@ -87,76 +87,22 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## check that the given annotation packages are installed and can be loaded,
             ## load them and save the annotation object into the argument
+
+            bsgenome <- .loadAnnotationPackageObject(bsgenome, "begenome", "BSgenome")
+
             orgdb <- .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
 
-            ## if (!is.character(orgdb) && length(orgdb) != 1)
-            ##   stop("argument 'orgdb' should contain the name of an 'OrgDb' gene-centric annotation package.")
-            ## else {
-            ##   if (!orgdb %in% installed.packages()[, "Package"])
-            ##     stop(sprintf("please install the Bioconductor package %s.", orgdb))
-            ##   if (!.isPkgLoaded(orgdb)) {
-            ##     message("Loading gene-centric annotation package ", orgdb)
-            ##     if (!suppressPackageStartupMessages(require(orgdb, character.only=TRUE)))
-            ##       stop(sprintf("package %s could not be loaded.", orgdb))
-            ##   }
-            ##   tryCatch({
-            ##     orgdb <- get(orgdb)
-            ##   }, error=function(err) {
-            ##     stop(sprintf("The gene annotation package %s should automatically load an 'OrgDb' object with the same name as the package."))
-            ##   })
-
-            ##   if (!is(orgdb, "OrgDb"))
-            ##     stop(sprintf("The object loaded with name %s is not an 'OrgDb' object.", orgdb))
-            ## }
-
-            if (!is.character(txdb) && !is(txdb, "TxDb"))
-              stop("argument 'txdb' should either be a character string with the name a 'TxDb' transcript-centric annotation package, or a 'TxDb' object itself.")
-            if (is.character(txdb)) {
-              if (length(txdb) > 1)
-                stop("when 'txdb' is a character string, it can only contain the name of one single 'TxDb' transcript-centric annotation package.")
-
-              if (!txdb %in% installed.packages()[, "Package"])
-                stop(sprintf("please install the Bioconductor package %s.", txdb))
-              if (!.isPkgLoaded(txdb)) {
-                message("Loading transcript-centric annotation package ", txdb)
-                if (!suppressPackageStartupMessages(require(txdb, character.only=TRUE)))
-                  stop(sprintf("package %s could not be loaded.", txdb))
-              }
-              tryCatch({
-                txdb <- get(txdb)
-              }, error=function(err) {
-                stop(sprintf("The gene annotation package %s should automatically load a 'TxDb' object with the same name as the package."))
-              })
-              if (!is(txdb, "TxDb"))
-                stop(sprintf("The object loaded with name %s is not a 'TxDb' object.", txdb))
-            }
+            txdb <- .loadAnnotationPackageObject(txdb, "txdb", "TxDb")
 
             ## when no VCF has genome information, this information is taken from the TxDb package
-            wh0 <- sapply(seqinfos, length) == 0
+            wh0 <- which(sapply(seqinfos, length) == 0)
             if (length(wh0) > 0) {
               seqinfos[wh0] <- seqinfo(txdb)
               warning(sprintf("No genome information available from any VCF file. This information will be taken from the transcript-centric package %s, thus assuming a genome version %s with %s chromosome nomenclature\n",
                       txdb$packageName, unique(genome(txdb)), seqlevelsStyle(txdb)))
             }
 
-            if (!is.character(snpdb) && length(snpdb) != 1)
-              stop("argument 'snpdb' should contain the name of a 'SNPlocs' SNP-centric annotation package.")
-            else {
-              if (!snpdb %in% installed.packages()[, "Package"])
-                stop(sprintf("please install the Bioconductor package %s.", snpdb))
-              if (!.isPkgLoaded(snpdb)) {
-                message("Loading SNP-centric annotation package ", snpdb)
-                if (!suppressPackageStartupMessages(require(snpdb, character.only=TRUE)))
-                  stop(sprintf("package %s could not be loaded.", snpdb))
-              }
-              tryCatch({
-                snpdb <- get(snpdb)
-              }, error=function(err) {
-                stop(sprintf("The gene annotation package %s should automatically load a 'SNPlocs' object with the same name as the package."))
-              })
-              if (!is(snpdb, "SNPlocs"))
-                stop(sprintf("The object loaded with name %s is not a 'SNPlocs' object.", snpdb))
-            }
+            snpdb <- .loadAnnotationPackageObject(snpdb, "snpdb", "SNPlocs")
 
             if (!is.logical(allTranscripts))
               stop("argument 'allTranscripts' should be logical.")
@@ -180,7 +126,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             }
 
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
-                sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=Hsapiens, orgdb=orgdb, txdb=txdb,
+                sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
                 snpdb=snpdb, radicalAAchangeFilename=radicalAAchangeFilename,
                 radicalAAchangeMatrix=radicalAAchangeMatrix, otherAnnotations=otherannotations,
                 allTranscripts=allTranscripts, filterTag=filterTag)
@@ -205,13 +151,16 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat(sprintf("\n  Number of individuals: %d (%s)\n", length(object$sampleNames), sampleNames))
             if (length(object$pedFilename) > 0)
               cat(sprintf("  PED file: %s\n", basename(object$pedFilename)))
-            cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
+            cat(sprintf("  Genome-centric annotation package: %s (%s %s %s)\n",
+                        object$bsgenome@pkgname, provider(object$bsgenome),
+                        providerVersion(object$bsgenome), releaseName(object$bsgenome)))
+            cat(sprintf("  SNP-centric annotation package: %s (%s %s)\n",
+                        object$snpdb@data_pkgname, provider(object$snpdb), releaseName(object$snpdb)))
             if (length(object$txdb$packageName) > 0)
               cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb$packageName))
             else
               cat(sprintf("  Transcript-centric annotation table: %s\n", metadata(object$txdb)[grep("Table", metadata(object$txdb)$name), "value"]))
-            cat(sprintf("  SNP-centric annotation package: %s (%s %s)\n",
-                        object$snpdb@data_pkgname, provider(object$snpdb), releaseName(object$snpdb)))
+            cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
             cat(sprintf("  Radical/Conservative AA changes file: %s\n", basename(object$radicalAAchangeFilename)))
             cat(sprintf("  Other annotation pkg/obj: %s\n",
                         paste(names(object$otherAnnotations),
