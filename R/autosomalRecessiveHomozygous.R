@@ -6,6 +6,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   input_list <- as.list(path(param$vcfFiles))
   ped <- param$pedFilename
   sinfo <- param$seqInfos[[1]]
+  bsgenome <- param@bsgenome
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
@@ -113,7 +114,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   ##                      ##
   ##########################
   
-  recessive_annotated <- annotationEngine(recessive, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
+  recessive_annotated <- annotationEngine(recessive, bsgenome=bsgenome, orgdb=orgdb,
+                                          txdb=txdb, snpdb=snpdb,
                                           radicalAAchangeMatrix=radicalAAchangeMatrix,
                                           otherAnnotations=otherAnnotations,
                                           allTranscripts=allTranscripts, BPPARAM=BPPARAM)
