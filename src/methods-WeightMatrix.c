@@ -134,15 +134,13 @@ scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
   scores = REAL(scoresR);
   i = 0;
   for (j=0; j < S_length; j++) {
-    /* cachedCharSeq S_elt; */
     Chars_holder S_elt;
     char buf[MAXVARS];
     int k;
 
-    /* S_elt = get_cachedXStringSet_elt(&S, j); */
     S_elt = get_elt_from_XStringSet_holder(&S, j);
     for (k=0; k < S_elt.length; k++) {
-      const char* c = S_elt.seq+k;
+      const char* c = S_elt.ptr + k;
 
       buf[k] = DNAdecode(*c);
     }
