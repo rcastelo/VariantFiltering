@@ -5,23 +5,12 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   callstr <- deparse(callobj)
   input_list <- as.list(path(param$vcfFiles))
   ped <- param$pedFilename
-  sinfo <- param$seqInfos[[1]]
-  bsgenome <- param@bsgenome
-  orgdb <- param$orgdb
+  genomeInfo <- param$seqInfos[[1]]
   txdb <- param$txdb
-  snpdb <- param$snpdb
-  radicalAAchangeMatrix <- param$radicalAAchangeMatrix
-  allTranscripts <- param$allTranscripts
-  otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
   
-  genomeInfo <- sinfo
-
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
-  
-  if (class(txdb) != "TxDb")
-    stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
   
   if (length(input_list) > 1) {
     multiSample <- FALSE
@@ -114,11 +103,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   ##                      ##
   ##########################
   
-  recessive_annotated <- annotationEngine(recessive, bsgenome=bsgenome, orgdb=orgdb,
-                                          txdb=txdb, snpdb=snpdb,
-                                          radicalAAchangeMatrix=radicalAAchangeMatrix,
-                                          otherAnnotations=otherAnnotations,
-                                          allTranscripts=allTranscripts, BPPARAM=BPPARAM)
+  recessive_annotated <- annotationEngine(recessive, param, BPPARAM=BPPARAM)
 
   ##########################
   ##                      ##

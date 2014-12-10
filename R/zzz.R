@@ -4,11 +4,11 @@
   data_dir <- system.file("extdata", package=pkgname, lib.loc=libname)
 
   ## read idlbn-weight matrices for human donor and acceptor sites
-  wmDonorSites <- readWm(file.path(data_dir, "hsap.donors.hcmc10_15_1.ibn"))
-  wmAcceptorSites <- readWm(file.path(data_dir, "hsap.acceptors.hcmc10_15_1.ibn"))
+  ## wmDonorSites <- readWm(file.path(data_dir, "hsap.donors.hcmc10_15_1.ibn"))
+  ## wmAcceptorSites <- readWm(file.path(data_dir, "hsap.acceptors.hcmc10_15_1.ibn"))
 
-  assign("wmDonorSites", wmDonorSites, envir=ns)
-  assign("wmAcceptorSites", wmAcceptorSites, envir=ns)
+  ## assign("wmDonorSites", wmDonorSites, envir=ns)
+  ## assign("wmAcceptorSites", wmAcceptorSites, envir=ns)
 
   assign("humanGenesPhylostrata", GenePhylostrataDb("human",
                                                     "http://genomebiology.com/content/supplementary/1471-2164-14-117-s1.xlsx",
@@ -17,7 +17,7 @@
                                                     pkgname, data_dir),
          envir=ns)
 
-  namespaceExport(ns, "wmDonorSites")
-  namespaceExport(ns, "wmAcceptorSites")
+  ## namespaceExport(ns, "wmDonorSites")
+  ## namespaceExport(ns, "wmAcceptorSites")
   namespaceExport(ns, "humanGenesPhylostrata")
 }
