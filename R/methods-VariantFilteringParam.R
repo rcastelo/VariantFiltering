@@ -4,6 +4,10 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                    orgdb="org.Hs.eg.db",
                    txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                    snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
+                   spliceSiteMatricesFilenames=c(file.path(system.file("extdata", package="VariantFiltering"),
+                                                           "hsap.donors.hcmc10_15_1.ibn"),
+                                                 file.path(system.file("extdata", package="VariantFiltering"),
+                                                           "hsap.acceptors.hcmc10_15_1.ibn")),
                    radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                      "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
                    allTranscripts=FALSE,
@@ -20,9 +24,9 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             callstr <- gsub(".local", "VariantFilteringParam", deparse(callobj))
             callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
 
-            ## check if input VCF, PED and radical AA change files exist
+            ## check if input VCF, PED, splice site and radical AA change files exist
             tryCatch({
-              .io_check_exists(c(vcfFilenames, pedFilename, radicalAAchangeFilename))
+              .io_check_exists(c(vcfFilenames, pedFilename, spliceSiteMatricesFilenames, radicalAAchangeFilename))
             }, error=function(err) {
                  stop(conditionMessage(err), call.=FALSE)
             })
@@ -82,6 +86,15 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                               basename(vcfFilenames[wh[1]])))
             }
 
+            ## read splice site matrices
+            spliceSiteMatrices <- list()
+            if (any(!is.na(spliceSiteMatricesFilenames))) {
+              if (class(spliceSiteMatricesFilenames) != "character" || length(spliceSiteMatricesFilenames) != 2)
+                stop("'spliceSiteMatricesFilenames' should be a character vector with two filenames of donor and acceptor splice site matrices, respectively.")
+              spliceSiteMatrices <- list(wmDonorSites=readWm(spliceSiteMatricesFilenames[1]),
+                                         wmAcceptorSites=readWm(spliceSiteMatricesFilenames[2]))
+            }
+
             ## read radical amino acid change matrix
             radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
 
@@ -127,7 +140,8 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
                 sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
-                snpdb=snpdb, radicalAAchangeFilename=radicalAAchangeFilename,
+                snpdb=snpdb, spliceSiteMatricesFilenames=spliceSiteMatricesFilenames,
+                spliceSiteMatrices=spliceSiteMatrices, radicalAAchangeFilename=radicalAAchangeFilename,
                 radicalAAchangeMatrix=radicalAAchangeMatrix, otherAnnotations=otherannotations,
                 allTranscripts=allTranscripts, filterTag=filterTag)
           })
@@ -161,7 +175,8 @@ setMethod("show", signature(object="VariantFilteringParam"),
             else
               cat(sprintf("  Transcript-centric annotation table: %s\n", metadata(object$txdb)[grep("Table", metadata(object$txdb)$name), "value"]))
             cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
-            cat(sprintf("  Radical/Conservative AA changes file: %s\n", basename(object$radicalAAchangeFilename)))
+            cat(sprintf("  Splice site matrices: %s\n", paste(basename(object$spliceSiteMatricesFilenames), collapse=", ")))
+            cat(sprintf("  Radical/Conservative AA changes: %s\n", basename(object$radicalAAchangeFilename)))
             cat(sprintf("  Other annotation pkg/obj: %s\n",
                         paste(names(object$otherAnnotations),
                               collapse=",\n                            ")))

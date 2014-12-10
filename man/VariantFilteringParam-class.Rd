@@ -23,6 +23,8 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
                                             orgdb="org.Hs.eg.db",
                                             txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                                             snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
+                                            spliceSiteMatricesFilenames=c(file.path(system.file("extdata", package="VariantFiltering"), "hsap.donors.hcmc10_15_1.ibn"),
+                                                                          file.path(system.file("extdata", package = "VariantFiltering"), "hsap.acceptors.hcmc10_15_1.ibn")),
                                             radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                                               "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
                                             allTranscripts=FALSE,
@@ -56,6 +58,9 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   }
   \item{snpdb}{
   Character string of a SNP-centric annotation package (\code{SNPlocs.Hsapiens.dbSNP.20120608} by default).
+  }
+  \item{spliceSiteMatricesFilenames}{
+  Names of text files containing position weight matrices for splice site recognition. See the default files (\code{hsap.donors.hcmc10_15_1.ibn} and \code{hsap.acceptors.hcmc10_15_1.ibn}) for details on their format.
   }
   \item{radicalAAchangeFilename}{
   Name of a tab-separated text file containing chemical properties of amino acids. These properties are interpreted such that amino acid changes within a property are considered "conservative" and between properties are considered "radical". See the default file (\code{AA_chemical_properties_HanadaGojoboriLi2006.tsv}) for details on its format.
