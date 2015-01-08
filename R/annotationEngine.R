@@ -18,6 +18,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
+  codonusage <- param$codonusage
 
   ##############################
   ##                          ##
@@ -229,26 +230,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   
   #### final
  
-  ## consolidate the annotations on coding variants, via 'predictCoding()', with the rest of non-coding
-  ## variants in a single GRanges object, replacing the one named 'variantsGR_annotated'
-  variantsGR_annotated_noncoding <- variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"]
-  n.noncoding <- length(variantsGR_annotated_noncoding)
-  dummyDF <- DataFrame(varAllele=DNAStringSet(rep("", n.noncoding)),
-                       CDSLOC=IRanges(start=rep(-1, n.noncoding), end=rep(-1, n.noncoding)),
-                       PROTEINLOC=IntegerList(as.list(rep(NA, n.noncoding))),
-                       CONSEQUENCE=factor(rep(NA, n.noncoding), levels=c("nonsynonymous", "synonymous")),
-                       REFCODON=DNAStringSet(rep("", n.noncoding)),
-                       VARCODON=DNAStringSet(rep("", n.noncoding)),
-                       REFAA=AAStringSet(rep("", n.noncoding)),
-                       VARAA=AAStringSet(rep("", n.noncoding)))
-  mcols(variantsGR_annotated_noncoding) <- cbind(mcols(variantsGR_annotated_noncoding), dummyDF)
-
-  if (any(variantsGR_annotated$LOCATION == "coding")) {
-    mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, colnames(mcols(variantsGR_annotated_noncoding))]
-    variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
-  } else
-    variantsGR_annotated <- variantsGR_annotated_noncoding
-
+  
   #############################################################
   ##                                                         ##
   ## ANNOTATE SPLICE SITES IN SYNONYMOUS & INTRONIC VARIANTS ##

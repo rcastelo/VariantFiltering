@@ -27,7 +27,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## check if input VCF, PED, splice site and radical AA change files exist
             tryCatch({
-              .io_check_exists(c(vcfFilenames, pedFilename, spliceSiteMatricesFilenames, radicalAAchangeFilename))
+              .io_check_exists(c(vcfFilenames, pedFilename, spliceSiteMatricesFilenames, radicalAAchangeFilename, codonusage))
             }, error=function(err) {
                  stop(conditionMessage(err), call.=FALSE)
             })
@@ -98,7 +98,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## read radical amino acid change matrix
             radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
-
+            
             ## check that the given annotation packages are installed and can be loaded,
             ## load them and save the annotation object into the argument
 
@@ -144,7 +144,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                 snpdb=snpdb, spliceSiteMatricesFilenames=spliceSiteMatricesFilenames,
                 spliceSiteMatrices=spliceSiteMatrices, radicalAAchangeFilename=radicalAAchangeFilename,
                 radicalAAchangeMatrix=radicalAAchangeMatrix, otherAnnotations=otherannotations,
-                allTranscripts=allTranscripts, filterTag=filterTag)
+                allTranscripts=allTranscripts, filterTag=filterTag, codonusage=codonusage)
           })
 
 setMethod("show", signature(object="VariantFilteringParam"),
