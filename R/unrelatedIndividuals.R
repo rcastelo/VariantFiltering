@@ -13,6 +13,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
+  codonusage <- param$codonusage
   
   genomeInfo <- sinfo
   
