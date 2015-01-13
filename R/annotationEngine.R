@@ -18,6 +18,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
+  codonusage <- param$codonusage
 
   ##############################
   ##                          ##
@@ -137,7 +138,69 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     ## remove the QUERYID column to avoid any possible problem later in misusing this column
     mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, -match("QUERYID", colnames(mcols(GRanges_coding_uq)))]
   }
+  
+  #### inici 
+  
+
+ #### if there are coding synonymous variants, add two metadatacolumns: CUREF and CUALT 
  
+  if (any(GRanges_coding_uq$CONSEQUENCE == "synonymous")){
+    
+    GRanges_coding_uq_codonusage <- GRanges_coding_uq
+    
+    codon_usage_DF <- DataFrame(CUREF=rep(NA_real_, length(GRanges_coding_uq_codonusage)),           
+                                CUALT=rep(NA_real_, length(GRanges_coding_uq_codonusage)))
+    
+    mcols(GRanges_coding_uq_codonusage) <- cbind(mcols(GRanges_coding_uq_codonusage), codon_usage_DF)
+    
+    message("Annotating codon usage frequencies in coding synonymous variants")
+    
+ #### create a mask for those variants that are codying and synonymous
+
+    mask <- GRanges_coding_uq_codonusage$CONSEQUENCE %in% "synonymous"
+    
+ #### extract the reference codons and alt codons from the DNStringSet
+   
+    ref_codons <- unname(as.character(GRanges_coding_uq_codonusage$REFCODON[mask]))
+    alt_codons <- unname(as.character(GRanges_coding_uq_codonusage$VARCODON[mask]))
+
+ #### upload the codonusage object to a named numerical vector
+
+    filehandle <- read.table(codonusage, sep=";")
+
+	  codon_usage <- as.numeric()
+
+	  for (i in 1:nrow(filehandle)) {
+		  codon_usage <- c(codon_usage,filehandle[i,2])
+		  names(codon_usage)[i] <- as.character(filehandle[i,1])
+		  i<- i+1
+  	  }
+    
+ #### obtain the vector with the frequencies for the reference and alternative codons   
+    ref_codons_numeric <- codon_usage[ref_codons]
+    alt_codons_numeric <- codon_usage[alt_codons]
+    
+ #### push the numerical vector to its corresponding variant to compare on CUREF and CUALT columns
+    GRanges_coding_uq_codonusage$CUREF[mask] <- unname(ref_codons_numeric)
+    GRanges_coding_uq_codonusage$CUALT[mask] <- unname(alt_codons_numeric)
+        
+  } else {
+  
+  #consider the case where no codying synonymous variants are found not to raise errors afterwards
+  
+  GRanges_coding_uq_codonusage <- GRanges_coding_uq
+  codon_usage_DF <- DataFrame(CUREF=rep(NA_real_, length(GRanges_coding_uq_codonusage)),           
+                              CUALT=rep(NA_real_, length(GRanges_coding_uq_codonusage)))
+  mcols(GRanges_coding_uq_codonusage) <- cbind(mcols(GRanges_coding_uq_codonusage), codon_usage_DF)
+  
+  }
+  
+  #uncomment the line below to see the modified object
+  #GRanges_coding_uq_codonusage
+  
+  ## The variable "GRanges_coding_uq" is changed to "GRanges_coding_uq_codonusage" not to miss the new information.
+  ## Additionally, the dataframe that is pushed to the variantsGR_annotated_noncoding is adapted no to raise errors.
+  
   ## consolidate the annotations on coding variants, via 'predictCoding()', with the rest of non-coding
   ## variants in a single GRanges object, replacing the one named 'variantsGR_annotated'
   variantsGR_annotated_noncoding <- variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"]
@@ -149,15 +212,25 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
                        REFCODON=DNAStringSet(rep("", n.noncoding)),
                        VARCODON=DNAStringSet(rep("", n.noncoding)),
                        REFAA=AAStringSet(rep("", n.noncoding)),
-                       VARAA=AAStringSet(rep("", n.noncoding)))
+                       VARAA=AAStringSet(rep("", n.noncoding)),
+                       CUREF=rep(NA_real_,n.noncoding),
+                       CUALT=rep(NA_real_,n.noncoding))
+  
   mcols(variantsGR_annotated_noncoding) <- cbind(mcols(variantsGR_annotated_noncoding), dummyDF)
+  ## mcols(variantsGR_annotated_noncoding) <- mcols(variantsGR_annotated_noncoding)[, colnames(mcols(GRanges_coding_uq))]
 
   if (any(variantsGR_annotated$LOCATION == "coding")) {
-    mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, colnames(mcols(variantsGR_annotated_noncoding))]
-    variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
+    #mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, colnames(mcols(variantsGR_annotated_noncoding))]
+    mcols(GRanges_coding_uq_codonusage) <- mcols(GRanges_coding_uq_codonusage)[, colnames(mcols(variantsGR_annotated_noncoding))]
+    #variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
+    variantsGR_annotated <- c(GRanges_coding_uq_codonusage, variantsGR_annotated_noncoding)
   } else
     variantsGR_annotated <- variantsGR_annotated_noncoding
 
+  
+  #### final
+ 
+  
   #############################################################
   ##                                                         ##
   ## ANNOTATE SPLICE SITES IN SYNONYMOUS & INTRONIC VARIANTS ##
