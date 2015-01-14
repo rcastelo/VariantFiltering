@@ -10,7 +10,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                                                            "hsap.acceptors.hcmc10_15_1.ibn")),
                    radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                      "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
-                   codonusage=file.path(system.file("extdata", package="VariantFiltering"),"codon_usage.txt"),
+                   codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),"humanCodonUsage.txt"),
                    allTranscripts=FALSE,
                    otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137.dbSNP138",
                                       "MafDb.ALL.wgs.phase1.release.v3.20101123",
@@ -27,7 +27,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## check if input VCF, PED, splice site and radical AA change files exist
             tryCatch({
-              .io_check_exists(c(vcfFilenames, pedFilename, spliceSiteMatricesFilenames, radicalAAchangeFilename, codonusage))
+              .io_check_exists(c(vcfFilenames, pedFilename, spliceSiteMatricesFilenames, radicalAAchangeFilename, codonusageFilename))
             }, error=function(err) {
                  stop(conditionMessage(err), call.=FALSE)
             })
@@ -98,6 +98,10 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## read radical amino acid change matrix
             radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
+
+            ## read codon usage table
+            codonusageTable <- read.table(file=codonusageFilename, sep=";")
+            codonusageTable <- do.call("names<-", list(codonusageTable[[2]], codonusageTable[[1]]))
             
             ## check that the given annotation packages are installed and can be loaded,
             ## load them and save the annotation object into the argument
@@ -143,8 +147,9 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                 sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
                 snpdb=snpdb, spliceSiteMatricesFilenames=spliceSiteMatricesFilenames,
                 spliceSiteMatrices=spliceSiteMatrices, radicalAAchangeFilename=radicalAAchangeFilename,
-                radicalAAchangeMatrix=radicalAAchangeMatrix, otherAnnotations=otherannotations,
-                allTranscripts=allTranscripts, filterTag=filterTag, codonusage=codonusage)
+                radicalAAchangeMatrix=radicalAAchangeMatrix, codonusageFilename=codonusageFilename,
+                codonusageTable=codonusageTable, otherAnnotations=otherannotations, allTranscripts=allTranscripts,
+                filterTag=filterTag)
           })
 
 setMethod("show", signature(object="VariantFilteringParam"),
@@ -178,6 +183,7 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
             cat(sprintf("  Splice site matrices: %s\n", paste(basename(object$spliceSiteMatricesFilenames), collapse=", ")))
             cat(sprintf("  Radical/Conservative AA changes: %s\n", basename(object$radicalAAchangeFilename)))
+            cat(sprintf("  Codon usage table: %s\n", basename(object$codonusageFilename)))
             cat(sprintf("  Other annotation pkg/obj: %s\n",
                         paste(names(object$otherAnnotations),
                               collapse=",\n                            ")))

@@ -14,7 +14,6 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
   filterTag <- param$filterTag
-  codonusage <- param$codonusage
 
   genomeInfo <- sinfo
   
