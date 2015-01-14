@@ -1,8 +1,7 @@
 # Codon Usage Database
 # Homo sapiens [gbpri]: 93487 CDS's (40662582 codons)
-
-
-#Codon;Freq.per.thoTsand
+# http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=9606
+# Codon;Freq.per.thousand
 TTT;17.6
 TTC;20.3
 TTA;7.7
