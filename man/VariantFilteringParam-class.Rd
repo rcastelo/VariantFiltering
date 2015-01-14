@@ -27,6 +27,7 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
                                                                           file.path(system.file("extdata", package = "VariantFiltering"), "hsap.acceptors.hcmc10_15_1.ibn")),
                                             radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                                               "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
+                                            codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),"humanCodonUsage.txt"),
                                             allTranscripts=FALSE,
                                             otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137.dbSNP138",
                                                                "MafDb.ALL.wgs.phase1.release.v3.20101123",
@@ -65,6 +66,9 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   \item{radicalAAchangeFilename}{
   Name of a tab-separated text file containing chemical properties of amino acids. These properties are interpreted such that amino acid changes within a property are considered "conservative" and between properties are considered "radical". See the default file (\code{AA_chemical_properties_HanadaGojoboriLi2006.tsv}) for details on its format.
   }
+  \item{codonusageFilename}{
+  Name of a text file containing the codon usage.
+  }
   \item{allTranscripts}{
   Logical. This option allows the user to choose between working with all the transcripts affected by the variant (\code{allTranscripts=TRUE}) or with only one transcript per variant.
   }
@@ -96,7 +100,7 @@ The method \code{names()} allows one to see the names of the slots from a \code{
 An \code{VariantFilteringParam} object is returned by the method \code{VariantFilteringParam}.
 }
 
-\author{D.M. Elurbe and R. Castelo}
+\author{D.M. Elurbe, P. Puigdevall and R. Castelo}
 
 \examples{
 p <- VariantFilteringParam(list.files(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.gz$", full.names=TRUE), list.files(system.file("extdata", package="VariantFiltering"), "CEUtrio.ped", full.names=TRUE))

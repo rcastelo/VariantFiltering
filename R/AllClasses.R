@@ -62,7 +62,8 @@ setClass("VariantFilteringParam",
                                        radicalAAchangeMatrix="matrix",
                                        otherAnnotations="list",
                                        allTranscripts="logical",
-                                       codonusage="character",
+                                       codonusageFilename="character",
+                                       codonusageTable="numeric",
                                        filterTag="character"))
 
 setClass("VariantFilteringResults",
