@@ -101,7 +101,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## read codon usage table
             codonusageTable <- read.table(file=codonusageFilename, sep=";")
-            codonusageTable <- do.call("names<-", list(codonusageTable[[2]], codonusageTable[[1]]))
+            codonusageTable <- do.call("names<-", list(codonusageTable[[3]], codonusageTable[[1]]))
             
             ## check that the given annotation packages are installed and can be loaded,
             ## load them and save the annotation object into the argument
