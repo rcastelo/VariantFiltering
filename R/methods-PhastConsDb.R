@@ -9,7 +9,7 @@ PhastConsDb <- function(provider, provider_version, download_url,
   if (file.exists(file.path(data_dirpath, "phastCons100way.rda")))
     load(file.path(data_dirpath, "phastCons100way.rda"), envir=data_cache)
   else
-    assign("phastCons100way", RleList(), envir=data_cache)
+    assign("phastCons100way", RleList(compress=FALSE), envir=data_cache)
 
   new("PhastConsDb", provider=provider,
                      provider_version=provider_version,
