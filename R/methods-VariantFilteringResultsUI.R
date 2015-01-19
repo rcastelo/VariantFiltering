@@ -255,7 +255,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsUI"),
     varsdf <- as.data.frame(DataFrame(VarID=names(varsdf), CHR=seqnames(varsdf),
                                       POS=start(varsdf), mcols(varsdf)))
     if (type == "csv")
-      write.csv(varsdf, file=file, quote=FALSE, row.names=FALSE, col.names=TRUE)
+      write.csv(varsdf, file=file, quote=FALSE, row.names=FALSE)
     else
       write.table(varsdf, file, row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t")
    

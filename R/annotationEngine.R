@@ -33,7 +33,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   vnames2 <- vnames
   vnames2 <- rep(NA_character_, length(vnames))
 
-  mt <- gregexpr("^[A-Z]+:[0-9]+_[ACGT/]+", vnames)
+  mt <- gregexpr("^[A-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
   mtstart <- unlist(mt, use.names=FALSE)
   mtlength <- sapply(mt, attr, "match.length")
   vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
@@ -54,6 +54,14 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
 
   names(variantsGR) <- vnames2
+
+  ############################
+  ##                        ##
+  ## INDEX ORIGINAL VARIANT ##
+  ##                        ##
+  ############################
+
+  mcols(variantsGR) <- cbind(mcols(variantsGR), DataFrame(IDX=1:length(variantsGR)))
 
   ##############################
   ##                          ##
@@ -89,10 +97,10 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## put back GRanges names which in general correspond to the variant identifier from the VCF file
   names(variantsGR_annotated) <- names(variantsGR)[variantsGR_annotated$QUERYID]
 
-  ## put back metadata columns of the REF and ALT alleles, the variant TYPE, the FILTER flag information and
+  ## put back metadata columns IDX, the REF and ALT alleles, the variant TYPE, the FILTER flag information and
   ## the dbSNP annotated identifier
   mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-                                 mcols(variantsGR[variantsGR_annotated$QUERYID])[, c("REF", "ALT", "TYPE", "FILTER", "dbSNP")])
+                                 mcols(variantsGR[variantsGR_annotated$QUERYID])[, c("IDX", "REF", "ALT", "TYPE", "FILTER", "dbSNP")])
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
@@ -103,7 +111,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   }
 
   ## remove unnecessary (by now) metadata columns (LOCEND, QUERYID, PRECEDEID, FOLLOWID)
-  selmcols <- c("LOCATION", "LOCSTART", "TXID", "CDSID", "GENEID", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
+  selmcols <- c("IDX", "LOCATION", "LOCSTART", "TXID", "CDSID", "GENEID", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
   mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, selmcols]
 
   ## annotate cDNA position where applicable
@@ -126,7 +134,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
 
     ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
-    selmcols <- c("LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
+    selmcols <- c("IDX", "LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
     mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
     GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
                                        seqSource=bsgenome, varAllele=unlist(variantsGR_annotated_coding$ALT))
