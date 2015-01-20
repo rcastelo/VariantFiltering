@@ -33,7 +33,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   vnames2 <- vnames
   vnames2 <- rep(NA_character_, length(vnames))
 
-  mt <- gregexpr("^[A-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
+  mt <- gregexpr("^[a-zA-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
   mtstart <- unlist(mt, use.names=FALSE)
   mtlength <- sapply(mt, attr, "match.length")
   vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
@@ -441,7 +441,7 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
                                            OMIM=rep(NA_character_, times=length(entrezIDs)))
               if (sum(!maskNAs) > 0) {
                 uniqEntrezIDs <- unique(entrezIDs[!maskNAs])
-                res <- select(annObj, keys=uniqEntrezIDs, columns=c("SYMBOL", "OMIM"), keytype="ENTREZID")
+                res <- select(annObj, keys=as.character(uniqEntrezIDs), columns=c("SYMBOL", "OMIM"), keytype="ENTREZID")
                 symxentrezID <- sapply(split(res$SYMBOL, res$ENTREZID),
                                        function(x) paste(unique(x), collapse=", "))
                 omimxentrezID <- sapply(split(res$OMIM, res$ENTREZID),
@@ -466,7 +466,7 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
               txlevel_annot <- DataFrame(TXNAME=rep(NA_character_, times=length(txIDs)))
               if (sum(!maskNAs) > 0) {
                 uniqTxIDs <- unique(txIDs[!maskNAs])
-                res <- select(annObj, keys=uniqTxIDs, columns="TXNAME", keytype="TXID")
+                res <- select(annObj, keys=as.character(uniqTxIDs), columns="TXNAME", keytype="TXID")
                 txnamextxID <- sapply(split(res$TXNAME, res$TXID),
                                        function(x) paste(unique(x), collapse=", "))
                 txlevel_annot[!maskNAs, ] <- DataFrame(TXNAME=txnamextxID[txIDs[!maskNAs]])
@@ -553,8 +553,9 @@ typeOfVariants <- function(variantsGR) {
     wref <- nchar(variantsGR$REF)
     walt <- nchar(variantsGR$ALT)
     type <- factor(rep("SNV", times=length(wref)), levels=c("InDel", "MNV", "SNV"))
-    type[all(wref != walt)] <- "InDel"
+    type[any(wref != walt)] <- "InDel"
     type[all(wref == walt) & wref != 1] <- "MNV"
+    stopifnot(all(wref[type == "SNV"] == 1)) ## QC
     type
   }
 
