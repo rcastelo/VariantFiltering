@@ -10,7 +10,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     return(variantsGR_annotated)
   }
 
-  bsgenome <- param@bsgenome
+  bsgenome <- param$bsgenome
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
@@ -80,8 +80,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
   ## do this before variants get replicated because of different functional annotations
   message(sprintf("Annotating dbSNP identifiers with %s", snpdb@data_pkgname))
-  tempSNP <- annotateVariants(snpdb, variantsGR, BPPARAM=BPPARAM)
-  mcols(variantsGR) <- cbind(mcols(variantsGR), tempSNP)
+  mcols(variantsGR) <- cbind(mcols(variantsGR),
+                             annotateVariants(snpdb, variantsGR, BPPARAM=BPPARAM))
 
   #######################
   ##                   ##
@@ -93,6 +93,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
   variantsGR_annotated <- locateVariants(variantsGR, txdb, AllVariants(intergenic=IntergenicVariants(0, 0)))
+  seqinfo(variantsGR_annotated) <- seqinfo(variantsGR) ## locateVariants() drops the SeqInfo information
 
   ## put back GRanges names which in general correspond to the variant identifier from the VCF file
   names(variantsGR_annotated) <- names(variantsGR)[variantsGR_annotated$QUERYID]
@@ -133,11 +134,30 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     eltlen <- elementLengths(variantsGR_annotated_coding$ALT)
     variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
 
+    ## harmonize sequence levels between variants, annotations and genome sequence
+    origVarLevelsStyle <- seqlevelsStyle(variantsGR_annotated_coding_exp)
+    seqlevelsStyle(variantsGR_annotated_coding_exp) <- seqlevelsStyle(bsgenome)
+    origTxDbLevelsStyle <- seqlevelsStyle(txdb)
+    seqlevelsStyle(txdb) <- seqlevelsStyle(bsgenome)
+
+    commonChr <- intersect(seqlevels(variantsGR_annotated_coding_exp), seqlevels(bsgenome))
+    if (any(genome(variantsGR_annotated_coding_exp)[commonChr] != genome(bsgenome)[commonChr])) {
+      warning(sprintf("Assumming %s represent the same genome build.",
+                      paste(c(unique(genome(variantsGR_annotated_coding_exp)[commonChr]), unique(genome(bsgenome)[commonChr])),
+                            collapse=" and ")))
+      ## this generates conflicts with genome(txdb) in predictCoding() but it works
+      ## if we do not do it, so we just issue the warning
+      ## genome(variantsGR_annotated_coding_exp) <- genome(bsgenome)
+    }
+
     ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
     selmcols <- c("IDX", "LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
     mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
     GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
                                        seqSource=bsgenome, varAllele=unlist(variantsGR_annotated_coding$ALT))
+
+    seqlevelsStyle(GRanges_coding_uq) <- origVarLevelsStyle
+    seqlevelsStyle(txdb) <- origTxDbLevelsStyle
   
     ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
     ## annotated from the same gene but in different tx
@@ -151,16 +171,16 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
   ## if there are coding synonymous variants, add two metadatacolumns: CUREF and CUALT 
  
+  GRanges_coding_uq_codonusage <- GRanges_coding_uq
+  mcols(GRanges_coding_uq_codonusage) <- cbind(mcols(GRanges_coding_uq_codonusage),
+                                               DataFrame(CUREF=rep(NA_real_, length(GRanges_coding_uq_codonusage)),           
+                                                         CUALT=rep(NA_real_, length(GRanges_coding_uq_codonusage))))
+
   if (any(GRanges_coding_uq$CONSEQUENCE == "synonymous")){
     
-    GRanges_coding_uq_codonusage <- GRanges_coding_uq
-    
-    codon_usage_DF <- DataFrame(CUREF=rep(NA_real_, length(GRanges_coding_uq_codonusage)),           
-                                CUALT=rep(NA_real_, length(GRanges_coding_uq_codonusage)))
-    
-    mcols(GRanges_coding_uq_codonusage) <- cbind(mcols(GRanges_coding_uq_codonusage), codon_usage_DF)
-    
     message("Annotating codon usage frequencies in coding synonymous variants")
+    
+    GRanges_coding_uq_codonusage <- GRanges_coding_uq
     
     ## create a mask for those variants that are codying and synonymous
 
@@ -179,15 +199,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     GRanges_coding_uq_codonusage$CUREF[mask] <- unname(ref_codons_numeric)
     GRanges_coding_uq_codonusage$CUALT[mask] <- unname(alt_codons_numeric)
         
-  } else {
-  
-    ## consider the case where no codying synonymous variants are found not to raise errors afterwards
-  
-    GRanges_coding_uq_codonusage <- GRanges_coding_uq
-    codon_usage_DF <- DataFrame(CUREF=rep(NA_real_, length(GRanges_coding_uq_codonusage)),           
-                                CUALT=rep(NA_real_, length(GRanges_coding_uq_codonusage)))
-    mcols(GRanges_coding_uq_codonusage) <- cbind(mcols(GRanges_coding_uq_codonusage), codon_usage_DF)
-  
   }
   
   ## The variable "GRanges_coding_uq" is changed to "GRanges_coding_uq_codonusage" not to miss the new information.
@@ -717,6 +728,21 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 }
 
 .scoreSpliceSiteVariants <- function(variantsGR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam()) {
+
+  ## adapt to sequence style and genome version from the input
+  ## BSgenome object, thus assuming positions are based on the same
+  ## genome even though might be differently specified (i.e., hg38 vs GRCh38)
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(bsgenome)
+  commonChr <- intersect(seqlevels(variantsGR), seqlevels(bsgenome))
+  if (any(is.na(genome(variantsGR)))) {
+    warning(sprintf("Assuming the genome build of the input variants is %s.", unique(genome(bsgenome)[commonChr])))
+    genome(variantsGR) <- genome(bsgenome)
+  } else if (any(genome(variantsGR)[commonChr] != genome(bsgenome)[commonChr])) {
+    warning(sprintf("Assumming %s represent the same genome build.",
+                    paste(c(unique(genome(variantsGR)[commonChr]), unique(genome(bsgenome)[commonChr])),
+                          collapse=" and ")))
+    genome(variantsGR) <- genome(bsgenome)
+  }
 
   ## add metadata columns in 'variantsGR' for cryptic ss annotations
   dummyDF <- DataFrame(CRYP5ssREF=rep(NA_real_, length(variantsGR)),

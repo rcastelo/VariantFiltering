@@ -368,8 +368,6 @@ matchChromosomes <- function(variantsGR, txdb) {
   variantsGR <- keepStandardChromosomes(variantsGR)
   message(sprintf("Switching to %s chromosome-names style.", seqlevelsStyle(txdb)))
   seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
-  genome(variantsGR) <- genome(txdb)
-  ## genome(variantsGR) <- genome(txdb)[intersect(names(genome(variantsGR)), names(genome(txdb)))]
   slenVcf <- seqlengths(variantsGR)
   slenTxDb <- seqlengths(txdb)
   commonChr <- intersect(names(slenVcf), names(slenTxDb))
@@ -384,6 +382,17 @@ matchChromosomes <- function(variantsGR, txdb) {
     if (sum(slenVcf == slenTxDb) == 0)
       stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the transcript-centric annotations. Versions of the genome reference sequence may be different between the input VCF file and the transcript-centric annotation package.")
     variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenTxDb])
+    commonChr <- commonChr[slenVcf == slenTxDb]
+  }
+
+  if (any(is.na(genome(variantsGR)))) {
+    warning(sprintf("Assuming the genome build of the input variants is %s.", unique(genome(txdb)[commonChr])))
+    genome(variantsGR) <- genome(txdb)
+  } else if (any(genome(variantsGR)[commonChr] != genome(txdb)[commonChr])) {
+    warning(sprintf("Assumming %s represent the same genome build.",
+                    paste(c(unique(genome(variantsGR)[commonChr]), unique(genome(txdb)[commonChr])),
+                          collapse=" and ")))
+    genome(variantsGR) <- genome(txdb)
   }
 
   variantsGR
