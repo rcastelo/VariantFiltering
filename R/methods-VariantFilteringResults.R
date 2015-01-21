@@ -14,18 +14,18 @@ setMethod("show", signature(object="VariantFilteringResults"),
                             releaseName(param(object)$snpdb), dbSNPpresent(object)))
             cat(sprintf("    Variant type: %s\n", variantType(object)))
             cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
-            cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
-            cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
-            cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
-            whPhCdb <- match("PhastConsDb", sapply(param(object)$otherAnnotations, class))
-            if (!is.na(whPhCdb)) {
+            if ("MafDb" %in% sapply(param(object)$otherAnnotations, class)) {
+              cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
+              cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
+              cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
+            }
+            if ("PhastConsDb" %in% sapply(param(object)$otherAnnotations, class)) {
               if (is.na(minPhastCons(object)))
                 cat("    No filtering on nucleotide conservation\n")
               else
                 cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
             }
-            whGPSdb <- match("GenePhylostrataDb", sapply(param(object)$otherAnnotations, class))
-            if (!is.na(whGPSdb)) {
+            if ("GenePhylostrataDb" %in% sapply(param(object)$otherAnnotations, class)) {
               if (is.na(minPhylostratum(object)))
                 cat("    No filtering on gene conservation\n")
               else
