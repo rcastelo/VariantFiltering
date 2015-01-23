@@ -35,7 +35,8 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
                                                                "SIFT.Hsapiens.dbSNP137",
                                                                "phastCons100way.UCSC.hg19",
                                                                "humanGenesPhylostrata"),
-                                            filterTag=NA_character_)
+                                            filterTag=NA_character_,
+                                            geneKeytype=NA_character_)
 \S4method{show}{VariantFilteringParam}(object)
 \S4method{$}{VariantFilteringParam}(x, name)
 \S4method{names}{VariantFilteringParam}(x)
@@ -76,7 +77,10 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   Character vector of names of annotation packages or annotation objects.
   }
   \item{filterTag}{
-  Character vector of tags used to select only those variants which present the corresponding string (or strings) within the VCF's FILTER column. NA_character_ (default) means that it will consider all the variants present in the VCF file to perform the analysis. An example of possible value is PASS, a commonly used flag to indicate that the call fullfils all the quality parameters, so only variants flagged this way will be used in the analysis.
+  Character vector of tags used to select only those variants which present the corresponding string (or strings) within the VCF's FILTER column. \code{NA_character_} (default) means that it will consider all the variants present in the VCF file to perform the analysis. An example of possible value is PASS, a commonly used flag to indicate that the call fullfils all the quality parameters, so only variants flagged this way will be used in the analysis.
+  }
+  \item{geneKeytype}{
+  Character vector of the type of key gene identifier provided by the transcript-centric (TxDb) annotation package to interrogate the organism-centric (OrgDb) annotation package. The default value (\code{NA_character_} indicates that it will be assumed to be an Entrez identifier unless the values in the \code{GENEID} column returned by the TxDb package start with \code{ENSG} and then it will be assumed that they are Ensembl gene identifiers, or with one of \code{NM_, NP_, NR_, XM_, XP_, XR_ or YP_} and then it will be assumed that they are RefSeq gene identifiers.
   }
   \item{object}{
   A VariantFilteringParam object created through \code{VariantFilteringParam()}.
