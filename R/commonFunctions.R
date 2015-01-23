@@ -398,6 +398,46 @@ matchChromosomes <- function(variantsGR, txdb) {
   variantsGR
 }
 
+.matchSeqinfo <- function(variantsGR, txdb, bsgenome) {
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(bsgenome)
+  slenVcf <- seqlengths(variantsGR)
+  slenBSgenome <- seqlengths(bsgenome)
+  commonChr <- intersect(names(slenVcf), names(slenBSgenome))
+  slenVcf <- slenVcf[commonChr]
+  slenBSgenome <- slenBSgenome[commonChr]
+  if (any(slenVcf != slenBSgenome)) {
+    if (sum(slenVcf != slenBSgenome) == 1) {
+      warning(sprintf("Chromosome %s has different lengths between the input VCF and the input BSgenome pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
+    } else {
+      warning(sprintf("Chromosomes %s have different lengths between the input VCF and the input BSgenome package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
+    }
+    if (sum(slenVcf == slenBSgenome) == 0)
+      stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the input BSgenome package. The genome reference sequence employed to generate the VCF file was probably different from the one in the input BSgenome package.")
+    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenBSgenome])
+    commonChr <- commonChr[slenVcf == slenBSgenome]
+  }
+
+  message(sprintf("Assuming the genome build of the input variants is %s.", unique(genome(bsgenome)[commonChr])))
+  seqinfo(variantsGR, new2old=match(seqlevels(bsgenome), seqlevels(variantsGR))) <- seqinfo(bsgenome)
+
+  commonChr <- intersect(seqlevels(variantsGR), seqlevels(txdb))
+
+  if (any(is.na(genome(txdb)[commonChr])))
+    warning(sprintf("Assuming the genome build of transcript-centric annotations is %s.", unique(genome(variantsGR)[commonChr])))
+  else if (any(genome(variantsGR)[commonChr] != genome(txdb)[commonChr])) {
+    warning(sprintf("Assumming %s represent the same genome build.",
+                    paste(c(unique(genome(variantsGR)[commonChr]), unique(genome(txdb)[commonChr])),
+                          collapse=" and ")))
+  }
+
+  message(sprintf("Switching to the %s chromosome-name style from the transcript-centric annotation package.", seqlevelsStyle(txdb)))
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
+  message("Discarding scaffold sequences.")
+  variantsGR <- keepStandardChromosomes(variantsGR)
+
+  variantsGR
+}
+
 
 sharedVariants <- function(query1, query2) {
   overgen12 <- findOverlaps(query1, query2, type="equal", ignore.strand=FALSE)
