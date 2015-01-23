@@ -18,7 +18,8 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                                       "SIFT.Hsapiens.dbSNP137",
                                       "phastCons100way.UCSC.hg19",
                                       "humanGenesPhylostrata"),
-                   filterTag=NA_character_) {
+                   filterTag=NA_character_,
+                   geneKeytype=NA_character_) {
 
             ## store call to reproducing it later
             callobj <- match.call()
@@ -149,7 +150,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                 spliceSiteMatrices=spliceSiteMatrices, radicalAAchangeFilename=radicalAAchangeFilename,
                 radicalAAchangeMatrix=radicalAAchangeMatrix, codonusageFilename=codonusageFilename,
                 codonusageTable=codonusageTable, otherAnnotations=otherannotations, allTranscripts=allTranscripts,
-                filterTag=filterTag)
+                filterTag=filterTag, geneKeytype=geneKeytype)
           })
 
 setMethod("show", signature(object="VariantFilteringParam"),

@@ -6,6 +6,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   input_list <- as.list(path(param$vcfFiles))
   genomeInfo <- param$seqInfos[[1]]
   txdb <- param$txdb
+  bsgenome <- param$bsgenome
   
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
@@ -17,7 +18,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   vcf1 <- readVcf(unlist(input_list), genomeInfo)
   unrelated <- rowData(vcf1)
 
-  unrelated <- matchChromosomes(unrelated, txdb)
+  unrelated <- .matchSeqinfo(unrelated, txdb, bsgenome)
 
   ##########################
   ##                      ##

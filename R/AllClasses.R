@@ -64,6 +64,7 @@ setClass("VariantFilteringParam",
                                        allTranscripts="logical",
                                        codonusageFilename="character",
                                        codonusageTable="numeric",
+                                       geneKeytype="character",
                                        filterTag="character"))
 
 setClass("VariantFilteringResults",

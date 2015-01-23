@@ -81,7 +81,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## do this before variants get replicated because of different functional annotations
   message(sprintf("Annotating dbSNP identifiers with %s", snpdb@data_pkgname))
   mcols(variantsGR) <- cbind(mcols(variantsGR),
-                             annotateVariants(snpdb, variantsGR, BPPARAM=BPPARAM))
+                             annotateVariants(snpdb, variantsGR, param, BPPARAM=BPPARAM))
 
   #######################
   ##                   ##
@@ -256,7 +256,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ##                           ##
   ###############################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), annotateVariants(orgdb, variantsGR_annotated))
+  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
+                                       annotateVariants(orgdb, variantsGR_annotated, param))
 
   #####################################
   ##                                 ##
@@ -264,7 +265,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ##                                 ##
   #####################################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), annotateVariants(txdb, variantsGR_annotated))
+  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
+                                       annotateVariants(txdb, variantsGR_annotated, param))
 
   ########################
   ##                    ##
@@ -315,6 +317,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
                                          annotateVariants(otherAnnotations[[i]],
                                                           variantsGR_annotated,
+                                                          param,
                                                           BPPARAM=BPPARAM))
   }
 
@@ -332,7 +335,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
 ## an odd thing here is that getSNPlocs needs not the explicit SNPlocs object (annObj) as input argument
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
-          function(annObj, variantsGR, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
             if (!"TYPE" %in% colnames(mcols(variantsGR))) {
               stop("Variant type (SNV, InDel, MNV) has not been annotated.")
             }
@@ -355,7 +358,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
 ####
 
 setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
-          function(annObj, variantsGR, coding=TRUE, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam()) {
             PolyPhen2 <- rep(NA_character_, length(variantsGR))
             if (!coding)
               return(DataFrame(PolyPhen2=PolyPhen2))
@@ -378,7 +381,7 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
-          function(annObj, variantsGR, coding=TRUE, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam()) {
             PROVEAN <- rep(NA_character_, length(variantsGR))
             if (!coding)
               return(DataFrame(PROVEAN=PROVEAN))
@@ -400,7 +403,7 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
 
 ## revise this according to the previous two methods!!!
 setMethod("annotateVariants", signature(annObj="MafDb"),
-          function(annObj, variantsGR, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
 
             ## get the MAF columns
             mafCols <- knownVariantsMAFcols(annObj) ## assumes all MAF column names contain 'AF'
@@ -441,33 +444,41 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 ####
 
 setMethod("annotateVariants", signature(annObj="OrgDb"),
-          function(annObj, variantsGR, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
 
             genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
-            entrezIDs <- variantsGR$GENEID
-            maskNAs <- is.na(entrezIDs)
-            if (length(entrezIDs) > 0) {
+            geneIDs <- variantsGR$GENEID
+            geneKeytype <- param$geneKeytype
+            maskNAs <- is.na(geneIDs)
+            if (length(geneIDs) > 0) {
               ## if input IDs are NAs output should also be NAs and avoid querying malformed keys
-              genelevel_annot <- DataFrame(GENE=rep(NA_character_, times=length(entrezIDs)),
-                                           OMIM=rep(NA_character_, times=length(entrezIDs)))
+              genelevel_annot <- DataFrame(GENE=rep(NA_character_, times=length(geneIDs)),
+                                           OMIM=rep(NA_character_, times=length(geneIDs)))
               if (sum(!maskNAs) > 0) {
-                uniqEntrezIDs <- unique(entrezIDs[!maskNAs])
-                res <- select(annObj, keys=as.character(uniqEntrezIDs), columns=c("SYMBOL", "OMIM"), keytype="ENTREZID")
-                symxentrezID <- sapply(split(res$SYMBOL, res$ENTREZID),
-                                       function(x) paste(unique(x), collapse=", "))
-                omimxentrezID <- sapply(split(res$OMIM, res$ENTREZID),
-                                        function(x) {
-                                          if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
-                                        })
-                genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxentrezID[entrezIDs[!maskNAs]],
-                                                         OMIM=omimxentrezID[entrezIDs[!maskNAs]])
+                if (is.na(geneKeytype)) {
+                  geneKeytype <- "ENTREZID"
+                  if (substr(geneIDs[!maskNAs][1], 1, 4) == "ENSG")
+                    geneKeytype <- "ENSEMBL"
+                  else if (substr(geneIDs[!maskNAs][1], 1, 3) %in% c("NM_", "NP_", "NR_", "XM_", "XP", "XR_", "YP_"))
+                    geneKeytype <- "REFSEQ"
+                }
+                uniqEntrezIDs <- unique(geneIDs[!maskNAs])
+                res <- select(annObj, keys=as.character(uniqEntrezIDs), columns=c("SYMBOL", "OMIM"), keytype=geneKeytype)
+                symxgeneID <- sapply(split(res$SYMBOL, res[[geneKeytype]]),
+                                     function(x) paste(unique(x), collapse=", "))
+                omimxgeneID <- sapply(split(res$OMIM, res[[geneKeytype]]),
+                                      function(x) {
+                                        if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
+                                      })
+                genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxgeneID[geneIDs[!maskNAs]],
+                                                         OMIM=omimxgeneID[geneIDs[!maskNAs]])
               }
             }
             genelevel_annot
           })
 
 setMethod("annotateVariants", signature(annObj="TxDb"),
-          function(annObj, variantsGR, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
 
             txlevel_annot <- DataFrame(TXNAME=character())
             txIDs <- variantsGR$TXID
@@ -491,7 +502,7 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="PhastConsDb"),
-          function(annObj, variantsGR, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
 
             sco <- scores(annObj, variantsGR)
 
@@ -503,7 +514,7 @@ setMethod("annotateVariants", signature(annObj="PhastConsDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
-          function(annObj, variantsGR, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
 
             gps <- genePhylostratum(annObj, variantsGR$GENEID)
 
