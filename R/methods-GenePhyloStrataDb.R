@@ -45,7 +45,7 @@ setMethod("genePhylostratum", c("GenePhylostrataDb", "character"),
               ## if the input identifers are not Ensembl, Entrez ID is assumed
               if (substr(idsNotNA[1], 1, 4) != "ENSG") {
                 eg2ens <- get("entrezToPhylostrataEnsGene", envir=object@.data_cache)
-                ids <- eg2ens[ids]
+                idsNotNA <- eg2ens[idsNotNA]
               }
 
               gps <- genePhylostratum(object)

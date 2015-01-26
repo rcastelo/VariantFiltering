@@ -7,6 +7,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   ped <- param$pedFilename
   genomeInfo <- param$seqInfos[[1]]
   txdb <- param$txdb
+  bsgenome <- param$bsgenome
   filterTag <- param$filterTag
     
   if (!exists(as.character(substitute(BPPARAM))))
@@ -95,7 +96,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     recessive <- affected[realcommonrecessive]
   }
   
-  recessive <- matchChromosomes(recessive, txdb)
+  recessive <- .matchSeqinfo(recessive, txdb, bsgenome)
 
   ##########################
   ##                      ##

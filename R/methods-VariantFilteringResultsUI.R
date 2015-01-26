@@ -26,6 +26,7 @@ setMethod("show", signature(object="VariantFilteringResults"),
                 cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
             }
             if ("GenePhylostrataDb" %in% sapply(param(object)$otherAnnotations, class)) {
+              whGPSdb <- match("GenePhylostrataDb", sapply(param(object)$otherAnnotations, class))
               if (is.na(minPhylostratum(object)))
                 cat("    No filtering on gene conservation\n")
               else

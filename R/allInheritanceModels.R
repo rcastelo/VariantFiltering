@@ -9,6 +9,7 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
+  bsgenome <- param$bsgenome
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
@@ -52,7 +53,7 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   vcf1 <- readVcf(unlist(input_list), genomeInfo)
 
   gr1 <- rowData(vcf1)
-  gr1 <- matchChromosomes(gr1, txdb)
+  gr1 <- .matchSeqinfo(gr1, txdb, bsgenome)
 
   ##########################
   ##                      ##
