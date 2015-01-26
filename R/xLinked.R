@@ -9,6 +9,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
+  bsgenome <- param$bsgenome
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
@@ -124,7 +125,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     xl_all <- affected_filtered[realcommonXlinked]
   }
   
-  xl_allchr <- matchChromosomes(xl_all, txdb)
+  xl_allchr <- .matchSeqinfo(xl_all, txdb, bsgenome)
   
   Xlist <- which(seqnames(xl_allchr) == "chrX")
   xlinked <- xl_allchr[Xlist]

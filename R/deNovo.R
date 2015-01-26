@@ -9,6 +9,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
+  bsgenome <- param$bsgenome
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
@@ -98,7 +99,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     
   } 
   
-  denovo <- matchChromosomes(childDeNovo, txdb)
+  denovo <- .matchSeqinfo(childDeNovo, txdb, bsgenome)
     
   ##########################
   ##                      ##

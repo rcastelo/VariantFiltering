@@ -24,7 +24,7 @@ Class for storing gene-level conservation information in the form of levels of p
 \S4method{genePhylostrata}{GenePhylostrataDb}(object)
 \S4method{organism}{GenePhylostrataDb}(x)
 \S4method{genePhylostratum}{GenePhylostrataDb}(object, ids)
-\S4method{annotateVariants}{GenePhylostrataDb}(annObj, variantsGR, BPPARAM)
+\S4method{annotateVariants}{GenePhylostrataDb}(annObj, variantsGR, param ,BPPARAM)
 \S4method{organism}{GenePhylostrataDb}(x)
 }
 \arguments{
@@ -35,6 +35,7 @@ Class for storing gene-level conservation information in the form of levels of p
     or Entrez Gene Identifiers.}
   \item{annObj}{A \code{GenePhylostrataDb} object.}
   \item{variantsGR}{A \code{GRanges} object with the variants to annotate.}
+  \item{param}{A \code{\link{VariantFilteringParam-class}} object.}
   \item{BPPARAM}{An object of class \code{BiocParallelParam} specifying parameters related to
     the parallel execution of this function. See function \code{\link[BiocParallel]{bpparam}()}
     from the \code{BiocParallel} package.}

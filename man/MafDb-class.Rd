@@ -37,7 +37,7 @@ Class for annotation packages storing minimum allele frequency data.
 \S4method{keys}{MafDb}(x, keytype)
 \S4method{columns}{MafDb}(x)
 \S4method{select}{MafDb}(x, keys, columns, keytype)
-\S4method{annotateVariants}{MafDb}(annObj, variantsGR, BPPARAM)
+\S4method{annotateVariants}{MafDb}(annObj, variantsGR, param, BPPARAM)
 }
 \arguments{
   \item{mafdb}{A \code{MafDb} object.}
@@ -53,6 +53,7 @@ Class for annotation packages storing minimum allele frequency data.
     \code{columns} method.}
   \item{annObj}{A \code{MafDb} object.}
   \item{variantsGR}{A \code{GRanges} object with the variants to annotate.}
+  \item{param}{A \code{\link{VariantFilteringParam-class}} object.}
   \item{BPPARAM}{An object of class \code{BiocParallelParam} specifying parameters related to
     the parallel execution of this function. See function \code{\link[BiocParallel]{bpparam}()}
     from the \code{BiocParallel} package.}
