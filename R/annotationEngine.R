@@ -685,9 +685,9 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
   refaa <- as.character(variantsGR[whframeshift]$REFAA)
   altaa <- as.character(variantsGR[whframeshift]$VARAA)
   elen <- elementLengths(variantsGR[whframeshift]$PROTEINLOC)
-  locaa[elen == 1] <- as.character(unlist(variantsGR[whnonsyn]$PROTEINLOC[elen == 1], use.names=FALSE))
+  locaa[elen == 1] <- as.character(unlist(variantsGR[whframeshift]$PROTEINLOC[elen == 1], use.names=FALSE))
   ## location of a multiple amino acid replacement is denoted by its position range
-  locaa[elen > 1] <- sapply(variantsGR[whnonsyn]$PROTEINLOC[elen > 1],
+  locaa[elen > 1] <- sapply(variantsGR[whframeshift]$PROTEINLOC[elen > 1],
                                       function(x) paste(range(x), collapse="-"))
   aachange[whframeshift] <- paste0(refaa, locaa, altaa)
   aachangetype[whframeshift] <- "Radical"

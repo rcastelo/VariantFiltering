@@ -10,6 +10,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
+  bsgenome <- param$bsgenome
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
@@ -165,7 +166,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     dad_comphet <- matchChromosomes(dad_comphet, txdb)
   }
   
-  affected <- matchChromosomes(affected, txdb)
+  affected <- .matchSeqinfo(affected, txdb, bsgenome)
 
   ##########################
   ##                      ##

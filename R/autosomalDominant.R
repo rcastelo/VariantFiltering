@@ -9,6 +9,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   orgdb <- param$orgdb
   txdb <- param$txdb
   snpdb <- param$snpdb
+  bsgeonme <- param$bsgenome
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
@@ -98,7 +99,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     }
   }
   
-  dominant <- matchChromosomes(dominant, txdb)
+  dominant <- .matchSeqinfo(dominant, txdb, bsgenome)
   
   ##########################
   ##                      ##
