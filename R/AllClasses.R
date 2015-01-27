@@ -65,7 +65,8 @@ setClass("VariantFilteringParam",
                                        codonusageFilename="character",
                                        codonusageTable="numeric",
                                        geneKeytype="character",
-                                       filterTag="character"))
+                                       filterTag="character",
+                                       yieldSize="integer"))
 
 setClass("VariantFilteringResults",
          representation=representation(callObj="call",

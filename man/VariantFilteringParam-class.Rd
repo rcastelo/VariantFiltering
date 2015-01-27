@@ -36,7 +36,8 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
                                                                "phastCons100way.UCSC.hg19",
                                                                "humanGenesPhylostrata"),
                                             filterTag=NA_character_,
-                                            geneKeytype=NA_character_)
+                                            geneKeytype=NA_character_,
+                                            yieldSize=NA_integer_)
 \S4method{show}{VariantFilteringParam}(object)
 \S4method{$}{VariantFilteringParam}(x, name)
 \S4method{names}{VariantFilteringParam}(x)
@@ -61,6 +62,12 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   \item{snpdb}{
   Character string of a SNP-centric annotation package (\code{SNPlocs.Hsapiens.dbSNP.20120608} by default).
   }
+  %\item{readDepthGTfield}{
+  %Field name in the input VCF file that contains the total read depth at each position and sample. Default value is \code{DP}.
+  %}
+  %\item{allelicDepthGTfield}{
+  %Field name in the input VCF file that contains the read depth of each allele per sample. Default value is \code{AD}.
+  %}
   \item{spliceSiteMatricesFilenames}{
   Names of text files containing position weight matrices for splice site recognition. See the default files (\code{hsap.donors.hcmc10_15_1.ibn} and \code{hsap.acceptors.hcmc10_15_1.ibn}) for details on their format.
   }
@@ -81,6 +88,9 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   }
   \item{geneKeytype}{
   Character vector of the type of key gene identifier provided by the transcript-centric (TxDb) annotation package to interrogate the organism-centric (OrgDb) annotation package. The default value (\code{NA_character_} indicates that it will be assumed to be an Entrez identifier unless the values in the \code{GENEID} column returned by the TxDb package start with \code{ENSG} and then it will be assumed that they are Ensembl gene identifiers, or with one of \code{NM_, NP_, NR_, XM_, XP_, XR_ or YP_} and then it will be assumed that they are RefSeq gene identifiers.
+  }
+  \item{yieldSize}{
+  Number of variants to yield each time the input VCF file is read. This argument is passed to the \code{\link[Rsamtools]{TabixFile}} function when opening the input VCF file and it allows to iterate through the variants in chunks of the given size to limit the memory requirements. Its default value (\code{NA_integer_}) implies that the whole input VCF file will be read into main memory.
   }
   \item{object}{
   A VariantFilteringParam object created through \code{VariantFilteringParam()}.

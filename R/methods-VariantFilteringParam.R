@@ -18,8 +18,11 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                                       "SIFT.Hsapiens.dbSNP137",
                                       "phastCons100way.UCSC.hg19",
                                       "humanGenesPhylostrata"),
+                   ## readDepthGTfield="DP",
+                   ## allelicDepthGTfield="AD",
                    filterTag=NA_character_,
-                   geneKeytype=NA_character_) {
+                   geneKeytype=NA_character_,
+                   yieldSize=NA_integer_) {
 
             ## store call to reproducing it later
             callobj <- match.call()
@@ -67,7 +70,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
               hd <- scanVcfHeader(vcfFilenames[i])
               seqinfos[[i]] <- seqinfo(hd)
               sampleNames <- c(sampleNames, samples(hd))
-              tfl[[i]] <- TabixFile(vcfFilenames[i])
+              tfl[[i]] <- TabixFile(vcfFilenames[i], yieldSize=yieldSize)
             }
             tfl <- do.call(TabixFileList, tfl)
 
@@ -146,11 +149,13 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
                 sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
-                snpdb=snpdb, spliceSiteMatricesFilenames=spliceSiteMatricesFilenames,
-                spliceSiteMatrices=spliceSiteMatrices, radicalAAchangeFilename=radicalAAchangeFilename,
-                radicalAAchangeMatrix=radicalAAchangeMatrix, codonusageFilename=codonusageFilename,
-                codonusageTable=codonusageTable, otherAnnotations=otherannotations, allTranscripts=allTranscripts,
-                filterTag=filterTag, geneKeytype=geneKeytype)
+                snpdb=snpdb,
+                 ## readDepthGTfield=readDepthGTfield, allelicDepthGTfield=allelicDepthGTfield,
+                spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
+                radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
+                codonusageFilename=codonusageFilename, codonusageTable=codonusageTable,
+                otherAnnotations=otherannotations, allTranscripts=allTranscripts, filterTag=filterTag,
+                geneKeytype=geneKeytype, yieldSize=yieldSize)
           })
 
 setMethod("show", signature(object="VariantFilteringParam"),
