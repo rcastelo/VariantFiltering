@@ -724,6 +724,8 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
             VARCODON=DNAStringSet(),
             REFAA=AAStringSet(),
             VARAA=AAStringSet(),
+            CUREF=numeric(),
+            CUALT=numeric(),
             CRYP5ssREF=numeric(),
             CRYP5ssALT=numeric(),
             CRYP5ssPOS=numeric(),
