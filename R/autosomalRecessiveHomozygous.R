@@ -28,8 +28,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   
   annotated_variants <- GRanges()
   open(vcfFiles[[1]])
+  n.var <- 0
   while (nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
-    message(sprintf("%d variants read from input VCF file into main memory.", nrow(vcf)))
    
     carriers <- switch(nrow(unaff),
                        one_ind_ms(vcf, "0/1", unaff, filterTag),
@@ -54,6 +54,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
     annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+
+    n.var <- n.var + nrow(vcf)
+    message(sprintf("%d variants processed", n.var))
   }
   close(vcfFiles[[1]])
 
