@@ -155,7 +155,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                 radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
                 codonusageFilename=codonusageFilename, codonusageTable=codonusageTable,
                 otherAnnotations=otherannotations, allTranscripts=allTranscripts, filterTag=filterTag,
-                geneKeytype=geneKeytype, yieldSize=yieldSize)
+                geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
           })
 
 setMethod("show", signature(object="VariantFilteringParam"),
