@@ -3,7 +3,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
 
   callobj <- match.call()
   callstr <- deparse(callobj)
-  vcfFiles <- path(param$vcfFiles)
+  vcfFiles <- param$vcfFiles
   seqInfos <- param$seqInfos
   txdb <- param$txdb
   bsgenome <- param$bsgenome
