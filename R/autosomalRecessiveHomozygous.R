@@ -18,38 +18,52 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   } else if (length(vcfFiles) < 1)
     stop("A minimum of 1 vcf file has to be provided")
   
-  pedf <- read.table(ped, header=FALSE)
+  pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
+  pedf <- pedf[, 1:6]
+  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
 
-  if (sum(pedf[, 6] == 2) < 1)
+  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
+  if (sum(pedf$Phenotype  == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
   
-  unaff <- pedf[pedf[, 6] == 1, ]
-  aff <- pedf[pedf[, 6] == 2, ]
+  unaff <- pedf[pedf$Phenotype == 1, ]
+  aff <- pedf[pedf$Phenotype == 2, ]
   
-  annotated_variants <- GRanges()
+  annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
   while (nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
    
-    carriers <- switch(nrow(unaff),
-                       one_ind_ms(vcf, "0/1", unaff, filterTag),
-                       two_ind_ms(vcf, "0/1", unaff, filterTag),
-                       three_ind_ms(vcf, "0/1", unaff, filterTag),
-                       four_ind_ms(vcf, "0/1", unaff, filterTag),
-                       five_ind_ms(vcf, "0/1", unaff, filterTag))
-  
-    affected <- switch(nrow(aff)+1,
-                       stop("No affected individuals detected. Something is wrong with the PED file."),
-                       one_ind_ms(vcf, "1/1", aff, filterTag),
-                       two_ind_ms(vcf, "1/1", aff, filterTag),
-                       three_ind_ms(vcf, "1/1", aff, filterTag),
-                       four_ind_ms(vcf, "1/1", aff, filterTag),
-                       five_ind_ms(vcf, "1/1", aff, filterTag))
-  
-    variants <- affected
-    if (length(carriers) >= 1) {
-      variants <- affected[sharedVariants(affected, carriers)]
+    carriersMask <- rep(TRUE, times=nrow(vcf))
+    if (nrow(unaff) > 0) {
+      carriersMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "0/1"
+      carriersMask <- apply(carriersMask, 1, all)
     }
+
+    affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "1/1"
+    affectedMask <- apply(affectedMask, 1, all)
+
+    variants <- as(vcf[carriersMask & affectedMask, ], "VRanges")
+
+    ## carriers <- switch(nrow(unaff),
+    ##                    one_ind_ms(vcf, "0/1", unaff, filterTag),
+    ##                    two_ind_ms(vcf, "0/1", unaff, filterTag),
+    ##                    three_ind_ms(vcf, "0/1", unaff, filterTag),
+    ##                    four_ind_ms(vcf, "0/1", unaff, filterTag),
+    ##                    five_ind_ms(vcf, "0/1", unaff, filterTag))
+    ##
+    ## affected <- switch(nrow(aff)+1,
+    ##                    stop("No affected individuals detected. Something is wrong with the PED file."),
+    ##                    one_ind_ms(vcf, "1/1", aff, filterTag),
+    ##                    two_ind_ms(vcf, "1/1", aff, filterTag),
+    ##                    three_ind_ms(vcf, "1/1", aff, filterTag),
+    ##                    four_ind_ms(vcf, "1/1", aff, filterTag),
+    ##                    five_ind_ms(vcf, "1/1", aff, filterTag))
+    ## 
+    ## variants <- affected
+    ## if (length(carriers) >= 1) {
+    ##   variants <- affected[sharedVariants(affected, carriers)]
+    ## }
   
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
@@ -62,8 +76,10 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
   MAFpopMask <- NA
   if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
+    ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
     cnAF <- colnames(mcols(annotated_variants))
-    cnAF <- cnAF[grep("AF", cnAF)]
+    colsclasses <- sapply(mcols(annotated_variants), class)
+    cnAF <- cnAF[intersect(grep("AF[A-Z]+", cnAF), grep("numeric", colsclasses))]
     MAFpopMask <- rep(TRUE, length(cnAF))
     names(MAFpopMask) <- cnAF
   }
