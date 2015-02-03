@@ -45,7 +45,14 @@ importMethodsFrom(VariantAnnotation, readVcf,
                                      info,
                                      geno,
                                      predictCoding,
-                                     locateVariants)
+                                     locateVariants,
+                                     isSNV,
+                                     isIndel,
+                                     isSubstitution,
+                                     alt,
+                                     ref,
+                                     altDepth,
+                                     refDepth)
 importMethodsFrom(Rsamtools, headerTabix)
 importMethodsFrom(IRanges, elementLengths,
                            start,
@@ -102,7 +109,8 @@ importFrom(Biostrings, DNAStringSet,
                        AAStringSet, 
                        DNAStringSetList)
 importFrom(VariantAnnotation, AllVariants,
-                              IntergenicVariants)
+                              IntergenicVariants,
+                              VRanges)
 
 import(shiny)
 
