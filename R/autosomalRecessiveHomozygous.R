@@ -40,6 +40,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
                                          Description="Variant index in the VCF file.",
                                          row.names="VCFIDX"))
     info(vcf)$VCFIDX <- (n.var+1):(n.var+nrow(vcf))
+    varIDs <- names(rowData(vcf))
 
     n.var <- n.var + nrow(vcf)
 
@@ -59,29 +60,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     variants <- as(vcf, "VRanges")
 
     ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
-    nelt <- elementLengths(alt(vcf))
-    variants$VARID <- rep(names(rowData(vcf)), times=nelt)
+    variants$VARID <- varIDs[variants$VCFIDX]
 
-    ## carriers <- switch(nrow(unaff),
-    ##                    one_ind_ms(vcf, "0/1", unaff, filterTag),
-    ##                    two_ind_ms(vcf, "0/1", unaff, filterTag),
-    ##                    three_ind_ms(vcf, "0/1", unaff, filterTag),
-    ##                    four_ind_ms(vcf, "0/1", unaff, filterTag),
-    ##                    five_ind_ms(vcf, "0/1", unaff, filterTag))
-    ##
-    ## affected <- switch(nrow(aff)+1,
-    ##                    stop("No affected individuals detected. Something is wrong with the PED file."),
-    ##                    one_ind_ms(vcf, "1/1", aff, filterTag),
-    ##                    two_ind_ms(vcf, "1/1", aff, filterTag),
-    ##                    three_ind_ms(vcf, "1/1", aff, filterTag),
-    ##                    four_ind_ms(vcf, "1/1", aff, filterTag),
-    ##                    five_ind_ms(vcf, "1/1", aff, filterTag))
-    ## 
-    ## variants <- affected
-    ## if (length(carriers) >= 1) {
-    ##   variants <- affected[sharedVariants(affected, carriers)]
-    ## }
-  
+    ## harmonize Seqinfo data between variants, annotations and reference genome
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
     annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
