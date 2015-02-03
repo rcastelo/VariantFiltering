@@ -26,35 +26,36 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ##                          ##
   ##############################
 
-  ## clean the variant information landed on the 'names' of the input variantsGR 'GenomicRanges'
+  ## clean the variant information landed on the 'VARID' slot of the input variantsGR 'GenomicRanges'
   ## object to leave either dbSNP ids given to the input VCF in this field or a maximum of 20
-  ## characters
+  ## characters. When the dbSNP annotation does not succeed in fetching information, this 'VARID'
+  ## coming from the 'ID' column of the original VCF file will be used for that purpose
 
-  ## vnames <- names(variantsGR)
-  ## vnames2 <- vnames
-  ## vnames2 <- rep(NA_character_, length(vnames))
+  vnames <- variantsGR$VARID
+  vnames2 <- vnames
+  vnames2 <- rep(NA_character_, length(vnames))
 
-  ## mt <- gregexpr("^[a-zA-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
-  ## mtstart <- unlist(mt, use.names=FALSE)
-  ## mtlength <- sapply(mt, attr, "match.length")
-  ## vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+  mt <- gregexpr("^[a-zA-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
+  mtstart <- unlist(mt, use.names=FALSE)
+  mtlength <- sapply(mt, attr, "match.length")
+  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
 
-  ## mt <- gregexpr("RS=[a-zA-Z]+[0-9]+", vnames)
-  ## mtstart <- sapply(mt, "[", 1)
-  ## mtlength <- sapply(mt, attr, "match.length")
-  ## mtlength <- sapply(mtlength, "[", 1)
-  ## vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1]+3, mtlength[mtstart != -1])
+  mt <- gregexpr("RS=[a-zA-Z]+[0-9]+", vnames)
+  mtstart <- sapply(mt, "[", 1)
+  mtlength <- sapply(mt, attr, "match.length")
+  mtlength <- sapply(mtlength, "[", 1)
+  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1]+3, mtlength[mtstart != -1])
 
-  ## mt <- gregexpr("[a-zA-Z]+[0-9]+", vnames)
-  ## mtstart <- sapply(mt, "[", 1)
-  ## mtlength <- sapply(mt, attr, "match.length")
-  ## mtlength <- sapply(mtlength, "[", 1)
-  ## vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+  mt <- gregexpr("[a-zA-Z]+[0-9]+", vnames)
+  mtstart <- sapply(mt, "[", 1)
+  mtlength <- sapply(mt, attr, "match.length")
+  mtlength <- sapply(mtlength, "[", 1)
+  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
 
-  ## wh <- nchar(vnames2) > 20
-  ## vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
+  wh <- nchar(vnames2) > 20
+  vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
 
-  ## names(variantsGR) <- vnames2
+  variantsGR$VARID <- vnames2
 
   ##############################
   ##                          ##
