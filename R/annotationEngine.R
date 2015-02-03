@@ -56,14 +56,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
   ## names(variantsGR) <- vnames2
 
-  ############################
-  ##                        ##
-  ## INDEX ORIGINAL VARIANT ##
-  ##                        ##
-  ############################
-
-  mcols(variantsGR) <- cbind(mcols(variantsGR), DataFrame(IDX=1:length(variantsGR)))
-
   ##############################
   ##                          ##
   ## ANNOTATE TYPE OF VARIANT ##
@@ -93,17 +85,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## at the moment we are not interested in intergenic variants and we also leave promoter region
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
-  ## variantsGR_annotated <- locateVariants(variantsGR, txdb, AllVariants(intergenic=IntergenicVariants(0, 0)))
-  ## seqinfo(variantsGR_annotated) <- seqinfo(variantsGR) ## locateVariants() drops the SeqInfo information
-
-  ## put back GRanges names which in general correspond to the variant identifier from the VCF file
-  ## names(variantsGR_annotated) <- names(variantsGR)[variantsGR_annotated$QUERYID]
-
-  ## put back metadata columns IDX, the REF and ALT alleles, the variant TYPE, the FILTER flag information and
-  ## the dbSNP annotated identifier
-  ## mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-  ##                                mcols(variantsGR[variantsGR_annotated$QUERYID])[, c("IDX", "REF", "ALT", "TYPE", "FILTER", "dbSNP")])
-  located_variantsGR <- locateVariants(variantsGR, txdb, AllVariants(intergenic=IntergenicVariants(0, 0)))
+  located_variantsGR <- locateVariants(as(variantsGR, "GRanges"), txdb, AllVariants(intergenic=IntergenicVariants(0, 0)))
   variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID]
   variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
@@ -120,9 +102,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     variantsGR_annotated <- variantsGR_annotated[!dupsmask]
   }
 
-  ## remove unnecessary (by now) metadata columns (LOCEND, QUERYID, PRECEDEID, FOLLOWID)
-  ## selmcols <- c("IDX", "LOCATION", "LOCSTART", "TXID", "CDSID", "GENEID", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
-  ## mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, selmcols]
   rmcols <- match("QUERYID", colnames(mcols(variantsGR_annotated)))
   mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, -rmcols]
 
@@ -161,12 +140,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
       ## if we do not do it, so we just issue the warning
       ## genome(variantsGR_annotated_coding_exp) <- genome(bsgenome)
     }
-
-    ## remove columns that are again created by 'predictCoding()' to avoid this function prompting an error
-    ## selmcols <- c("IDX", "LOCATION", "LOCSTART", "cDNALOC", "REF", "ALT", "TYPE", "FILTER", "dbSNP")
-    ## mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, selmcols]
-    ## GRanges_coding_uq <- predictCoding(variantsGR_annotated_coding_exp, txdb,
-    ##                                    seqSource=bsgenome, varAllele=unlist(variantsGR_annotated_coding$ALT))
 
     variantsGR_annotated_coding_exp <- as(variantsGR_annotated_coding, "GRanges")
     rmcols <- match(c("TXID", "CDSID", "GENEID"), colnames(mcols(variantsGR_annotated_coding_exp)))
@@ -213,12 +186,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   
     ## annotate codon usage difference in synonymous mutations
 
-    ## if there are coding synonymous variants, add two metadatacolumns: CUREF and CUALT 
- 
-    ## GRanges_coding_uq_codonusage <- GRanges_coding_uq
-    ## mcols(GRanges_coding_uq_codonusage) <- cbind(mcols(GRanges_coding_uq_codonusage),
-    ##                                              DataFrame(CUREF=rep(NA_real_, length(GRanges_coding_uq_codonusage)),           
-    ##                                                        CUALT=rep(NA_real_, length(GRanges_coding_uq_codonusage))))
     variantsGR_annotated_coding$CUREF <- NA_real_
     variantsGR_annotated_coding$CUALT <- NA_real_
 
@@ -235,8 +202,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     
       ## extract the reference codons and alt codons from the DNStringSet
    
-      ## ref_codons <- unname(as.character(GRanges_coding_uq_codonusage$REFCODON[mask]))
-      ## alt_codons <- unname(as.character(GRanges_coding_uq_codonusage$VARCODON[mask]))
       ref_codons <- unname(as.character(variantsGR_annotated_coding$REFCODON[mask]))
       alt_codons <- unname(as.character(variantsGR_annotated_coding$VARCODON[mask]))
 
@@ -245,8 +210,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
       alt_codons_numeric <- codonusageTable[alt_codons]
     
       ## push the numerical vector to its corresponding variant to compare on CUREF and CUALT columns
-      ## GRanges_coding_uq_codonusage$CUREF[mask] <- unname(ref_codons_numeric)
-      ## GRanges_coding_uq_codonusage$CUALT[mask] <- unname(alt_codons_numeric)
       variantsGR_annotated_coding$CUREF[mask] <- unname(ref_codons_numeric)
       variantsGR_annotated_coding$CUALT[mask] <- unname(alt_codons_numeric)
         
@@ -271,13 +234,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
                        CUALT=rep(NA_real_,n.noncoding))
   
   mcols(variantsGR_annotated_noncoding) <- cbind(mcols(variantsGR_annotated_noncoding), dummyDF)
-  ## mcols(variantsGR_annotated_noncoding) <- mcols(variantsGR_annotated_noncoding)[, colnames(mcols(GRanges_coding_uq))]
 
   if (length(variantsGR_annotated_coding) > 0) {
-    #mcols(GRanges_coding_uq) <- mcols(GRanges_coding_uq)[, colnames(mcols(variantsGR_annotated_noncoding))]
-    ## mcols(GRanges_coding_uq_codonusage) <- mcols(GRanges_coding_uq_codonusage)[, colnames(mcols(variantsGR_annotated_noncoding))]
-    #variantsGR_annotated <- c(GRanges_coding_uq, variantsGR_annotated_noncoding)
-    ## variantsGR_annotated <- c(GRanges_coding_uq_codonusage, variantsGR_annotated_noncoding)
     variantsGR_annotated <- sort(c(variantsGR_annotated_coding, variantsGR_annotated_noncoding))
   } else
     variantsGR_annotated <- sort(variantsGR_annotated_noncoding)
@@ -337,18 +295,11 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   variantsGR_annotated$CDS[variantsGR_annotated$LOCATION == "coding"] <- paste0(refAllele, locAllele, altAllele)
 
   ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
-  ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREAD ADJUSTS FOR THIS (???)
+  ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
   refAllele <- as.character(adjustForStrandSense(variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"],
                                                  ref(variantsGR_annotated)[variantsGR_annotated$LOCATION != "coding"]))
   altAllele <- adjustForStrandSense(variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"],
                                     alt(variantsGR_annotated)[variantsGR_annotated$LOCATION != "coding"])
-  ## this is not necessary anymore as the VRanges is already expanded to variant x allele
-  ## eltlen <- elementLengths(altAllele)
-  ## altAlleleChr <- rep(NA_character_, length(altAllele))
-  ## altAlleleChr[eltlen == 1] <- as.character(unlist(altAllele[eltlen == 1]))
-  ## altAlleleChr[eltlen > 1] <- unlist(bplapply(altAllele[eltlen > 1], paste, collapse=", ", BPPARAM=BPPARAM),
-  ##                                    use.names=FALSE)
-
   variantsGR_annotated$CDS[variantsGR_annotated$LOCATION != "coding"] <- paste(refAllele, "->", altAllele)
 
   ########################

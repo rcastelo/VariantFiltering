@@ -1,3 +1,5 @@
+## group by variant position when providing the summary by variant (??????)
+
 setMethod("show", signature(object="VariantFilteringResults"),
           function(object) {
             cat("\nVariantFiltering results object\n\n")
@@ -472,9 +474,11 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     return(fullpath)
   }
   
-  ######## parameters for the UCSC genome browser, by now we have to hard-code "Hsapiens"
-  species <- "Hsapiens"
-  genomeVersion <- as.vector(genome(allVariants(vfResultsObj))[1])
+  ## parameters for the UCSC genome browser. the organism name is derived from
+  ## the 'organism()' getter for BSgenome objects and 
+  org <- organism(param(vfResultsObj)$bsgenome)
+  org <- paste0(substr(org, 1, 1), strsplit(org, " ")[[1]][2])
+  genomeBuild <- providerVersion(param(vfResultsObj)$bsgenome)
 
   annotationObjClasses <- sapply(param(vfResultsObj)$otherAnnotations, class)
   mtMafDb <- match("MafDb", annotationObjClasses)
@@ -686,17 +690,19 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         minCRYP3ss(vfResultsObj) <- NA_real_
 
       vdf <- filteredVariants(vfResultsObj)
-      vdf <- DataFrame(VarID=names(vdf), CHR=seqnames(vdf),
+      vdf <- DataFrame(VarID=vdf$VARID, CHR=seqnames(vdf),
                        POS=start(vdf), POSITION=start(vdf),
                        mcols(vdf))
       ## the ALT column is a DNAStringSetList object and requires this
       ## step to coerce to character
-      vdf$ALT <- sapply(vdf$ALT, paste, collapse=",")
+      ## vdf$ALT <- sapply(vdf$ALT, paste, collapse=",")
+      vdf$REF <- ref(vdf)
+      vdf$ALT <- alt(vdf)
       vdf <- as.data.frame(vdf)
       
       if (nrow(vdf) > 0) {
         varlocs <- paste0("<a href=http://genome.ucsc.edu/cgi-bin/hgTracks?org=", species,
-                          "&db=", genomeVersion, 
+                          "&db=", genomeBuild, 
                           "&position=", vdf$CHR, ":", vdf$POS, " target=\"ucsc\">",
                           vdf$CHR, ":", vdf$POS,
                           "</a>")

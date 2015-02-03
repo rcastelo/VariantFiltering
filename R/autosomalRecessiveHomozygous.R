@@ -34,6 +34,15 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   n.var <- 0
   while (nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
    
+    ## insert an index for each variant in the VCF file
+    info(header(vcf)) <- rbind(info(header(vcf)),
+                               DataFrame(Number=1, Type="Integer",
+                                         Description="Variant index in the VCF file.",
+                                         row.names="VCFIDX"))
+    info(vcf)$VCFIDX <- (n.var+1):(n.var+nrow(vcf))
+
+    n.var <- n.var + nrow(vcf)
+
     carriersMask <- rep(TRUE, times=nrow(vcf))
     if (nrow(unaff) > 0) {
       carriersMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "0/1"
@@ -43,7 +52,15 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "1/1"
     affectedMask <- apply(affectedMask, 1, all)
 
-    variants <- as(vcf[carriersMask & affectedMask, ], "VRanges")
+    ## filter out variants that do not segregate as an autosomal recessive homozygous trait
+    vcf <- vcf[carriersMask & affectedMask, ]
+
+    ## coerce the VCF object to a VRanges object
+    variants <- as(vcf, "VRanges")
+
+    ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
+    nelt <- elementLengths(alt(vcf))
+    variants$VARID <- rep(names(rowData(vcf)), times=nelt)
 
     ## carriers <- switch(nrow(unaff),
     ##                    one_ind_ms(vcf, "0/1", unaff, filterTag),
@@ -69,7 +86,6 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
 
-    n.var <- n.var + nrow(vcf)
     message(sprintf("%d variants processed", n.var))
   }
   close(vcfFiles[[1]])
