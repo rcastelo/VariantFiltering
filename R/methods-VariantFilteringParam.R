@@ -1,5 +1,5 @@
 setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
-          function(vcfFilenames, pedFilename=character(),
+          function(vcfFilenames, pedFilename=NA_character_,
                    bsgenome="BSgenome.Hsapiens.UCSC.hg19",
                    orgdb="org.Hs.eg.db",
                    txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
@@ -18,8 +18,6 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                                       "SIFT.Hsapiens.dbSNP137",
                                       "phastCons100way.UCSC.hg19",
                                       "humanGenesPhylostrata"),
-                   ## readDepthGTfield="DP",
-                   ## allelicDepthGTfield="AD",
                    filterTag=NA_character_,
                    geneKeytype=NA_character_,
                    yieldSize=NA_integer_) {
@@ -31,10 +29,28 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
 
             ## check if input VCF, PED, splice site and radical AA change files exist
             tryCatch({
-              .io_check_exists(c(vcfFilenames, pedFilename, spliceSiteMatricesFilenames, radicalAAchangeFilename, codonusageFilename))
+              .io_check_exists(c(vcfFilenames, radicalAAchangeFilename, codonusageFilename))
             }, error=function(err) {
                  stop(conditionMessage(err), call.=FALSE)
             })
+
+            if (!is.na(pedFilename) && length(pedFilename) == 1)
+              tryCatch({
+                .io_check_exists(pedFilename)
+              }, error=function(err) {
+                   stop(conditionMessage(err), call.=FALSE)
+              })
+            else
+              pedFilename <- NA_character_
+
+            if (!is.na(spliceSiteMatricesFilenames) && length(spliceSiteMatricesFilenames) == 2)
+              tryCatch({
+                .io_check_exists(spliceSiteMatricesFilenames)
+              }, error=function(err) {
+                   stop(conditionMessage(err), call.=FALSE)
+              })
+            else
+              spliceSiteMatricesFilenames <- NA_character_
 
             maskGz <- grepl("vcf.bgz$", vcfFilenames)
 
@@ -150,7 +166,6 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
                 sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
                 snpdb=snpdb,
-                 ## readDepthGTfield=readDepthGTfield, allelicDepthGTfield=allelicDepthGTfield,
                 spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
                 radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
                 codonusageFilename=codonusageFilename, codonusageTable=codonusageTable,
@@ -175,7 +190,7 @@ setMethod("show", signature(object="VariantFilteringParam"),
                 cat(" NA")
 
             cat(sprintf("\n  Number of individuals: %d (%s)\n", length(object$sampleNames), sampleNames))
-            if (length(object$pedFilename) > 0)
+            if (!is.na(object$pedFilename) && length(object$pedFilename) > 0)
               cat(sprintf("  PED file: %s\n", basename(object$pedFilename)))
             cat(sprintf("  Genome-centric annotation package: %s (%s %s %s)\n",
                         object$bsgenome@pkgname, provider(object$bsgenome),
@@ -187,12 +202,14 @@ setMethod("show", signature(object="VariantFilteringParam"),
             else
               cat(sprintf("  Transcript-centric annotation table: %s\n", metadata(object$txdb)[grep("Table", metadata(object$txdb)$name), "value"]))
             cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
-            cat(sprintf("  Splice site matrices: %s\n", paste(basename(object$spliceSiteMatricesFilenames), collapse=", ")))
+            if (!is.na(object$spliceSiteMatricesFilenames) && length(object$spliceSiteMatricesFilenames) > 0)
+              cat(sprintf("  Splice site matrices: %s\n", paste(basename(object$spliceSiteMatricesFilenames), collapse=", ")))
             cat(sprintf("  Radical/Conservative AA changes: %s\n", basename(object$radicalAAchangeFilename)))
             cat(sprintf("  Codon usage table: %s\n", basename(object$codonusageFilename)))
-            cat(sprintf("  Other annotation pkg/obj: %s\n",
-                        paste(names(object$otherAnnotations),
-                              collapse=",\n                            ")))
+            if (length(object$otherAnnotations) > 0)
+              cat(sprintf("  Other annotation pkg/obj: %s\n",
+                          paste(names(object$otherAnnotations),
+                                collapse=",\n                            ")))
             cat(sprintf("  All transcripts: %s\n", object$allTranscripts))
             cat(sprintf("  Filter tag: %s\n\n", object$filterTag))
           })

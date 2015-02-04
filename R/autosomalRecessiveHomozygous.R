@@ -65,6 +65,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     ## harmonize Seqinfo data between variants, annotations and reference genome
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
+    ## annotate variants
     annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
 
     message(sprintf("%d variants processed", n.var))
