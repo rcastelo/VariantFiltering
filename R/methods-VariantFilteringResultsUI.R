@@ -1,4 +1,4 @@
-setMethod("show", signature(object="VariantFilteringResults"),
+setMethod("show", signature(object="VariantFilteringResultsUI"),
           function(object) {
             cat("\nVariantFiltering results object\n\n")
             if (inheritanceModel(object) != "any")

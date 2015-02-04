@@ -113,7 +113,8 @@ importFrom(Biostrings, DNAStringSet,
                        DNAStringSetList)
 importFrom(VariantAnnotation, AllVariants,
                               IntergenicVariants,
-                              VRanges)
+                              VRanges,
+                              VRangesList)
 
 import(shiny)
 
