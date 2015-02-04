@@ -53,14 +53,15 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
     cnAF <- colnames(mcols(annotated_variants))
     colsclasses <- sapply(mcols(annotated_variants), class)
-    nAF <- cnAF[intersect(grep("AF[A-Z]+", cnAF), grep("numeric", colsclasses))]
+    cnAF <- cnAF[intersect(grep("AF[A-Z]+", cnAF), grep("numeric", colsclasses))]
     MAFpopMask <- rep(TRUE, length(cnAF))
     names(MAFpopMask) <- cnAF
   }
 
-  new("VariantFilteringResultsUI", callObj=callobj, callStr=callstr, inputParameters=param,
+  new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       inheritanceModel="unrelated individuals", variants=annotated_variants,
-      indselected=NA_character_, selectgene=NA_character_, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      ## indselected=NA_character_, selectgene=NA_character_,
+      dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantType="Any", aaChangeType="Any", MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minCRYP5ss=NA_real_, minCRYP3ss=NA_real_)
