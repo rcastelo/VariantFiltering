@@ -32,30 +32,32 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## coming from the 'ID' column of the original VCF file will be used for that purpose
 
   vnames <- variantsGR$VARID
-  vnames2 <- vnames
-  vnames2 <- rep(NA_character_, length(vnames))
+  if (!is.null(vnames)) {
+    vnames2 <- vnames
+    vnames2 <- rep(NA_character_, length(vnames))
 
-  mt <- gregexpr("^[a-zA-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
-  mtstart <- unlist(mt, use.names=FALSE)
-  mtlength <- sapply(mt, attr, "match.length")
-  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+    mt <- gregexpr("^[a-zA-Z0-9]+:[0-9]+_[ACGT/]+", vnames)
+    mtstart <- unlist(mt, use.names=FALSE)
+    mtlength <- sapply(mt, attr, "match.length")
+    vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
 
-  mt <- gregexpr("RS=[a-zA-Z]+[0-9]+", vnames)
-  mtstart <- sapply(mt, "[", 1)
-  mtlength <- sapply(mt, attr, "match.length")
-  mtlength <- sapply(mtlength, "[", 1)
-  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1]+3, mtlength[mtstart != -1])
+    mt <- gregexpr("RS=[a-zA-Z]+[0-9]+", vnames)
+    mtstart <- sapply(mt, "[", 1)
+    mtlength <- sapply(mt, attr, "match.length")
+    mtlength <- sapply(mtlength, "[", 1)
+    vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1]+3, mtlength[mtstart != -1])
 
-  mt <- gregexpr("[a-zA-Z]+[0-9]+", vnames)
-  mtstart <- sapply(mt, "[", 1)
-  mtlength <- sapply(mt, attr, "match.length")
-  mtlength <- sapply(mtlength, "[", 1)
-  vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+    mt <- gregexpr("[a-zA-Z]+[0-9]+", vnames)
+    mtstart <- sapply(mt, "[", 1)
+    mtlength <- sapply(mt, attr, "match.length")
+    mtlength <- sapply(mtlength, "[", 1)
+    vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
 
-  wh <- nchar(vnames2) > 20
-  vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
+    wh <- nchar(vnames2) > 20
+    vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
 
-  variantsGR$VARID <- vnames2
+    variantsGR$VARID <- vnames2
+  }
 
   ##############################
   ##                          ##
@@ -162,11 +164,15 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
     ## some TXID, CDSID and GENEID annotations are catched by
     ## VariantAnnotation::locateVariants() and not by VariantAnnotation::predictCoding()
-    ## and the other way araound. let's make the union of those and prompt and internal error
-    ## when both annotations disagree.
-    mask <- !is.na(variantsGR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID)
-    if (any(variantsGR_annotated_coding$GENEID[mask] != GRanges_coding_uq$GENEID[mask]))
-      stop("Internal error: enes annotated by VariantAnnotation::locateVariants() and VariantAnnotation::predictCoding() are different\n")
+    ## and the other way araound. In these cases we take the union of both annotations.
+    ## when locateVariants() and predictCoding() disagree in the GENEID annotation then
+    ## we take the one given by predictCoding() -SHOULD ASK ABOUT THIS IN THE DEVEL LIST-
+    mask <- !is.na(variantsGR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID) &
+            variantsGR_annotated_coding$GENEID != GRanges_coding_uq$GENEID
+
+    variantsGR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
+    variantsGR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
+    variantsGR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
 
     mask <- is.na(variantsGR_annotated_coding$TXID)
     variantsGR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
@@ -175,7 +181,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     mask <- is.na(variantsGR_annotated_coding$GENEID)
     variantsGR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
 
-    ## add coding annotations
+    ## add coding annotations from VariantAnnotation::predictCoding()
     variantsGR_annotated_coding$CDSLOC <- GRanges_coding_uq$CDSLOC
     variantsGR_annotated_coding$PROTEINLOC <- GRanges_coding_uq$PROTEINLOC
     variantsGR_annotated_coding$REFCODON <- GRanges_coding_uq$REFCODON

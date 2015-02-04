@@ -12,59 +12,38 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
   
   if (length(vcfFiles) > 1) {
-    stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with vcftools, do the variant calling simultaneously on all samples, or proceed analysing each file separately.")
+    stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with vcftools, do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
   } else if (length(vcfFiles) < 1)
     stop("A minimum of 1 vcf file has to be provided")
 
   
-  annotated_variants <- GRanges()
+  annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
   while(nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
 
-    variants <- rowData(vcf)
-
-    variants <- .matchSeqinfo(variants, txdb, bsgenome)
-
-    variants <- annotationEngine(variants, param, BPPARAM=BPPARAM)
-
-    homalt <- geno(vcf)$GT == "1/1" | geno(vcf)$GT == "1|1"
-    colnames(homalt) <- paste0("homALT_", colnames(homalt))
-    homalt <- homalt[variants$IDX, , drop=FALSE]
-    rownames(homalt) <- NULL
-    mcols(variants) <- cbind(mcols(variants), DataFrame(homalt))
-    homalt <- DataFrame(HomozygousAlt=CharacterList(apply(homalt, 1,
-                                                          function(mask, snames)
-                                                            snames[mask],
-                                                          rownames(colData(vcf)))))
-    mcols(variants) <- cbind(mcols(variants), DataFrame(homalt))
-
-    het <- geno(vcf)$GT == "0/1" | geno(vcf)$GT == "0|1" |
-           geno(vcf)$GT == "1/0" | geno(vcf)$GT == "1|0"
-    colnames(het) <- paste0("het_", colnames(het))
-    het <- het[variants$IDX, , drop=FALSE]
-    rownames(het) <- NULL
-    mcols(variants) <- cbind(mcols(variants), DataFrame(het))
-    het <- DataFrame(Heterozygous=CharacterList(apply(het, 1,
-                                                      function(mask, snames)
-                                                         snames[mask],
-                                                       rownames(colData(vcf)))))
-    mcols(variants) <- cbind(mcols(variants), DataFrame(het))
-
-    homref <- geno(vcf)$GT == "0/0" | geno(vcf)$GT == "0|0"
-    colnames(homref) <- paste0("homREF_", colnames(homref))
-    homref <- homref[variants$IDX, , drop=FALSE]
-    rownames(homref) <- NULL
-    mcols(variants) <- cbind(mcols(variants), DataFrame(homref))
-    homref <- DataFrame(HomozygousRef=CharacterList(apply(homref, 1,
-                                                          function(mask, snames)
-                                                            snames[mask],
-                                                          rownames(colData(vcf)))))
-    mcols(variants) <- cbind(mcols(variants), DataFrame(homref))
-
-    annotated_variants <- c(annotated_variants, variants)
+    # insert an index for each variant in the VCF file
+    info(header(vcf)) <- rbind(info(header(vcf)),
+                               DataFrame(Number=1, Type="Integer",
+                                         Description="Variant index in the VCF file.",
+                                         row.names="VCFIDX"))
+    info(vcf)$VCFIDX <- (n.var+1):(n.var+nrow(vcf))
+    varIDs <- names(rowData(vcf))
 
     n.var <- n.var + nrow(vcf)
+
+    ## coerce the VCF object to a VRanges object
+    variants <- as(vcf, "VRanges")
+
+    ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
+    variants$VARID <- varIDs[variants$VCFIDX]
+
+    ## harmonize Seqinfo data between variants, annotations and reference genome
+    variants <- .matchSeqinfo(variants, txdb, bsgenome)
+
+    ## annotate variants
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+
     message(sprintf("%d variants processed", n.var))
   }
   close(vcfFiles[[1]])
