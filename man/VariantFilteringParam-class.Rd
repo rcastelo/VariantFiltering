@@ -18,7 +18,7 @@
 The class \code{VariantFilteringParam} is defined to ease configuring the call to the functions that filter input genetic variants according to a desired segregating inheritance model (\code{xLinked()}, \code{autosomalRecessiveHomozygous()}, etc).
 }
 \usage{
-\S4method{VariantFilteringParam}{character}(vcfFilenames, pedFilename=character(),
+\S4method{VariantFilteringParam}{character}(vcfFilenames, pedFilename=NA_character_,
                                             bsgenome="BSgenome.Hsapiens.UCSC.hg19",
                                             orgdb="org.Hs.eg.db",
                                             txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
