@@ -3,8 +3,18 @@
 setMethod("show", signature(object="VariantFilteringResults"),
           function(object) {
             cat("\nVariantFiltering results object\n\n")
+            cat(sprintf("\n  Genome version(s):"))
+            for (i in seq(along=param(object)$seqInfos))
+              if (length(param(object)$seqInfos[[i]]) > 0)
+                cat(sprintf(" %s(%s)", paste(unique(genome(param(object)$seqInfos[[i]])), collapse=","),
+                            seqlevelsStyle(param(object)$seqInfos[[i]])))
+
+            sampleNames <- ifelse(length(param(object)$sampleNames) <= 4, paste(param(object)$sampleNames, collapse=", "),
+                                  paste(paste(head(param(object)$sampleNames, n=4), collapse=", "), "...", sep=", "))
+            cat(sprintf("\n  Number of individuals: %d (%s)\n", length(param(object)$sampleNames), sampleNames))
+
             if (inheritanceModel(object) != "any")
-              cat(sprintf("  Variants segregate according to a/an %s inheritance model\n", inheritanceModel(object)))
+              cat(sprintf("  Variants segregate according to a(n) %s inheritance model\n", inheritanceModel(object)))
             else
               cat("  Variants are not filtered by inheritance model\n")
             cat("  Functional annotation filters\n")
@@ -201,13 +211,20 @@ setReplaceMethod("MAFpop", signature(x="VariantFilteringResults", value="logical
                    if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
                      stop("A MafDb object was not used to annotate variants.")
 
+                   if (any(is.na(value)))
+                     stop("The given value(s) must be either TRUE or FALSE.")
+
                    if (is.na(popkey)) {
-                     if (is.null(names(value)))
-                       stop("The given value must be a logical vector whose names match the available population keywords.")
-                     if (any(is.na(match(names(value), names(x@MAFpopMask)))))
+                     popkey <- names(x@MAFpopMask)
+                     if (is.null(names(value))) {
+                       if (length(value) > 1)
+                         stop("When given multiple values they must be a logical vector whose names match the available population keywords.")
+                       value <- do.call("names<-", list(rep(value, length(popkey)), popkey))
+                     } else if (any(is.na(match(names(value), names(x@MAFpopMask)))))
                        stop(sprintf("Element names %s do not match the available population keywords",
                                     names(value)[is.na(match(names(value), names(x@MAFpopMask)))]))
-                     popkey <- names(value)
+                     else
+                       popkey <- names(value)
                    } else {
                      if (any(is.na(match(popkey, names(x@MAFpopMask)))))
                        stop(sprintf("%s does not match the available population keywords", popkey))
@@ -329,14 +346,20 @@ setReplaceMethod("minCRYP3ss", signature(x="VariantFilteringResults", value="ANY
 
 ## get all variants without applying any filter
 setMethod("allVariants", signature(x="VariantFilteringResults"), 
-          function(x) {
-            x@variants
+          function(x, groupBy="sample") {
+            vars <- x@variants
+            if (groupBy[1] %in% "sample")
+              vars <- do.call("VRangesList", split(x@variants, sampleNames(x@variants)))
+            else if (groupBy[1] %in% colnames(mcols(x@variants)))
+              vars <- do.call("VRangesList", split(x@variants, mcols(x@variants)[, groupBy]))
+
+            vars
           })
 
 ## get variants after applying all filters
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
-          function(x, unusedColumns.rm=FALSE) {
-            vars <- allVariants(x)
+          function(x, groupBy="sample", unusedColumns.rm=FALSE) {
+            vars <- allVariants(x)[[1]]
             rowsMask <- rep(TRUE, length(vars))
 
             ## presence in dbSNP
@@ -366,28 +389,28 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
 
             ## minimum allele frequency
-            mtNoMAF <- NULL
-            if (!is.na(match("MafDb", sapply(param(x)$otherAnnotations, class)))) {
-              vars$maxMAF <- rep(NA_real_, length(vars))
+            mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
+            if ("MafDb" %in% sapply(param(x)$otherAnnotations, class)) {
+              ## vars$maxMAF <- rep(NA_real_, length(vars))
               if (any(MAFpop(x))) {
-                vars$maxMAF <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
+                maxMAFannot <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
                 naMAFmask <- rep(TRUE, length(vars))
                 if (naMAF(x))
-                  vars$maxMAF[is.na(vars$maxMAF)] <- -Inf
+                  maxMAFannot[is.na(maxMAFannot)] <- -Inf
                 else
-                  vars$maxMAF[is.na(vars$maxMAF)] <- Inf
+                  maxMAFannot[is.na(maxMAFannot)] <- Inf
 
-                rowsMask <- rowsMask & naMAFmask & vars$maxMAF <= maxMAF(x)
+                rowsMask <- rowsMask & naMAFmask & maxMAFannot <= maxMAF(x)
                 rowsMask[is.na(rowsMask)] <- FALSE
 
-                vars$maxMAF[!is.finite(vars$maxMAF)] <- NA_real_
+                maxMAFannot[!is.finite(maxMAFannot)] <- NA_real_
                 if (any(!MAFpop(x)))
                   mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
-              } else {
-                mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
-                if (!naMAF(x))
-                  rowsMask <- rep(FALSE, length(vars))
-              }
+              } ##  else {
+                ## mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
+                ## if (!naMAF(x))
+                ##   rowsMask <- rep(FALSE, length(vars))
+                ## }
             }
 
             ## nucleotide conservation
@@ -413,35 +436,50 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             }
 
             ## if any of the 5' cryptic ss or 3' cryptic ss meet the cutoff, select the row
-            crypssMask <- rep(FALSE, length(vars))
-            mtNoCRYP5ss <- NULL
-            if (is.na(minCRYP5ss(x)))
-              mtNoCRYP5ss <- grep("CRYP5ss", colnames(mcols(vars)))
-            else {
-              cryp5ssMask <- vars$CRYP5ssALT >= minCRYP5ss(x)
-              cryp5ssMask[is.na(cryp5ssMask)] <- FALSE
-              crypssMask <- crypssMask | cryp5ssMask
+            mtNoCRYP5ss <- mtNoCRYP3ss <- NULL
+            if (!is.na(param(x)$spliceSiteMatricesFilenames)) {
+              crypssMask <- rep(FALSE, length(vars))
+              if (is.na(minCRYP5ss(x)))
+                mtNoCRYP5ss <- grep("CRYP5ss", colnames(mcols(vars)))
+              else {
+                cryp5ssMask <- vars$CRYP5ssALT >= minCRYP5ss(x)
+                cryp5ssMask[is.na(cryp5ssMask)] <- FALSE
+                crypssMask <- crypssMask | cryp5ssMask
+              }
+              if (is.na(minCRYP3ss(x)))
+                mtNoCRYP3ss <- grep("CRYP3ss", colnames(mcols(vars)))
+              else {
+                cryp3ssMask <- vars$CRYP3ssALT >= minCRYP3ss(x)
+                cryp3ssMask[is.na(cryp3ssMask)] <- FALSE
+                crypssMask <- crypssMask | cryp3ssMask
+              }
+              ## if no filter on 5' and 3' cryptic ss is set, then select all rows
+              if (is.na(minCRYP5ss(x)) && is.na(minCRYP3ss(x)))
+                crypssMask <- rep(TRUE, length(vars))
+
+              rowsMask <- rowsMask & crypssMask
             }
-            mtNoCRYP3ss <- NULL
-            if (is.na(minCRYP3ss(x)))
-              mtNoCRYP3ss <- grep("CRYP3ss", colnames(mcols(vars)))
-            else {
-              cryp3ssMask <- vars$CRYP3ssALT >= minCRYP3ss(x)
-              cryp3ssMask[is.na(cryp3ssMask)] <- FALSE
-              crypssMask <- crypssMask | cryp3ssMask
-            }
-            ## if no filter on 5' and 3' cryptic ss is set, then select all rows
-            if (is.na(minCRYP5ss(x)) && is.na(minCRYP3ss(x)))
-              crypssMask <- rep(TRUE, length(vars))
 
-            rowsMask <- rowsMask & crypssMask
-
-            colsMask <- setdiff(1:ncol(mcols(vars)), mtNoMAF)
-
+            colsIdx <- setdiff(1:ncol(mcols(vars)), mtNoMAF)
             if (unusedColumns.rm) ## remove data columns that are not used for filtering
-              colsMask <- setdiff(colsMask, c(mtNoMinPhastCons, mtNoMinPhylostratum, mtNoCRYP5ss, mtNoCRYP3ss))
+              colsIdx <- setdiff(colsIdx, c(mtNoMinPhastCons, mtNoMinPhylostratum, mtNoCRYP5ss, mtNoCRYP3ss))
 
-            vars[rowsMask, colsMask, drop=FALSE]
+            colsMask <- rep(FALSE, ncol(mcols(vars)))
+            colsMask[colsIdx] <- TRUE
+
+            vars <- allVariants(x)
+            vars <- endoapply(vars, "[", rowsMask, colsMask)
+            if ("MafDb" %in% sapply(param(x)$otherAnnotations, class))
+              vars <- endoapply(vars, function(x, mm) { x$maxMAF <- mm ; x }, maxMAFannot[rowsMask])
+
+            if (!groupBy %in% "sample") {
+              vars <- stackSamples(vars)
+
+              if (groupBy %in% colnames(mcols(x@variants)))
+                vars <- do.call("VRangesList", split(vars, mcols(vars)[, groupBy]))
+            }
+
+            vars
           })
 
 ## shiny app to filter and visualize variants
