@@ -393,6 +393,7 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
 ## Annotate PROVEAN predictions (former SIFT)
 #####
 
+## USE VARID WHERE dbSNP IS MISSING !!!
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
           function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam()) {
             PROVEAN <- rep(NA_character_, length(variantsGR))
@@ -414,7 +415,7 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
 ## Annotate MAF values
 #####
 
-## revise this according to the previous two methods!!!
+## USE VARID WHERE dbSNP IS MISSING !!!
 setMethod("annotateVariants", signature(annObj="MafDb"),
           function(annObj, variantsGR, param, BPPARAM=bpparam()) {
 
@@ -432,14 +433,16 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
               mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
 
               ## for missing entries then fetch by given identifier
-              varIDs <- names(variantsGR)
-              missingdbsnpIDs <- unique(c(varIDs[is.na(variantsGR$dbSNP)],
-                                          varIDs[!is.na(match(variantsGR$dbSNP, uniqMAFvalues$varID[is.na(uniqMAFvalues$chrom)]))]))
-              missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
-              if (length(missingdbsnpIDs) > 0) {
-                uniqMAFvalues <- fetchKnownVariantsByID(annObj, missingdbsnpIDs)
-                mt <- match(varIDs, uniqMAFvalues$varID)
-                mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
+              varIDs <- variantsGR$VARID
+              if (!is.null(varIDs) && any(!is.na(varIDs))) {
+                missingdbsnpIDs <- unique(c(varIDs[is.na(variantsGR$dbSNP)],
+                                            varIDs[!is.na(match(variantsGR$dbSNP, uniqMAFvalues$varID[is.na(uniqMAFvalues$chrom)]))]))
+                missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
+                if (length(missingdbsnpIDs) > 0) {
+                  uniqMAFvalues <- fetchKnownVariantsByID(annObj, missingdbsnpIDs)
+                  mt <- match(varIDs, uniqMAFvalues$varID)
+                  mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
+                }
               }
             }
 

@@ -3,6 +3,7 @@ useDynLib(VariantFiltering)
 import(methods)
 import(BiocGenerics)
 import(S4Vectors)
+import(shiny)
 
 importFrom(BSgenome.Hsapiens.UCSC.hg19, Hsapiens)
 
@@ -115,8 +116,6 @@ importFrom(VariantAnnotation, AllVariants,
                               IntergenicVariants,
                               VRanges,
                               VRangesList)
-
-import(shiny)
 
 exportClasses(MafDb, PhastConsDb, GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,
