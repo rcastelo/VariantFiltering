@@ -1,5 +1,15 @@
 ## group by variant position when providing the summary by variant (??????)
 
+## this is by now missing from VariantAnnotation
+setMethod("show", signature(object="CompressedVRangesList"),
+          function(object) {
+            lo <- length(object)
+            cat(classNameForDisplay(object), " of length ", lo, "\n",
+                sep = "")
+            if (!is.null(names(object)))
+              cat(BiocGenerics:::labeledLine("names", names(object)))
+          })
+
 setMethod("show", signature(object="VariantFilteringResults"),
           function(object) {
             cat("\nVariantFiltering results object\n\n")
@@ -19,10 +29,10 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat("  Variants are not filtered by inheritance model\n")
             cat("  Functional annotation filters\n")
             if (is.na(dbSNPpresent(object)))
-                cat(sprintf("    No filtering on presence in %s %s\n", provider(param(object)$snpdb),
+                cat(sprintf("    No filtering on presence in %s (%s)\n", provider(param(object)$snpdb),
                             releaseName(param(object)$snpdb)))
             else
-                cat(sprintf("    Present in %s %s: %s\n", provider(param(object)$snpdb),
+                cat(sprintf("    Present in %s (%s): %s\n", provider(param(object)$snpdb),
                             releaseName(param(object)$snpdb), dbSNPpresent(object)))
             cat(sprintf("    Variant type: %s\n", variantType(object)))
             cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
@@ -47,19 +57,22 @@ setMethod("show", signature(object="VariantFilteringResults"),
                             minPhylostratum(object),
                             nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
             }
-            if (is.na(minCRYP5ss(object)))
-              cat("    No filtering on cryptic 5'ss\n")
-            else
-              cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minCRYP5ss(object)))
-            if (is.na(minCRYP3ss(object)))
-              cat("    No filtering on cryptic 3'ss\n")
-            else
-              cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minCRYP3ss(object)))
-            vdf <- filteredVariants(object)
-            total <- length(vdf)
-            vxloc <- table(vdf$LOCATION)
-            vxcon <- table(vdf$CONSEQUENCE)
-            cat(sprintf("\n  Total number of variants: %d\n", total))
+            if (!is.na(param(object)$spliceSiteMatricesFilenames)) {
+              if (is.na(minCRYP5ss(object)))
+                cat("    No filtering on cryptic 5'ss\n")
+              else
+                cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minCRYP5ss(object)))
+              if (is.na(minCRYP3ss(object)))
+                cat("    No filtering on cryptic 3'ss\n")
+              else
+                cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minCRYP3ss(object)))
+            }
+            fv <- filteredVariants(object)
+            total <- length(fv[[1]])
+            nvars <- length(unique(fv[[1]]$VCFIDX))
+            vxloc <- table(fv[[1]]$LOCATION)
+            vxcon <- table(fv[[1]]$CONSEQUENCE)
+            cat(sprintf("\n  Total number of variants: %d leading to %d annotations\n", nvars, total))
             paddgts <- sprintf("%%%dd", nchar(as.character(total)))
             if (!is.na(match("nonsynonymous", names(vxcon))))
               cat(sprintf("    %s (%.1f%%) are coding non-synonymous\n", sprintf(paddgts, vxcon["nonsynonymous"]), 100*vxcon["nonsynonymous"]/total))
@@ -319,11 +332,17 @@ setReplaceMethod("minPhylostratum", signature(x="VariantFilteringResults", value
 
 setMethod("minCRYP5ss", signature(x="VariantFilteringResults"),
           function(x) {
+            if (is.na(param(x)$spliceSiteMatricesFilenames))
+              stop("No splice site matrix was used to annotate variants.")
+
             x@minCRYP5ss
           })
 
 setReplaceMethod("minCRYP5ss", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
+                   if (is.na(param(x)$spliceSiteMatricesFilenames))
+                     stop("No splice site matrix was used to annotate variants.")
+
                    if (!is.na(value) && !is.numeric(value) && !is.integer(value))
                      stop("Only a numeric or NA value is allowed as minimum cutoff for cryptic 5'ss.")
                    x@minCRYP5ss <- as.numeric(value)
@@ -332,11 +351,17 @@ setReplaceMethod("minCRYP5ss", signature(x="VariantFilteringResults", value="ANY
 
 setMethod("minCRYP3ss", signature(x="VariantFilteringResults"),
           function(x) {
+            if (is.na(param(x)$spliceSiteMatricesFilenames))
+              stop("No splice site matrix was used to annotate variants.")
+
             x@minCRYP3ss
           })
 
 setReplaceMethod("minCRYP3ss", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
+                   if (is.na(param(x)$spliceSiteMatricesFilenames))
+                     stop("No splice site matrix was used to annotate variants.")
+
                    if (!is.na(value) && !is.numeric(value) && !is.integer(value))
                      stop("Only a numeric or NA value is allowed as minimum cutoff for cryptic 3'ss.")
                    x@minCRYP3ss <- as.numeric(value)
@@ -349,9 +374,9 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
           function(x, groupBy="sample") {
             vars <- x@variants
             if (groupBy[1] %in% "sample")
-              vars <- do.call("VRangesList", split(x@variants, sampleNames(x@variants)))
+              vars <- new("CompressedVRangesList", split(x@variants, sampleNames(x@variants)))
             else if (groupBy[1] %in% colnames(mcols(x@variants)))
-              vars <- do.call("VRangesList", split(x@variants, mcols(x@variants)[, groupBy]))
+              vars <- new("CompressedVRangesList", split(x@variants, mcols(x@variants)[, groupBy]))
 
             vars
           })
@@ -359,7 +384,8 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
 ## get variants after applying all filters
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample", unusedColumns.rm=FALSE) {
-            vars <- allVariants(x)[[1]]
+            varsxsam <- allVariants(x)
+            vars <- varsxsam[[1]]
             rowsMask <- rep(TRUE, length(vars))
 
             ## presence in dbSNP
@@ -391,8 +417,9 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             ## minimum allele frequency
             mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
             if ("MafDb" %in% sapply(param(x)$otherAnnotations, class)) {
-              ## vars$maxMAF <- rep(NA_real_, length(vars))
+              maxMAFannot <- rep(NA_real_, length(vars))
               if (any(MAFpop(x))) {
+                mtNoMAF <- NULL
                 maxMAFannot <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
                 naMAFmask <- rep(TRUE, length(vars))
                 if (naMAF(x))
@@ -467,17 +494,18 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             colsMask <- rep(FALSE, ncol(mcols(vars)))
             colsMask[colsIdx] <- TRUE
 
-            vars <- allVariants(x)
-            vars <- endoapply(vars, "[", rowsMask, colsMask)
+            vars <- unlist(varsxsam, use.names=FALSE)
+            sampleNames(vars) <- Rle(names(varsxsam), elementLengths(varsxsam))
+            rowsMask <- rep(rowsMask, length(varsxsam))
             if ("MafDb" %in% sapply(param(x)$otherAnnotations, class))
-              vars <- endoapply(vars, function(x, mm) { x$maxMAF <- mm ; x }, maxMAFannot[rowsMask])
+              vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
 
-            if (!groupBy %in% "sample") {
-              vars <- stackSamples(vars)
+            vars <- vars[rowsMask, colsMask]
 
-              if (groupBy %in% colnames(mcols(x@variants)))
-                vars <- do.call("VRangesList", split(vars, mcols(vars)[, groupBy]))
-            }
+            if (groupBy[1] %in% "sample")
+              vars <- new("CompressedVRangesList", split(vars, sampleNames(vars)))
+            else if (groupBy[1] %in% colnames(mcols(vars)))
+              vars <- new("CompressedVRangesList", split(vars, mcols(vars)[, groupBy]))
 
             vars
           })
@@ -495,7 +523,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     stop("If type=\"csv\" or type=\"tsv\" then the input argument 'file' cannot be NULL.")
 
   if (type == "csv" || type == "tsv") {
-    varsdf <- filteredVariants(vfResultsObj)
+    varsdf <- filteredVariants(vfResultsObj, groupBy="nothing")
     varsdf <- as.data.frame(DataFrame(VarID=names(varsdf), CHR=seqnames(varsdf),
                                       POS=start(varsdf), mcols(varsdf)))
     if (type == "csv")
@@ -514,8 +542,8 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   
   ## parameters for the UCSC genome browser. the organism name is derived from
   ## the 'organism()' getter for BSgenome objects and 
-  org <- organism(param(vfResultsObj)$bsgenome)
-  org <- paste0(substr(org, 1, 1), strsplit(org, " ")[[1]][2])
+  orgshort <- organism(param(vfResultsObj)$bsgenome)
+  orgshort <- paste0(substr(orgshort, 1, 1), strsplit(orgshort, " ")[[1]][2])
   genomeBuild <- providerVersion(param(vfResultsObj)$bsgenome)
 
   annotationObjClasses <- sapply(param(vfResultsObj)$otherAnnotations, class)
@@ -525,6 +553,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   phylostrata <- "Unavailable"
   if (!is.na(mtGenePhylostrataDb))
     phylostrata <- rev(genePhylostrata(param(vfResultsObj)$otherAnnotations[[mtGenePhylostrataDb]])$Description)
+  crypsplice <- param(vfResultsObj)$spliceSiteMatricesFilenames
   
   app <- list(ui=NULL, server=NULL)
   app$ui <- pageWithSidebar(
@@ -657,21 +686,26 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (input$minCRYP5ssFlag)
-          minCRYP5ss(vfResultsObj) <- input$minCRYP5ss
-        else
-          minCRYP5ss(vfResultsObj) <- NA_real_
+        if (!is.na(crypsplice)) {
+          if (input$minCRYP5ssFlag)
+            minCRYP5ss(vfResultsObj) <- input$minCRYP5ss
+          else
+            minCRYP5ss(vfResultsObj) <- NA_real_
 
-        if (input$minCRYP3ssFlag)
-          minCRYP3ss(vfResultsObj) <- input$minCRYP3ss
-        else
-          minCRYP3ss(vfResultsObj) <- NA_real_
+          if (input$minCRYP3ssFlag)
+            minCRYP3ss(vfResultsObj) <- input$minCRYP3ss
+          else
+            minCRYP3ss(vfResultsObj) <- NA_real_
+        }
 
         stopApp(returnValue=vfResultsObj)
       })
     })
 
     filteredVariantsReact <- reactive({
+      vdf <- data.frame()
+      withProgress(message="Filtering variants", value=0, {
+      incProgress(1/3, detail="setting filters ...")
       ## presence in dbSNP
       if (input$dbSNPpresentFlag)
         dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
@@ -717,41 +751,53 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       }
 
       ## cryptic splice sites
-      if (input$minCRYP5ssFlag)
-        minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
-      else
-        minCRYP5ss(vfResultsObj) <- NA_real_
+      if (!is.na(crypsplice)) {
+        if (input$minCRYP5ssFlag)
+          minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
+        else
+          minCRYP5ss(vfResultsObj) <- NA_real_
 
-      if (input$minCRYP3ssFlag)
-        minCRYP3ss(vfResultsObj) <- as.numeric(input$minCRYP3ss)
-      else
-        minCRYP3ss(vfResultsObj) <- NA_real_
+        if (input$minCRYP3ssFlag)
+          minCRYP3ss(vfResultsObj) <- as.numeric(input$minCRYP3ss)
+        else
+          minCRYP3ss(vfResultsObj) <- NA_real_
+      }
 
-      vdf <- filteredVariants(vfResultsObj)
-      vdf <- DataFrame(VarID=vdf$VARID, CHR=seqnames(vdf),
-                       POS=start(vdf), POSITION=start(vdf),
-                       mcols(vdf))
-      ## the ALT column is a DNAStringSetList object and requires this
-      ## step to coerce to character
-      ## vdf$ALT <- sapply(vdf$ALT, paste, collapse=",")
-      vdf$REF <- ref(vdf)
-      vdf$ALT <- alt(vdf)
+      incProgress(2/3, detail="applying filters ...")
+      fvxsam <- filteredVariants(vfResultsObj)
+      incProgress(3/3, detail="retrieving variants ...")
+      fv <- fvxsam[[1]]
+      vdf <- DataFrame(VarID=fv$VARID, CHR=seqnames(fv),
+                       POS=start(fv), POSITION=start(fv),
+                       mcols(fv))
+      vdf$REF <- ref(fv)
+      vdf$ALT <- alt(fv)
+      if (length(fv) > 1) {
+        vdf$DP <- as.integer(round(rowMeans(sapply(fvxsam, totalDepth)), digits=0))
+        vdf$REFDP <- as.integer(round(rowMeans(sapply(fvxsam, refDepth)), digits=0))
+        vdf$ALTDP <- as.integer(round(rowMeans(sapply(fvxsam, altDepth)), digits=0))
+      } else if (length(fv) == 1) {
+        vdf$DP <- as.integer(round(mean(sapply(fvxsam, totalDepth)), digits=0))
+        vdf$REFDP <- as.integer(round(mean(sapply(fvxsam, refDepth)), digits=0))
+        vdf$ALTDP <- as.integer(round(mean(sapply(fvxsam, altDepth)), digits=0))
+      } else
+        vdf$DP <- vdf$REFDP <- vdf$ALTDP <- integer()
       vdf <- as.data.frame(vdf)
       
       if (nrow(vdf) > 0) {
-        varlocs <- paste0("<a href=http://genome.ucsc.edu/cgi-bin/hgTracks?org=", species,
+        varlocs <- paste0("<a href=http://genome.ucsc.edu/cgi-bin/hgTracks?org=", orgshort,
                           "&db=", genomeBuild, 
                           "&position=", vdf$CHR, ":", vdf$POS, " target=\"ucsc\">",
                           vdf$CHR, ":", vdf$POS,
                           "</a>")
-        tempOMIM <- rep(NA_character_, length(vfResultsObj))
+        tempOMIM <- rep(NA_character_, nrow(vdf))
         tempOMIM[!is.na(vdf$OMIM)] <- sapply(strsplit(vdf$OMIM[!is.na(vdf$OMIM)], ","), function(x) {
           z <- paste0("<a href=http://www.omim.org/entry/", x, " target=\"omim\">", x, "</a>")
           a <- paste(z, collapse=", ")
           a
         })
       
-        tempdbSNP <- rep(NA_character_, length(vfResultsObj))
+        tempdbSNP <- rep(NA_character_, nrow(vdf))
         nors <- sub("rs", "", vdf$dbSNP[!is.na(vdf$dbSNP)])
         tempdbSNP[!is.na(vdf$dbSNP)] <- paste0("<a href=http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=",
                            nors, " target=\"dbsnp\">", vdf$dbSNP[!is.na(vdf$dbSNP)], "</a>")
@@ -762,14 +808,14 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       }
 
       vdf <- vdf[, -match(c("CHR", "POS"), colnames(vdf))]
-      
       rownames(vdf) <- NULL
 
+      }) ## withProgress
       vdf 
     })
 
     output$tableGenome <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "dbSNP", "TYPE")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "dbSNP", "TYPE", "DP", "REFDP", "ALTDP")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableGene <- renderTable({
@@ -777,40 +823,61 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableTranscript <- renderTable({
-      ## filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS")]
       filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({
-      ## filteredVariantsReact()[, c("VarID", "GENE", "CONSEQUENCE", "AAchange", "AAchangeType", "PolyPhen2", "PROVEAN")]
-      filteredVariantsReact()[, c("VarID", "GENE", "CONSEQUENCE", "AAchange", "AAchangeType", "PolyPhen2", "PROVEAN")]
+      selcols <- c("VarID", "GENE", "CONSEQUENCE", "AAchange", "AAchangeType")
+      if ("PolyPhenDb" %in% annotationObjClasses)
+        selcols <- c(selcols, "PolyPhen2")
+      if ("PROVEANDb" %in% annotationObjClasses)
+        selcols <- c(selcols, "PROVEAN")
+
+      filteredVariantsReact()[, selcols]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableMAF <- renderTable({
-      selcnames <- c("VarID", "dbSNP", "Max", "All KG", "AMR KG", "ASN KG",
-                     "AFR KG", "EUR KG", "All ESP", "EA ESP", "AA ESP")
+      selcols <- selcolsnames <- c("VarID", "dbSNP")
+      if ("MafDb" %in% annotationObjClasses) {
+        selcols <- c(selcols, "maxMAF", names(MAFpop(vfResultsObj))[MAFpop(vfResultsObj)])
+        selcolsnames <- c(selcolsnames, "Max", gsub("_", " ", names(MAFpop(vfResultsObj))[MAFpop(vfResultsObj)]))
+      }
+
       fv <- filteredVariantsReact()
-      cnamesmt <- match(c("VarID", "dbSNP", "maxMAF", "AFKG", "AMR_AFKG", "ASN_AFKG",
-                          "AFR_AFKG", "EUR_AFKG", "AFESP", "EA_AFESP", "AA_AFESP"),
-                        colnames(fv))
-      fv <- fv[, na.omit(cnamesmt)]
-      colnames(fv) <- selcnames[!is.na(cnamesmt)]
+      fv <- fv[, selcols]
+      colnames(fv) <- selcolsnames
+
       fv
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableConservation <- renderTable({
-      fv <- filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "phastCons", "GenePhylostratum", "GenePhylostratumTaxID")]
-      fv$GenePhylostratum[!is.na(fv$GenePhylostratum)] <- sprintf("<a href=\"http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=%s&lvl=5\" target='ncbitaxonomybrowser'>%s</a>", fv$GenePhylostratumTaxID[!is.na(fv$GenePhylostratum)], fv$GenePhylostratum[!is.na(fv$GenePhylostratum)])
-      fv <- fv[, -match("GenePhylostratumTaxID", colnames(fv))]
+      selcols <- c("VarID", "POSITION", "GENE")
+      if ("PhastConsDb" %in% annotationObjClasses)
+        selcols <- c(selcols, "phastCons")
+      if ("GenePhylostrataDb" %in% annotationObjClasses)
+        selcols <- c(selcols, "GenePhylostratum", "GenePhylostratumTaxID")
+
+      fv <- filteredVariantsReact()[, selcols]
+
+      if ("GenePhylostrataDb" %in% annotationObjClasses) {
+        fv$GenePhylostratum[!is.na(fv$GenePhylostratum)] <- sprintf("<a href=\"http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=%s&lvl=5\" target='ncbitaxonomybrowser'>%s</a>", fv$GenePhylostratumTaxID[!is.na(fv$GenePhylostratum)], fv$GenePhylostratum[!is.na(fv$GenePhylostratum)])
+        fv <- fv[, -match("GenePhylostratumTaxID", colnames(fv))]
+      }
+
       fv
     }, NA.string="NA", sanitize.text.function=function(x){x})
 
     output$tableCrypSplice <- renderTable({
-      colscrypss <- c("CRYP5ssREF", "CRYP5ssALT", "CRYP5ssPOS", "CRYP3ssREF", "CRYP3ssALT", "CRYP3ssPOS")
-      selcnames <- c("VarID", "POSITION", "5'ss Ref", "5'ss Alt", "5'ss Pos", "3'ss Ref", "3'ss Alt", "3'ss Pos")
+      selcols <- selcolsnames <- c("VarID", "POSITION")
 
-      fv <- filteredVariantsReact()[, c("VarID", "POSITION", colscrypss), drop=FALSE]
-      colnames(fv) <- selcnames
+      if (!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames)) {
+        selcols <- c(selcols, "CRYP5ssREF", "CRYP5ssALT", "CRYP5ssPOS", "CRYP3ssREF", "CRYP3ssALT", "CRYP3ssPOS")
+        selcolsnames <- c(selcolsnames, "5'ss Ref", "5'ss Alt", "5'ss Pos", "3'ss Ref", "3'ss Alt", "3'ss Pos")
+      }
+
+      fv <- filteredVariantsReact()[, selcols]
+      colnames(fv) <- selcolsnames
+
       fv
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
@@ -863,25 +930,27 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (input$minCRYP5ssFlag)
-          minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
-        else
-          minCRYP5ss(vfResultsObj) <- NA_real_
+        if (!is.na(crypsplice)) {
+          if (input$minCRYP5ssFlag)
+            minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
+          else
+            minCRYP5ss(vfResultsObj) <- NA_real_
 
-        if (input$minCRYP3ssFlag)
-          minCRYP3ss(vfResultsObj) <- as.numeric(input$minCRYP3ss)
-        else
-          minCRYP3ss(vfResultsObj) <- NA_real_
+          if (input$minCRYP3ssFlag)
+            minCRYP3ss(vfResultsObj) <- as.numeric(input$minCRYP3ss)
+          else
+            minCRYP3ss(vfResultsObj) <- NA_real_
+        }
 
-        vdf <- filteredVariants(vfResultsObj)
-        vdf <- DataFrame(VarID=names(vdf), CHR=seqnames(vdf),
-                         POS=start(vdf), POSITION=start(vdf),
-                         mcols(vdf))
-        ## the ALT column is a DNAStringSetList object and requires this
-        ## step to coerce to character
-        vdf$ALT <- sapply(vdf$ALT, paste, collapse=",")
+        fvxsam <- filteredVariants(vfResultsObj)
+        fv <- fvxsam[[1]]
+        vdf <- DataFrame(VarID=fv$VARID, CHR=seqnames(fv),
+                         POS=start(fv), POSITION=start(fv),
+                         mcols(fv))
+        vdf$REF <- ref(fv)
+        vdf$ALT <- alt(fv)
         vdf <- as.data.frame(vdf)
-      
+
         write.table(vdf, file, row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t")
       },
       contentType = "text/plain"
@@ -936,16 +1005,17 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (input$minCRYP5ssFlag)
-          minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
-        else
-          minCRYP5ss(vfResultsObj) <- NA_real_
+        if (!is.na(crypsplice)) {
+          if (input$minCRYP5ssFlag)
+            minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
+          else
+            minCRYP5ss(vfResultsObj) <- NA_real_
 
-        if (input$minCRYP3ssFlag)
-          minCRYP3ss(vfResultsObj) <- as.numeric(input$minCRYP3ss)
-        else
-          minCRYP3ss(vfResultsObj) <- NA_real_
-
+          if (input$minCRYP3ssFlag)
+            minCRYP3ss(vfResultsObj) <- as.numeric(input$minCRYP3ss)
+          else
+            minCRYP3ss(vfResultsObj) <- NA_real_
+        }
 
         sink(file)
         cat("R script and output to get the resulting filtered variants with VariantFiltering\n")
@@ -977,10 +1047,12 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           if (!is.na(minPhylostratum(vfResultsObj)))
             cat(sprintf("> minPhylostratum(res) <- %d\n", minPhylostratum(vfResultsObj)))
         }
-        if (!is.na(minCRYP5ss(vfResultsObj)))
-          cat(sprintf("> minCRYP5ss(res) <- %.2f\n", minCRYP5ss(vfResultsObj)))
-        if (!is.na(minCRYP3ss(vfResultsObj)))
-          cat(sprintf("> minCRYP3ss(res) <- %.2f\n", minCRYP3ss(vfResultsObj)))
+        if (!is.na(crypsplice)) {
+          if (!is.na(minCRYP5ss(vfResultsObj)))
+            cat(sprintf("> minCRYP5ss(res) <- %.2f\n", minCRYP5ss(vfResultsObj)))
+          if (!is.na(minCRYP3ss(vfResultsObj)))
+            cat(sprintf("> minCRYP3ss(res) <- %.2f\n", minCRYP3ss(vfResultsObj)))
+        }
         cat("> res\n")
         print(vfResultsObj)
         cat("> reportVariants(res, type=\"tsv\", file=\"variants.tsv\")\n")
