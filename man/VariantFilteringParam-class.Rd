@@ -28,6 +28,7 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
                                             radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                                               "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
                                             codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),"humanCodonUsage.txt"),
+                                            geneticCode=getGeneticCode("SGC0"),
                                             allTranscripts=FALSE,
                                             otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137.dbSNP138",
                                                                "MafDb.ALL.wgs.phase1.release.v3.20101123",
@@ -76,6 +77,9 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
   }
   \item{codonusageFilename}{
   Name of a text file containing the codon usage.
+  }
+  \item{geneticCode}{
+  Name character vector of length 64 describing the genetic code. The default value is \code{getGeneticCode("SGC0")}, the standard genetic code. An alternative genetic code, for instance, is \code{getGeneticCode("SGC1")}, the vertebrate mitochondrial genetic code. See \code{\link[Biostrings]{getGeneticCode}} in the Biostrings package for further details.
   }
   \item{allTranscripts}{
   Logical. This option allows the user to choose between working with all the transcripts affected by the variant (\code{allTranscripts=TRUE}) or with only one transcript per variant.

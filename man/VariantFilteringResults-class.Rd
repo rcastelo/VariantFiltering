@@ -15,6 +15,7 @@
 \alias{VariantFilteringResultsUI-class}
 
 % Methods:
+\alias{show,CompressedVRangesList-method}
 \alias{show,VariantFilteringResults-method}
 \alias{show,VariantFilteringResultsAIM-method}
 \alias{show,VariantFilteringResultsUI-method}

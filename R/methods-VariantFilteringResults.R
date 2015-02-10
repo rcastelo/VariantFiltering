@@ -512,7 +512,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
 
 ## shiny app to filter and visualize variants
 setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
-          function(vfResultsObj, type=c("shiny", "csv", "tsv"), file=NULL) {
+          function(vfResultsObj, type=c("shiny", "csv", "tsv"), file=NULL, UCSCorg=NA_character_) {
               
   type <- match.arg(type)
 
@@ -541,9 +541,13 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   }
   
   ## parameters for the UCSC genome browser. the organism name is derived from
-  ## the 'organism()' getter for BSgenome objects and 
-  orgshort <- organism(param(vfResultsObj)$bsgenome)
-  orgshort <- paste0(substr(orgshort, 1, 1), strsplit(orgshort, " ")[[1]][2])
+  ## the 'organism()' getter for BSgenome objects when not specified with the
+  ## function argument 'UCSCorg'
+
+  if (is.na(UCSCorg)) {
+    UCSCorg <- organism(param(vfResultsObj)$bsgenome)
+    UCSCorg <- paste0(substr(UCSCorg, 1, 1), strsplit(UCSCorg, " ")[[1]][2])
+  }
   genomeBuild <- providerVersion(param(vfResultsObj)$bsgenome)
 
   annotationObjClasses <- sapply(param(vfResultsObj)$otherAnnotations, class)
@@ -785,22 +789,26 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       vdf <- as.data.frame(vdf)
       
       if (nrow(vdf) > 0) {
-        varlocs <- paste0("<a href=http://genome.ucsc.edu/cgi-bin/hgTracks?org=", orgshort,
+        varlocs <- paste0("<a href=http://genome.ucsc.edu/cgi-bin/hgTracks?org=", UCSCorg,
                           "&db=", genomeBuild, 
                           "&position=", vdf$CHR, ":", vdf$POS, " target=\"ucsc\">",
                           vdf$CHR, ":", vdf$POS,
                           "</a>")
         tempOMIM <- rep(NA_character_, nrow(vdf))
-        tempOMIM[!is.na(vdf$OMIM)] <- sapply(strsplit(vdf$OMIM[!is.na(vdf$OMIM)], ","), function(x) {
+        tempOMIM[!is.na(vdf$OMIM)] <- sapply(strsplit(vdf$OMIM[!is.na(vdf$OMIM)], " *, *"), function(x) {
           z <- paste0("<a href=http://www.omim.org/entry/", x, " target=\"omim\">", x, "</a>")
           a <- paste(z, collapse=", ")
           a
         })
       
         tempdbSNP <- rep(NA_character_, nrow(vdf))
-        nors <- sub("rs", "", vdf$dbSNP[!is.na(vdf$dbSNP)])
-        tempdbSNP[!is.na(vdf$dbSNP)] <- paste0("<a href=http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=",
-                           nors, " target=\"dbsnp\">", vdf$dbSNP[!is.na(vdf$dbSNP)], "</a>")
+        tempdbSNP[!is.na(vdf$dbSNP)] <- sapply(strsplit(gsub("rs", "", vdf$dbSNP[!is.na(vdf$dbSNP)]), " *, *"),
+                                               function(x) {
+          z <- paste0("<a href=http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=", x,
+                      " target=\"dbsnp\">", paste0("rs", x), "</a>")
+          a <- paste(z, collapse=", ")
+          a
+        })
       
         vdf[["POSITION"]] <- varlocs
         vdf[["OMIM"]] <- tempOMIM
