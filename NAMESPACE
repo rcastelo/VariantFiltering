@@ -111,7 +111,8 @@ importFrom(IRanges, IRanges,
                     CharacterList)
 importFrom(Biostrings, DNAStringSet,
                        AAStringSet, 
-                       DNAStringSetList)
+                       DNAStringSetList,
+                       getGeneticCode)
 importFrom(VariantAnnotation, AllVariants,
                               IntergenicVariants,
                               VRanges,
