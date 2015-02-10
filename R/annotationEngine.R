@@ -19,6 +19,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   allTranscripts <- param$allTranscripts
   otherAnnotations <- param$otherAnnotations
   codonusageTable <- param$codonusageTable
+  geneticCode <- param$geneticCode
 
   ##############################
   ##                          ##
@@ -88,7 +89,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## at the moment we are not interested in intergenic variants and we also leave promoter region
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
-  located_variantsGR <- locateVariants(as(variantsGR, "GRanges"), txdb, AllVariants(intergenic=IntergenicVariants(0, 0)))
+  located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
+                                       region=AllVariants(intergenic=IntergenicVariants(0, 0)))
   variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID]
   variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
@@ -149,7 +151,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, -rmcols]
 
     GRanges_coding_uq <- predictCoding(query=variantsGR_annotated_coding_exp,
-                                       subject=txdb, seqSource=bsgenome,
+                                       subject=txdb, seqSource=bsgenome, genetic.code=geneticCode,
                                        varAllele=DNAStringSet(alt(variantsGR_annotated_coding)))
 
     seqlevelsStyle(GRanges_coding_uq) <- origVarLevelsStyle
