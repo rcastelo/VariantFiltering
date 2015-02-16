@@ -2,25 +2,25 @@ Package: VariantFiltering
 Type: Package
 Title: Filtering of coding and non-coding genetic variants
 Description: Filter genetic variants using different criteria such as
-        inheritance model, amino acid change consequence, minimum
-        allele frequencies across human populations, splice site
-        strength, conservation, etc.
-Version: 1.3.30
-Author: Robert Castelo (with contributions from D.M. Elurbe and P. Puigdevall)
-Maintainer: Robert Castelo <robert.castelo@upf.edu>
-Depends: R (>= 3.0.0), methods, BiocGenerics (>= 0.11.3), VariantAnnotation(>= 1.13.4)
-Imports: DBI, RSQLite (>= 1.0.0), Biobase, S4Vectors, IRanges (>= 2.1.18),
-        AnnotationDbi, BiocParallel, Biostrings (>= 2.33.11),
-        GenomeInfoDb (>= 1.3.6), GenomicRanges (>= 1.19.13),
-        GenomicFeatures, Rsamtools (>= 1.17.8), BSgenome,
-        BSgenome.Hsapiens.UCSC.hg19, shiny
-Suggests: BiocStyle, org.Hs.eg.db, TxDb.Hsapiens.UCSC.hg19.knownGene,
-        SNPlocs.Hsapiens.dbSNP.20120608,
-        MafDb.ALL.wgs.phase1.release.v3.20101123,
-        MafDb.ESP6500SI.V2.SSA137.dbSNP138, phastCons100way.UCSC.hg19,
-        PolyPhen.Hsapiens.dbSNP131, SIFT.Hsapiens.dbSNP137
-LinkingTo: S4Vectors, IRanges, XVector, Biostrings
+             inheritance model, amino acid change consequence, minimum
+             allele frequencies across human populations, splice site
+             strength, conservation, etc.
+Version: 1.3.31
+Authors@R: c(person("Robert", "Castelo", role=c("aut", "cre"), email="robert.castelo@upf.edu"),
+             person("Dei", "Martinez Elurbe", role="aut"),
+             person("Pau", "Puigdevall", role="ctb"))
 License: Artistic-2.0
+Depends: R (>= 3.0.0), methods, BiocGenerics (>= 0.11.3), VariantAnnotation(>= 1.13.29)
+Imports: DBI, RSQLite (>= 1.0.0), Biobase, S4Vectors, IRanges (>= 2.1.18),
+         AnnotationDbi, BiocParallel, Biostrings (>= 2.33.11),
+         GenomeInfoDb (>= 1.3.6), GenomicRanges (>= 1.19.13),
+         GenomicFeatures, Rsamtools (>= 1.17.8), BSgenome, shiny
+Suggests: BiocStyle, org.Hs.eg.db, BSgenome.Hsapiens.UCSC.hg19,
+          TxDb.Hsapiens.UCSC.hg19.knownGene, SNPlocs.Hsapiens.dbSNP.20120608,
+          MafDb.ALL.wgs.phase1.release.v3.20101123,
+          MafDb.ESP6500SI.V2.SSA137.dbSNP138, phastCons100way.UCSC.hg19,
+          PolyPhen.Hsapiens.dbSNP131, SIFT.Hsapiens.dbSNP137
+LinkingTo: S4Vectors, IRanges, XVector, Biostrings
 LazyData: yes
 URL: https://github.com/rcastelo/VariantFiltering/issues
 biocViews: Genetics, Homo_sapiens, Annotation, SNP, Sequencing,

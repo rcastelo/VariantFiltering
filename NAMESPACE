@@ -5,8 +5,6 @@ import(BiocGenerics)
 import(S4Vectors)
 import(shiny)
 
-importFrom(BSgenome.Hsapiens.UCSC.hg19, Hsapiens)
-
 importClassesFrom(Biobase, AssayData)
 importClassesFrom(AnnotationDbi, AnnotationDb)
 importClassesFrom(RSQLite, SQLiteConnection)

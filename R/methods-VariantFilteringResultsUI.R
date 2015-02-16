@@ -307,7 +307,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsUI"),
                                  selectInput("dbSNPpresent", "Present in dbSNP:",
                                              choices=c("Yes", "No"))),
                 conditionalPanel(condition="input.tsp == 'genome'", selectInput("variantType", "Variant Type:",
-                                                                    choices=c("Any", "SNV", "InDel", "MNV"))),
+                                                                    choices=c("Any", "SNV", "InDel", "MNV", "DelIns"))),
                 ## gene tab
                 conditionalPanel(condition="input.tsp == 'gene'",
                                  checkboxInput('geneFlag',
