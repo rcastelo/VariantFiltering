@@ -509,12 +509,12 @@ adjustForStrandSense <- function(variantsGR, alleles){
   if (!"TXID" %in% colnames(mcols(gr)))
     stop("cDNApos: metadata column 'TXID' not found in input GRanges object.")
 
-  exonsbytx <- exonsBy(txdb, by="tx")
-  map <- mapCoords(gr, exonsbytx, ignore.strand=FALSE, elt.hits=FALSE)
-  qolap <- map$fromHits
+  exonsbytx <- exonsBy(txdb, by="tx") ## CONSIDER USING THE CACHE HERE !!!
+  map <- mapToTranscripts(gr, exonsbytx, ignore.strand=FALSE)
+  qolap <- map$xHits
   res <- gr[qolap]
   mcols(res) <- append(values(res),
-                       DataFrame(cDNALOC=ranges(map), TXID2=map$toHits))
+                       DataFrame(cDNALOC=ranges(map), TXID2=map$transcriptsHits))
   ## restrict results to cDNA positions of query TXID
   ## this is necessary with overlaping transcripts
   res <- res[res$TXID == res$TXID2]
