@@ -586,18 +586,12 @@ readAAradicalChangeMatrix <- function(file) {
 
 typeOfVariants <- function(variantsGR) {
 
-  type <- factor(levels=c("InDel", "MNV", "SNV"))
+  type <- factor(levels=c("Delins", "InDel", "MNV", "SNV"))
   if (length(variantsGR) > 0) {
-    ## variants with multiple alternate alleles should have all
-    ## alt alleles as SNV to be annotated as SNV
-    ## wref <- nchar(variantsGR$REF)
-    ## walt <- nchar(variantsGR$ALT)
-    type <- factor(rep("SNV", times=length(variantsGR)), levels=c("InDel", "MNV", "SNV"))
-    ## type[any(wref != walt)] <- "InDel"
-    ## type[all(wref == walt) & wref != 1] <- "MNV"
-    ## stopifnot(all(wref[type == "SNV"] == 1)) ## QC
+    type <- factor(rep("SNV", times=length(variantsGR)), levels=c("Delins", "InDel", "MNV", "SNV"))
     type[isIndel(variantsGR)] <- "InDel"
     type[isSubstitution(variantsGR) & !isSNV(variantsGR)] <- "MNV"
+    type[isDelins(variantsGR)] <- "DelIns"
   }
 
   DataFrame(TYPE=type)
