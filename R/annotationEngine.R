@@ -142,7 +142,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
                       paste(c(unique(genome(variantsGR_annotated_coding)[commonChr]), unique(genome(bsgenome)[commonChr])),
                             collapse=" and ")))
       ## this generates conflicts with genome(txdb) in predictCoding() but it works
-      ## if we do not do it, so we just issue the warning
+      ## we do not do anything about it and we just provide the warning
       ## genome(variantsGR_annotated_coding_exp) <- genome(bsgenome)
     }
 
@@ -178,7 +178,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
     mask <- is.na(variantsGR_annotated_coding$TXID)
     variantsGR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    mask <- is.na(variantsGR_annotated_coding$CDSID)
+    ## mask <- is.na(variantsGR_annotated_coding$CDSID) NOW CDSID from locateVariants() is an IntegerList
+    mask <- elementLengths(variantsGR_annotated_coding$CDSID) == 0
     variantsGR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
     mask <- is.na(variantsGR_annotated_coding$GENEID)
     variantsGR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
@@ -586,9 +587,9 @@ readAAradicalChangeMatrix <- function(file) {
 
 typeOfVariants <- function(variantsGR) {
 
-  type <- factor(levels=c("Delins", "InDel", "MNV", "SNV"))
+  type <- factor(levels=c("DelIns", "InDel", "MNV", "SNV"))
   if (length(variantsGR) > 0) {
-    type <- factor(rep("SNV", times=length(variantsGR)), levels=c("Delins", "InDel", "MNV", "SNV"))
+    type <- factor(rep("SNV", times=length(variantsGR)), levels=c("DelIns", "InDel", "MNV", "SNV"))
     type[isIndel(variantsGR)] <- "InDel"
     type[isSubstitution(variantsGR) & !isSNV(variantsGR)] <- "MNV"
     type[isDelins(variantsGR)] <- "DelIns"

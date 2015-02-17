@@ -51,6 +51,7 @@ importMethodsFrom(VariantAnnotation, readVcf,
                                      isSNV,
                                      isIndel,
                                      isSubstitution,
+                                     isDelins,
                                      alt,
                                      ref,
                                      altDepth,
@@ -69,7 +70,8 @@ importMethodsFrom(IRanges, elementLengths,
                            values,
                            findOverlaps,
                            as.vector)
-importMethodsFrom(GenomicFeatures, exonsBy)
+importMethodsFrom(GenomicFeatures, exonsBy,
+                                   mapToTranscripts)
 importMethodsFrom(GenomicRanges, resize,
                                  ranges)
 importMethodsFrom(Biostrings, getSeq,
@@ -98,8 +100,7 @@ importFrom(GenomeInfoDb, seqnames,
                          seqinfo,
                          Seqinfo)
 importFrom(GenomicRanges, GRanges,
-                          rowData,
-                          mapCoords)
+                          rowData)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
