@@ -573,11 +573,11 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResultsUI"),
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableGene <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "OMIM")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "DESC", "OMIM")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableTranscript <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "DESC")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({

@@ -23,7 +23,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                    geneKeytype=NA_character_,
                    yieldSize=NA_integer_) {
 
-            ## store call to reproducing it later
+            ## store call for reproducing it later
             callobj <- match.call()
             callstr <- gsub(".local", "VariantFilteringParam", deparse(callobj))
             callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
