@@ -57,7 +57,7 @@ setMethod("show", signature(object="VariantFilteringResults"),
                             minPhylostratum(object),
                             nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
             }
-            if (!is.na(param(object)$spliceSiteMatricesFilenames)) {
+            if (all(!is.na(param(object)$spliceSiteMatricesFilenames))) {
               if (is.na(minCRYP5ss(object)))
                 cat("    No filtering on cryptic 5'ss\n")
               else
@@ -332,7 +332,7 @@ setReplaceMethod("minPhylostratum", signature(x="VariantFilteringResults", value
 
 setMethod("minCRYP5ss", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(param(x)$spliceSiteMatricesFilenames))
+            if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
               stop("No splice site matrix was used to annotate variants.")
 
             x@minCRYP5ss
@@ -340,7 +340,7 @@ setMethod("minCRYP5ss", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("minCRYP5ss", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
-                   if (is.na(param(x)$spliceSiteMatricesFilenames))
+                   if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
                      stop("No splice site matrix was used to annotate variants.")
 
                    if (!is.na(value) && !is.numeric(value) && !is.integer(value))
@@ -351,7 +351,7 @@ setReplaceMethod("minCRYP5ss", signature(x="VariantFilteringResults", value="ANY
 
 setMethod("minCRYP3ss", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(param(x)$spliceSiteMatricesFilenames))
+            if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
               stop("No splice site matrix was used to annotate variants.")
 
             x@minCRYP3ss
@@ -359,7 +359,7 @@ setMethod("minCRYP3ss", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("minCRYP3ss", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
-                   if (is.na(param(x)$spliceSiteMatricesFilenames))
+                   if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
                      stop("No splice site matrix was used to annotate variants.")
 
                    if (!is.na(value) && !is.numeric(value) && !is.integer(value))
@@ -464,7 +464,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
 
             ## if any of the 5' cryptic ss or 3' cryptic ss meet the cutoff, select the row
             mtNoCRYP5ss <- mtNoCRYP3ss <- NULL
-            if (!is.na(param(x)$spliceSiteMatricesFilenames)) {
+            if (all(!is.na(param(x)$spliceSiteMatricesFilenames))) {
               crypssMask <- rep(FALSE, length(vars))
               if (is.na(minCRYP5ss(x)))
                 mtNoCRYP5ss <- grep("CRYP5ss", colnames(mcols(vars)))
@@ -690,7 +690,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (!is.na(crypsplice)) {
+        if (all(!is.na(crypsplice))) {
           if (input$minCRYP5ssFlag)
             minCRYP5ss(vfResultsObj) <- input$minCRYP5ss
           else
@@ -755,7 +755,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       }
 
       ## cryptic splice sites
-      if (!is.na(crypsplice)) {
+      if (all(!is.na(crypsplice))) {
         if (input$minCRYP5ssFlag)
           minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
         else
@@ -831,7 +831,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableTranscript <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS", "CUREF", "CUALT")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({
@@ -878,7 +878,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     output$tableCrypSplice <- renderTable({
       selcols <- selcolsnames <- c("VarID", "POSITION")
 
-      if (!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames)) {
+      if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames))) {
         selcols <- c(selcols, "CRYP5ssREF", "CRYP5ssALT", "CRYP5ssPOS", "CRYP3ssREF", "CRYP3ssALT", "CRYP3ssPOS")
         selcolsnames <- c(selcolsnames, "5'ss Ref", "5'ss Alt", "5'ss Pos", "3'ss Ref", "3'ss Alt", "3'ss Pos")
       }
@@ -938,7 +938,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (!is.na(crypsplice)) {
+        if (all(!is.na(crypsplice))) {
           if (input$minCRYP5ssFlag)
             minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
           else
@@ -1013,7 +1013,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (!is.na(crypsplice)) {
+        if (all(!is.na(crypsplice))) {
           if (input$minCRYP5ssFlag)
             minCRYP5ss(vfResultsObj) <- as.numeric(input$minCRYP5ss)
           else
@@ -1055,7 +1055,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           if (!is.na(minPhylostratum(vfResultsObj)))
             cat(sprintf("> minPhylostratum(res) <- %d\n", minPhylostratum(vfResultsObj)))
         }
-        if (!is.na(crypsplice)) {
+        if (all(!is.na(crypsplice))) {
           if (!is.na(minCRYP5ss(vfResultsObj)))
             cat(sprintf("> minCRYP5ss(res) <- %.2f\n", minCRYP5ss(vfResultsObj)))
           if (!is.na(minCRYP3ss(vfResultsObj)))
