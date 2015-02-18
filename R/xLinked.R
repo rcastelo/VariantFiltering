@@ -147,15 +147,25 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   ##                      ##
   ##########################
 
-  cnAF <- colnames(mcols(xlinked_annotated))
-  cnAF <- cnAF[grep("AF", cnAF)]
-  MAFpopMask <- rep(TRUE, length(cnAF))
-  names(MAFpopMask) <- cnAF
+  locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
+                                     levels(annotated_variants$LOCATION)))
+  conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
+                                     levels(annotated_variants$CONSEQUENCE)))
+  MAFpopMask <- NA
+  if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
+    ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
+    cnAF <- colnames(mcols(annotated_variants))
+    colsclasses <- sapply(mcols(annotated_variants), class)
+    cnAF <- cnAF[intersect(grep("AF[A-Z]+", cnAF), grep("numeric", colsclasses))]
+    MAFpopMask <- rep(TRUE, length(cnAF))
+    names(MAFpopMask) <- cnAF
+  }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       inheritanceModel="X-linked", variants=xlinked_annotated,
-      dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any", aaChangeType="Any",
+      dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
+      locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
-      minCRYP5ss=NA_real_, minCRYP3ss=NA_real_)
+      minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)
 })

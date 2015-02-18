@@ -28,43 +28,38 @@ setMethod("show", signature(object="VariantFilteringResults"),
             else
               cat("  Variants are not filtered by inheritance model\n")
             cat("  Functional annotation filters\n")
-            if (is.na(dbSNPpresent(object)))
-                cat(sprintf("    No filtering on presence in %s (%s)\n", provider(param(object)$snpdb),
-                            releaseName(param(object)$snpdb)))
-            else
-                cat(sprintf("    Present in %s (%s): %s\n", provider(param(object)$snpdb),
-                            releaseName(param(object)$snpdb), dbSNPpresent(object)))
+            if (!is.na(dbSNPpresent(object)))
+              cat(sprintf("    Present in %s (%s): %s\n", provider(param(object)$snpdb),
+                          releaseName(param(object)$snpdb), dbSNPpresent(object)))
             cat(sprintf("    Variant type: %s\n", variantType(object)))
+            if (minCUFC(object) > 0)
+              cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
             cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
+            if (!all(variantLocation(object)))
+              cat(sprintf("    Location restricted to: %s\n", paste(names(variantLocation(object))[variantLocation(object)], collapse=", ")))
+            if (!all(variantConsequence(object)))
+              cat(sprintf("    Consequence restricted to: %s\n", paste(names(variantConsequence(object))[variantConsequence(object)], collapse=", ")))
             if ("MafDb" %in% sapply(param(object)$otherAnnotations, class)) {
               cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
               cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
               cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
             }
             if ("PhastConsDb" %in% sapply(param(object)$otherAnnotations, class)) {
-              if (is.na(minPhastCons(object)))
-                cat("    No filtering on nucleotide conservation\n")
-              else
+              if (!is.na(minPhastCons(object)))
                 cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
             }
             if ("GenePhylostrataDb" %in% sapply(param(object)$otherAnnotations, class)) {
               whGPSdb <- match("GenePhylostrataDb", sapply(param(object)$otherAnnotations, class))
-              if (is.na(minPhylostratum(object)))
-                cat("    No filtering on gene conservation\n")
-              else
+              if (!is.na(minPhylostratum(object)))
                 cat(sprintf("    Minimum conserved gene phylostratum: %s (%d/%d)\n",
                             genePhylostrata(param(object)$otherAnnotations[[whGPSdb]])$Description[minPhylostratum(object)],
                             minPhylostratum(object),
                             nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
             }
             if (all(!is.na(param(object)$spliceSiteMatricesFilenames))) {
-              if (is.na(minCRYP5ss(object)))
-                cat("    No filtering on cryptic 5'ss\n")
-              else
+              if (!is.na(minCRYP5ss(object)))
                 cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minCRYP5ss(object)))
-              if (is.na(minCRYP3ss(object)))
-                cat("    No filtering on cryptic 3'ss\n")
-              else
+              if (!is.na(minCRYP3ss(object)))
                 cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minCRYP3ss(object)))
             }
             fv <- filteredVariants(object)
@@ -194,6 +189,69 @@ setReplaceMethod("aaChangeType", signature(x="VariantFilteringResults", value="c
                    x@aaChangeType <- value
                    x
                  })
+
+setMethod("variantLocation", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@locationMask
+          })
+
+setReplaceMethod("variantLocation", signature(x="VariantFilteringResults", value="logical"),
+                 function(x, lockey=NA, value) {
+
+                   if (any(is.na(value)))
+                     stop("The given value(s) must be either TRUE or FALSE.")
+
+                   if (is.na(lockey)) {
+                     lockey <- names(x@locationMask)
+                     if (is.null(names(value))) {
+                       if (length(value) > 1)
+                         stop("When given multiple values they must be a logical vector whose names match the available location keywords.")
+                       value <- do.call("names<-", list(rep(value, length(lockey)), lockey))
+                     } else if (any(is.na(match(names(value), names(x@locationMask)))))
+                       stop(sprintf("Element names %s do not match the available location keywords",
+                                    names(value)[is.na(match(names(value), names(x@locationMask)))]))
+                     else
+                       lockey <- names(value)
+                   } else {
+                     if (any(is.na(match(lockey, names(x@locationMask)))))
+                       stop(sprintf("%s does not match the available location keywords", lockey))
+                   }
+
+                   x@locationMask[lockey] <- value
+                   x
+                 })
+
+setMethod("variantConsequence", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@consequenceMask
+          })
+
+setReplaceMethod("variantConsequence", signature(x="VariantFilteringResults", value="logical"),
+                 function(x, conkey=NA, value) {
+
+                   if (any(is.na(value)))
+                     stop("The given value(s) must be either TRUE or FALSE.")
+
+                   if (is.na(conkey)) {
+                     conkey <- names(x@consequenceMask)
+                     if (is.null(names(value))) {
+                       if (length(value) > 1)
+                         stop("When given multiple values they must be a logical vector whose names match the available consequence keywords.")
+                       value <- do.call("names<-", list(rep(value, length(conkey)), conkey))
+                     } else if (any(is.na(match(names(value), names(x@consequenceMask)))))
+                       stop(sprintf("Element names %s do not match the available consequence keywords",
+                                    names(value)[is.na(match(names(value), names(x@consequenceMask)))]))
+                     else
+                       conkey <- names(value)
+                   } else {
+                     if (any(is.na(match(conkey, names(x@consequenceMask)))))
+                       stop(sprintf("%s does not match the available consequence keywords", conkey))
+                   }
+
+                   x@consequenceMask[conkey] <- value
+                   x
+                 })
+
 setMethod("naMAF", signature(x="VariantFilteringResults"),
           function(x) {
             if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
@@ -368,6 +426,17 @@ setReplaceMethod("minCRYP3ss", signature(x="VariantFilteringResults", value="ANY
                    x
                  })
 
+setMethod("minCUFC", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@minCUFC
+          })
+
+setReplaceMethod("minCUFC", signature(x="VariantFilteringResults", value="numeric"),
+                 function(x, value) {
+                   x@minCUFC <- value
+                   x
+                 })
+
 
 ## get all variants without applying any filter
 setMethod("allVariants", signature(x="VariantFilteringResults"), 
@@ -410,6 +479,14 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             if (variantType(x) != "Any")
               rowsMask <- rowsMask & vars$TYPE == variantType(x)
 
+            ## location of variant
+            if (!all(variantLocation(x)))
+              rowsMask <- rowsMask & vars$LOCATION %in% names(variantLocation(x))[variantLocation(x)]
+
+            ## consquence of variant
+            if (!all(variantConsequence(x)))
+              rowsMask <- rowsMask & vars$CONSEQUENCE %in% names(variantConsequence(x))[variantConsequence(x)]
+
             ## type of amino acid change
             if (aaChangeType(x) != "Any")
               rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
@@ -421,13 +498,12 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               if (any(MAFpop(x))) {
                 mtNoMAF <- NULL
                 maxMAFannot <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
-                naMAFmask <- rep(TRUE, length(vars))
                 if (naMAF(x))
                   maxMAFannot[is.na(maxMAFannot)] <- -Inf
                 else
                   maxMAFannot[is.na(maxMAFannot)] <- Inf
 
-                rowsMask <- rowsMask & naMAFmask & maxMAFannot <= maxMAF(x)
+                rowsMask <- rowsMask & maxMAFannot <= maxMAF(x)
                 rowsMask[is.na(rowsMask)] <- FALSE
 
                 maxMAFannot[!is.finite(maxMAFannot)] <- NA_real_
@@ -487,6 +563,17 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               rowsMask <- rowsMask & crypssMask
             }
 
+            ## codon-usage fold-change
+            minCUFCannot <- log2(vars$CUALT) - log2(vars$CUREF)
+            naCUFCmask <- rep(TRUE, length(vars))
+            minCUFCannot[is.na(minCUFCannot)] <- Inf
+
+            rowsMask <- rowsMask & abs(minCUFCannot) >= minCUFC(x)
+            rowsMask[is.na(rowsMask)] <- FALSE
+
+            minCUFCannot[!is.finite(minCUFCannot)] <- NA_real_
+
+            ## select variant annotations using the logical mask of the filters
             colsIdx <- setdiff(1:ncol(mcols(vars)), mtNoMAF)
             if (unusedColumns.rm) ## remove data columns that are not used for filtering
               colsIdx <- setdiff(colsIdx, c(mtNoMinPhastCons, mtNoMinPhylostratum, mtNoCRYP5ss, mtNoCRYP3ss))
@@ -499,6 +586,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             rowsMask <- rep(rowsMask, length(varsxsam))
             if ("MafDb" %in% sapply(param(x)$otherAnnotations, class))
               vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
+            vars$CUFC <- rep(minCUFCannot, length(varsxsam))
 
             vars <- vars[rowsMask, colsMask]
 
@@ -572,6 +660,17 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
                                              choices=c("Yes", "No"))),
                 conditionalPanel(condition="input.tsp == 'genome'", selectInput("variantType", "Variant Type:",
                                                                     choices=c("Any", "SNV", "InDel", "MNV", "DelIns"))),
+                ## transcript tab
+                conditionalPanel(condition="input.tsp == 'transcript'", numericInput('minCUFC', 'Minimum Codon Usage Absolute log2-Fold Change:', 0.00)),
+                conditionalPanel(condition="input.tsp == 'transcript'", helpText(strong("Restrict variants to the following locations:"))),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("coding", "Coding", TRUE)),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("fiveUTR", "5' UTR", TRUE)),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("threeUTR", "3' UTR", TRUE)),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("intron", "Intronic", TRUE)),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("spliceSite", "Known splice site", TRUE)),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("promoter", "Promoter", TRUE)),
+                conditionalPanel(condition="input.tsp == 'transcript'", checkboxInput("intergenic", "Intergenic", TRUE)),
+                
                 ## gene tab
                 conditionalPanel(condition="input.tsp == 'gene'",
                                  checkboxInput('OMIMpresentFlag',
@@ -580,6 +679,12 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
                                  selectInput("OMIMpresent", "Present in OMIM:",
                                              choices=c("Yes", "No"))),
                 ## protein tab
+                conditionalPanel(condition="input.tsp == 'protein'", helpText(strong("Restrict variants to the following consequences:"))),
+                conditionalPanel(condition="input.tsp == 'protein'", checkboxInput("synonymous", "Synonymous", TRUE)),
+                conditionalPanel(condition="input.tsp == 'protein'", checkboxInput("nonsynonymous", "Nonsynonymous", TRUE)),
+                conditionalPanel(condition="input.tsp == 'protein'", checkboxInput("frameshift", "Frameshift", TRUE)),
+                conditionalPanel(condition="input.tsp == 'protein'", checkboxInput("nonsense", "Nonsense", TRUE)),
+                conditionalPanel(condition="input.tsp == 'protein'", checkboxInput("not tranlated", "Not translated", TRUE)),
                 conditionalPanel(condition="input.tsp == 'protein'", selectInput("aaChangeType", "Amino acid change type:",
                                                                      choices=c("Any", "Radical", "Conservative"))),
                 ## MAF tab
@@ -660,6 +765,18 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         ## type of variant
         variantType(vfResultsObj) <- input$variantType
 
+        ## variant location
+        locMask <- variantLocation(vfResultsObj)
+        for (i in names(locMask))
+          locMask[i] <- input[[i]]
+        variantLocation(vfResultsObj) <- locMask
+
+        ## variant consequence
+        conMask <- variantConsequence(vfResultsObj)
+        for (i in names(conMask))
+          conMask[i] <- input[[i]]
+        variantConsequence(vfResultsObj) <- conMask
+
         ## type of amino acid change
         aaChangeType(vfResultsObj) <- input$aaChangeType
 
@@ -702,6 +819,9 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
             minCRYP3ss(vfResultsObj) <- NA_real_
         }
 
+        ## codon-usage fold-change
+        minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
+
         stopApp(returnValue=vfResultsObj)
       })
     })
@@ -724,6 +844,18 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
       ## type of variant
       variantType(vfResultsObj) <- input$variantType
+
+      ## variant location
+      locMask <- variantLocation(vfResultsObj)
+      for (i in names(locMask))
+        locMask[i] <- input[[i]]
+      variantLocation(vfResultsObj) <- locMask
+
+      ## variant consequence
+      conMask <- variantConsequence(vfResultsObj)
+      for (i in names(conMask))
+        conMask[i] <- input[[i]]
+      variantConsequence(vfResultsObj) <- conMask
 
       ## type of amino acid change
       aaChangeType(vfResultsObj) <- input$aaChangeType
@@ -766,6 +898,9 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         else
           minCRYP3ss(vfResultsObj) <- NA_real_
       }
+
+      ## codon-usage fold-change
+      minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
 
       incProgress(2/3, detail="applying filters ...")
       fvxsam <- filteredVariants(vfResultsObj)
@@ -827,11 +962,11 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableGene <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "OMIM")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "DESC", "OMIM")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableTranscript <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "CDS", "CUREF", "CUALT")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "DESC", "CUREF", "CUALT", "CUFC")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({
@@ -907,6 +1042,18 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
         ## type of variant
         variantType(vfResultsObj) <- input$variantType
+ 
+        ## variant location
+        locMask <- variantLocation(vfResultsObj)
+        for (i in names(locMask))
+          locMask[i] <- input[[i]]
+        variantLocation(vfResultsObj) <- locMask
+
+        ## variant consequence
+        conMask <- variantConsequence(vfResultsObj)
+        for (i in names(conMask))
+          conMask[i] <- input[[i]]
+        variantConsequence(vfResultsObj) <- conMask
 
         ## type of amino acid change
         aaChangeType(vfResultsObj) <- input$aaChangeType
@@ -950,8 +1097,14 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
             minCRYP3ss(vfResultsObj) <- NA_real_
         }
 
+        ## codon-usage fold-change
+        minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
+
+        ## apply filters
         fvxsam <- filteredVariants(vfResultsObj)
         fv <- fvxsam[[1]]
+
+        ## build data frame with the annotated and filtered variants
         vdf <- DataFrame(VarID=fv$VARID, CHR=seqnames(fv),
                          POS=start(fv), POSITION=start(fv),
                          mcols(fv))
@@ -983,6 +1136,18 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         ## type of variant
         variantType(vfResultsObj) <- input$variantType
 
+        ## variant location
+        locMask <- variantLocation(vfResultsObj)
+        for (i in names(locMask))
+          locMask[i] <- input[[i]]
+        variantLocation(vfResultsObj) <- locMask
+
+        ## variant consequence
+        conMask <- variantConsequence(vfResultsObj)
+        for (i in names(conMask))
+          conMask[i] <- input[[i]]
+        variantConsequence(vfResultsObj) <- conMask
+
         ## type of amino acid change
         aaChangeType(vfResultsObj) <- input$aaChangeType
 
@@ -1025,6 +1190,9 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
             minCRYP3ss(vfResultsObj) <- NA_real_
         }
 
+        ## codon-usage fold-change
+        minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
+
         sink(file)
         cat("R script and output to get the resulting filtered variants with VariantFiltering\n")
         cat("================================================================================\n\n")
@@ -1038,8 +1206,14 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           cat(sprintf("> OMIMpresent(res) <- \"%s\"\n", OMIMpresent(vfResultsObj)))
         if (variantType(vfResultsObj) != "Any")
           cat(sprintf("> variantType(res) <- \"%s\"\n", variantType(vfResultsObj)))
+        if (!all(variantLocation(vfResultsObj)))
+            cat(sprintf("> variantLocation(res) <- c(%s)\n", paste(paste(names(variantLocation(vfResultsObj)), as.character(variantLocation(vfResultsObj)), sep="="), collapse=", ")))
+        if (!all(variantConsequence(vfResultsObj)))
+            cat(sprintf("> variantConsequence(res) <- c(%s)\n", paste(paste(names(variantConsequence(vfResultsObj)), as.character(variantConsequence(vfResultsObj)), sep="="), collapse=", ")))
         if (aaChangeType(vfResultsObj) != "Any")
           cat(sprintf("> aaChangeType(res) <- \"%s\"\n", aaChangeType(vfResultsObj)))
+        if (minCUFC(vfResultsObj) > 0)
+          cat(sprintf("> minCUFC(res) <- %.2f\n", minCUFC(vfResultsObj)))
         if (!is.na(mtMafDb)) {
           if (!all(MAFpop(vfResultsObj))) ## default values need not to be set
             cat(sprintf("> MAFpop(res) <- c(%s)\n", paste(paste(names(MAFpop(vfResultsObj)), as.character(MAFpop(vfResultsObj)), sep="="), collapse=", ")))
