@@ -78,6 +78,8 @@ setClass("VariantFilteringResults",
                                        dbSNPflag="character",
                                        OMIMflag="character",
                                        variantType="character",
+                                       locationMask="logical",
+                                       consequenceMask="logical",
                                        aaChangeType="character",
                                        MAFpopMask="logical",
                                        naMAF="logical",
@@ -85,7 +87,8 @@ setClass("VariantFilteringResults",
                                        minPhastCons="numeric",
                                        minPhylostratumIndex="integer",
                                        minCRYP5ss="numeric",
-                                       minCRYP3ss="numeric"))
+                                       minCRYP3ss="numeric",
+                                       minCUFC="numeric"))
 
 setClass("VariantFilteringResultsAIM",
          representation=representation(inheritancepattern="character",

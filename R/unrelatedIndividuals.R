@@ -48,6 +48,10 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   }
   close(vcfFiles[[1]])
 
+  locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
+                                     levels(annotated_variants$LOCATION)))
+  conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
+                                     levels(annotated_variants$CONSEQUENCE)))
   MAFpopMask <- NA
   if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
@@ -62,7 +66,8 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
       inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
       dbSNPflag=NA_character_, OMIMflag=NA_character_,
-      variantType="Any", aaChangeType="Any", MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
+      locationMask=locMask, consequenceMask=conMask, variantType="Any", aaChangeType="Any",
+      MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
-      minCRYP5ss=NA_real_, minCRYP3ss=NA_real_)
+      minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)
 })

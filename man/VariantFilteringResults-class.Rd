@@ -83,6 +83,10 @@
 \alias{minCRYP3ss,VariantFilteringResults-method}
 \alias{minCRYP3ss<-,VariantFilteringResults,ANY-method}
 \alias{minCRYP3ss<-,VariantFilteringResults-method}
+\alias{minCUFC}
+\alias{minCUFC<-}
+\alias{minCUFC,VariantFilteringResults-method}
+\alias{minCUFC<-,VariantFilteringResults,numeric-method}
 \alias{allVariants,VariantFilteringResults-method}
 \alias{allVariants}
 \alias{filteredVariants,VariantFilteringResults-method}
@@ -236,6 +240,9 @@ In the calls below, \code{x} is a \code{VariantFilteringResults} object.
   }
   \item{}{
     \code{minCRYP3ss(x)}: minimum weight matrix score on a cryptic 3'ss. \code{NA} indicates this filter is not applied.
+  }
+  \item{}{
+    \code{minCUFC(x)}: minimum absolute codon-usage log2 fold-change.
   }
   \item{}{
     \code{allVariants(x)}: get a \code{GRanges} object with all variants without applying any filter.

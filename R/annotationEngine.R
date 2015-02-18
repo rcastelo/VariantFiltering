@@ -178,7 +178,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 
     mask <- is.na(variantsGR_annotated_coding$TXID)
     variantsGR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    ## mask <- is.na(variantsGR_annotated_coding$CDSID) NOW CDSID from locateVariants() is an IntegerList
     mask <- elementLengths(variantsGR_annotated_coding$CDSID) == 0
     variantsGR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
     mask <- is.na(variantsGR_annotated_coding$GENEID)
@@ -291,27 +290,12 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ## TODO: REPLACE THIS BY THE HGVS NOMENCLATURE !!!!!
   ########################
   ##                    ##
-  ##        CDS         ##
+  ##    DESCRIPTION     ##
   ##                    ##
   ########################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), DataFrame(CDS=rep(NA_character_, length(variantsGR_annotated))))
-
-  ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-  refAllele <- as.character(adjustForStrandSense(variantsGR_annotated[variantsGR_annotated$LOCATION == "coding"],
-                                                 ref(variantsGR_annotated)[variantsGR_annotated$LOCATION == "coding"]))
-  locAllele <- as.character(start(variantsGR_annotated$CDSLOC[variantsGR_annotated$LOCATION == "coding"]))
-  altAllele <- as.character(variantsGR_annotated$varAllele[variantsGR_annotated$LOCATION == "coding"])
-  variantsGR_annotated$CDS[variantsGR_annotated$LOCATION == "coding"] <- paste0(refAllele, locAllele, altAllele)
-
-  ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
-  ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-  refAllele <- as.character(adjustForStrandSense(variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"],
-                                                 ref(variantsGR_annotated)[variantsGR_annotated$LOCATION != "coding"]))
-  altAllele <- adjustForStrandSense(variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"],
-                                    alt(variantsGR_annotated)[variantsGR_annotated$LOCATION != "coding"])
-  variantsGR_annotated$CDS[variantsGR_annotated$LOCATION != "coding"] <- paste(refAllele, "->", altAllele)
-
+  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), variantDescription(variantsGR_annotated))
+                                      
   ########################
   ##                    ##
   ##     AminoAcid      ##
@@ -598,6 +582,43 @@ typeOfVariants <- function(variantsGR) {
   DataFrame(TYPE=type)
 }
 
+## this function tries to provide a variant description following
+## HGVS nomenclature at http://www.hgvs.org/mutnomen
+## this is a very first version covering only a couple of cases
+## hopefully it will become more comprehensive in the near future
+variantDescription <- function(variantsGR) {
+  desc <- character()
+  if (length(variantsGR) > 0) {
+    desc <- rep(NA_character_, length(variantsGR))
+
+    maskSNVs <- variantsGR$TYPE == "SNV"
+    maskCoding <- variantsGR$LOCATION == "coding"
+
+    ## for coding variants we use the 'varAllele' column which is already adjusted for strand
+    refAllele <- as.character(adjustForStrandSense(variantsGR[maskCoding],
+                                                   ref(variantsGR)[maskCoding]))
+    locAllele <- start(variantsGR$CDSLOC[maskCoding])
+    altAllele <- as.character(variantsGR$varAllele[maskCoding])
+    desc[maskCoding & maskSNVs] <- sprintf("c.%d%s>%s", locAllele[maskSNVs],
+                                           refAllele[maskSNVs], altAllele[maskSNVs])
+
+    ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
+    ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
+    refAllele <- as.character(adjustForStrandSense(variantsGR[!maskCoding],
+                                                   ref(variantsGR)[!maskCoding]))
+    altAllele <- adjustForStrandSense(variantsGR[!maskCoding],
+                                      alt(variantsGR)[!maskCoding])
+    mask5UTR <- variantsGR$LOCATION == "fiveUTR"
+    desc[!maskCoding & maskSNVs & mask5UTR] <- sprintf("c.-??%s>%s", refAllele[maskSNVs & mask5UTR],
+                                                                  altAllele[maskSNVs & mask5UTR])
+    mask3UTR <- variantsGR$LOCATION == "threeUTR"
+    desc[!maskCoding & maskSNVs & mask3UTR] <- sprintf("c.*??%s>%s", refAllele[maskSNVs & mask3UTR],
+                                                                  altAllele[maskSNVs & mask3UTR])
+  }
+
+  DataFrame(DESC=desc)
+}
+
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
 loc2rsid <- function(locs, BPPARAM=bpparam()) {
   getSNPcountFun <- getSNPlocsFun <- NULL
@@ -749,7 +770,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
             GENE=character(),
             OMIM=character(),
             TXNAME=character(),
-            CDS=character(),
+            DESC=character(),
             AAchange=character(),
             AAchangeType=character())
 }
