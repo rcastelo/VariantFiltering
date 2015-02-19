@@ -127,8 +127,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   variantsGR_annotated_coding <- VRanges()
   if (any(variantsGR_annotated$LOCATION == "coding")) {
     variantsGR_annotated_coding <- variantsGR_annotated[variantsGR_annotated$LOCATION == "coding"]
-    ## eltlen <- elementLengths(variantsGR_annotated_coding$ALT)
-    ## variantsGR_annotated_coding_exp <- rep(variantsGR_annotated_coding, eltlen)
 
     ## harmonize sequence levels between variants, annotations and genome sequence
     origVarLevelsStyle <- seqlevelsStyle(variantsGR_annotated_coding)
@@ -775,6 +773,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
             AAchangeType=character())
 }
 
+## assumes variantsGR is a VRanges object
 .scoreSpliceSiteVariants <- function(variantsGR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam()) {
 
   ## adapt to sequence style and genome version from the input
@@ -806,11 +805,10 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
   ## coding synonymous variants
 
   message("Annotating potential cryptic splice sites in coding synonymous variants")
-  eltlen <- elementLengths(variantsGR$ALT) ## DISCARD MULTIPLE ALT ALLELES BY NOW (SHOULD DO SOMETHING DIFFERENT)
 
-  if (any(variantsGR$CONSEQUENCE %in% "synonymous" & eltlen == 1)) {
+  if (any(variantsGR$CONSEQUENCE %in% "synonymous")) {
     ## %in% avoids NAs when comparing with them (THIS MASK IS ALSO USED BELOW !!)
-    synonymousSNVmask <- variantsGR$CONSEQUENCE %in% "synonymous" & eltlen == 1
+    synonymousSNVmask <- variantsGR$CONSEQUENCE %in% "synonymous"
 
     GRanges_SY <- variantsGR[synonymousSNVmask]
 
@@ -894,16 +892,15 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
   ## intronic variants
 
   message("Annotating potential cryptic splice sites in intronic variants")
-  eltlen <- elementLengths(variantsGR$ALT) ## DISCARD MULTIPLE ALT ALLELES BY NOW (SHOULD DO SOMETHING DIFFERENT)
 
-  intronicSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "intron" & eltlen == 1
+  intronicSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "intron"
   if (any(intronicSNVmask)) {
     GRanges_intron_SNV <- variantsGR[intronicSNVmask] ## THIS MASK IS ALSO USED BELOW !!!
 
     ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
     ## and the column ALT is not adjusted - adapted from VariantAnnotation/R/methods-predictCoding.R
     nstrand <- as.vector(strand(GRanges_intron_SNV) == "-")
-    altAlleleStrandAdjusted <- GRanges_intron_SNV$ALT
+    altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_intron_SNV), split="", fixed=TRUE))
     if (any(nstrand))
       altAlleleStrandAdjusted[nstrand] <- relist(complement(unlist(altAlleleStrandAdjusted[nstrand])),
                                                  altAlleleStrandAdjusted[nstrand])

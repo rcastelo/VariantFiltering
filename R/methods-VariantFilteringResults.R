@@ -492,8 +492,9 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
 
             ## minimum allele frequency
-            mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
+            mtNoMAF <- NULL
             if ("MafDb" %in% sapply(param(x)$otherAnnotations, class)) {
+              mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
               maxMAFannot <- rep(NA_real_, length(vars))
               if (any(MAFpop(x))) {
                 mtNoMAF <- NULL
@@ -509,11 +510,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
                 maxMAFannot[!is.finite(maxMAFannot)] <- NA_real_
                 if (any(!MAFpop(x)))
                   mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
-              } ##  else {
-                ## mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
-                ## if (!naMAF(x))
-                ##   rowsMask <- rep(FALSE, length(vars))
-                ## }
+              }
             }
 
             ## nucleotide conservation
@@ -648,6 +645,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   crypsplice <- param(vfResultsObj)$spliceSiteMatricesFilenames
   
   app <- list(ui=NULL, server=NULL)
+
   app$ui <- pageWithSidebar(
               headerPanel('R/BioC VariantFiltering Web App'),
               sidebarPanel(
@@ -727,20 +725,23 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
                 downloadButton('generateReport', 'Generate Report'),
                 actionButton('closesavebutton', 'Save & Close')
               ),
+              ## mainPanel(
+              ##   tabsetPanel(
+              ##     tabPanel("Genome", tableOutput('tableGenome'), value="genome"),
+              ##     tabPanel("Gene", tableOutput('tableGene'), value="gene"),
+              ##     tabPanel("Transcript", tableOutput('tableTranscript'), value="transcript"),
+              ##     tabPanel("Protein", htmlOutput('tableProtein'), value="protein"),
+              ##     ## if (!is.na(mtMafDb))
+              ##       tabPanel("MAF", tableOutput('tableMAF'), value="maf"),
+              ##     ## if (!is.na(mtPhastConsDb) || !is.na(mtGenePhylostrataDb))
+              ##       tabPanel("Conservation", tableOutput('tableConservation'), value="conservation"),
+              ##     tabPanel("CrypSplice", tableOutput('tableCrypSplice'), value="cryp"),
+              ##     tabPanelAbout(),
+              ##     id="tsp"
+              ##   )
+              ## )
               mainPanel(
-                tabsetPanel(
-                  tabPanel("Genome", tableOutput('tableGenome'), value="genome"),
-                  tabPanel("Gene", tableOutput('tableGene'), value="gene"),
-                  tabPanel("Transcript", tableOutput('tableTranscript'), value="transcript"),
-                  tabPanel("Protein", htmlOutput('tableProtein'), value="protein"),
-                  ## if (!is.na(mtMafDb))
-                    tabPanel("MAF", tableOutput('tableMAF'), value="maf"),
-                  ## if (!is.na(mtPhastConsDb) || !is.na(mtGenePhylostrataDb))
-                    tabPanel("Conservation", tableOutput('tableConservation'), value="conservation"),
-                  tabPanel("CrypSplice", tableOutput('tableCrypSplice'), value="cryp"),
-                  tabPanelAbout(),
-                  id="tsp"
-                )
+                uiOutput('mytabs')
               )
             )
 
@@ -955,6 +956,30 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
       }) ## withProgress
       vdf 
+    })
+
+    output$mytabs <- renderUI({
+      tabPanelList <- list(tabPanel("Genome", tableOutput('tableGenome'), value="genome"),
+                           tabPanel("Gene", tableOutput('tableGene'), value="gene"),
+                           tabPanel("Transcript", tableOutput('tableTranscript'), value="transcript"),
+                           tabPanel("Protein", htmlOutput('tableProtein'), value="protein"))
+
+      if ("MafDb" %in% annotationObjClasses)
+        tabPanelList[[length(tabPanelList)+1]] <- tabPanel("MAF", tableOutput('tableMAF'), value="maf")
+
+      if ("PhastConsDb" %in% annotationObjClasses || "GenePhylostrataDb" %in% annotationObjClasses)
+        tabPanelList[[length(tabPanelList)+1]] <- tabPanel("Conservation", tableOutput('tableConservation'), value="conservation")
+
+      if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames)))
+        tabPanelList[[length(tabPanelList)+1]] <- tabPanel("CrypSplice", tableOutput('tableCrypSplice'), value="cryp")
+
+      tabPanelList[[length(tabPanelList)+1]] <- tabPanelAbout()
+
+      tabPanelList[[length(tabPanelList)+1]] <- "tsp"
+
+      names(tabPanelList) <- c(rep("", length(tabPanelList)-1), "id")
+
+      do.call(tabsetPanel, tabPanelList)
     })
 
     output$tableGenome <- renderTable({
