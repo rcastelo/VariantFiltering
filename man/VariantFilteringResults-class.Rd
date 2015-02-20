@@ -40,6 +40,14 @@
 \alias{variantType<-}
 \alias{variantType,VariantFilteringResults-method}
 \alias{variantType<-,VariantFilteringResults,character-method}
+\alias{variantLocation}
+\alias{variantLocation<-}
+\alias{variantLocation,VariantFilteringResults-method}
+\alias{variantLocation<-,VariantFilteringResults,character-method}
+\alias{variantConsequence}
+\alias{variantConsequence<-}
+\alias{variantConsequence,VariantFilteringResults-method}
+\alias{variantConsequence<-,VariantFilteringResults,character-method}
 \alias{aaChangeType}
 \alias{aaChangeType<-}
 \alias{aaChangeType,VariantFilteringResults-method}
@@ -213,6 +221,12 @@ In the calls below, \code{x} is a \code{VariantFilteringResults} object.
   }
   \item{}{
     \code{variantType(x)}: filter by type of variant (\code{"Any"}, \code{"SNV"}, \code{"Indel"}, \code{"MNV"}).
+  }
+  \item{}{
+    \code{variantLocation(x)}: filter by variant location (\code{"coding"}, \code{"intron"}, \code{"threeUTR"}, \code{"fiveUTR"}, \code{"intergenic"}, \code{"spliceSite"}, \code{"promoter"}).
+  }
+  \item{}{
+    \code{variantConsequence(x)}: filter by variant consequence (\code{"snynonymous"}, \code{"nonsynonymous"}, \code{"frameshift"}, \code{"nonsense"}, \code{"not translated"}).
   }
   \item{}{
     \code{aaChangeType(x)}: filter by type of change of amino acid (\code{"Any"}, \code{"Radical"}, \code{"Conservative"}).

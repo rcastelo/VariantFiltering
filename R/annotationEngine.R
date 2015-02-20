@@ -587,31 +587,33 @@ typeOfVariants <- function(variantsGR) {
 variantDescription <- function(variantsGR) {
   desc <- character()
   if (length(variantsGR) > 0) {
-    desc <- rep(NA_character_, length(variantsGR))
+    desc <- refAllele <- locAllele <- altAllele <- rep(NA_character_, length(variantsGR))
 
-    maskSNVs <- variantsGR$TYPE == "SNV"
     maskCoding <- variantsGR$LOCATION == "coding"
 
     ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-    refAllele <- as.character(adjustForStrandSense(variantsGR[maskCoding],
-                                                   ref(variantsGR)[maskCoding]))
-    locAllele <- start(variantsGR$CDSLOC[maskCoding])
-    altAllele <- as.character(variantsGR$varAllele[maskCoding])
-    desc[maskCoding & maskSNVs] <- sprintf("c.%d%s>%s", locAllele[maskSNVs],
-                                           refAllele[maskSNVs], altAllele[maskSNVs])
+    refAllele[maskCoding] <- as.character(adjustForStrandSense(variantsGR[maskCoding],
+                                                               ref(variantsGR)[maskCoding]))
+    locAllele[maskCoding] <- start(variantsGR$CDSLOC[maskCoding])
+    altAllele[maskCoding] <- as.character(variantsGR$varAllele[maskCoding])
+
+    ## SNVs
+    maskSNVs <- variantsGR$TYPE == "SNV"
+    desc[maskCoding & maskSNVs] <- sprintf("c.%d%s>%s", locAllele[maskCoding & maskSNVs],
+                                           refAllele[maskCoding & maskSNVs], altAllele[maskCoding & maskSNVs])
 
     ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
     ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-    refAllele <- as.character(adjustForStrandSense(variantsGR[!maskCoding],
-                                                   ref(variantsGR)[!maskCoding]))
-    altAllele <- adjustForStrandSense(variantsGR[!maskCoding],
-                                      alt(variantsGR)[!maskCoding])
+    refAllele[!maskCoding] <- as.character(adjustForStrandSense(variantsGR[!maskCoding],
+                                                                ref(variantsGR)[!maskCoding]))
+    altAllele[!maskCoding] <- adjustForStrandSense(variantsGR[!maskCoding],
+                                                   alt(variantsGR)[!maskCoding])
     mask5UTR <- variantsGR$LOCATION == "fiveUTR"
-    desc[!maskCoding & maskSNVs & mask5UTR] <- sprintf("c.-??%s>%s", refAllele[maskSNVs & mask5UTR],
-                                                                  altAllele[maskSNVs & mask5UTR])
+    desc[!maskCoding & maskSNVs & mask5UTR] <- sprintf("c.-??%s>%s", refAllele[!maskCoding & maskSNVs & mask5UTR],
+                                                                  altAllele[!maskCoding & maskSNVs & mask5UTR])
     mask3UTR <- variantsGR$LOCATION == "threeUTR"
-    desc[!maskCoding & maskSNVs & mask3UTR] <- sprintf("c.*??%s>%s", refAllele[maskSNVs & mask3UTR],
-                                                                  altAllele[maskSNVs & mask3UTR])
+    desc[!maskCoding & maskSNVs & mask3UTR] <- sprintf("c.*??%s>%s", refAllele[!maskCoding & maskSNVs & mask3UTR],
+                                                                  altAllele[!maskCoding & maskSNVs & mask3UTR])
   }
 
   DataFrame(DESC=desc)
