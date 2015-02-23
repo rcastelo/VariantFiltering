@@ -43,11 +43,15 @@
 \alias{variantLocation}
 \alias{variantLocation<-}
 \alias{variantLocation,VariantFilteringResults-method}
-\alias{variantLocation<-,VariantFilteringResults,character-method}
+\alias{variantLocation<-,VariantFilteringResults-method}
+\alias{variantLocation<-,VariantFilteringResults,logical-method}
+\alias{variantLocation<-,VariantFilteringResults,ANY,logical-method}
 \alias{variantConsequence}
 \alias{variantConsequence<-}
 \alias{variantConsequence,VariantFilteringResults-method}
-\alias{variantConsequence<-,VariantFilteringResults,character-method}
+\alias{variantConsequence<-,VariantFilteringResults-method}
+\alias{variantConsequence<-,VariantFilteringResults,logical-method}
+\alias{variantConsequence<-,VariantFilteringResults,ANY,logical-method}
 \alias{aaChangeType}
 \alias{aaChangeType<-}
 \alias{aaChangeType,VariantFilteringResults-method}
