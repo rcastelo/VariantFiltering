@@ -16,9 +16,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
   
-  if (length(vcfFiles) > 1) {
-    stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with vcftools, do the variant calling simultaneously on all samples, or proceed analysing each file separately.")
-  } else if (length(vcfFiles) < 1)
+  if (length(vcfFiles) > 1)
+    stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with software such as vcftools or GATK, or do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
+  else if (length(vcfFiles) < 1)
     stop("A minimum of 1 vcf file has to be provided")
   
   pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
@@ -47,6 +47,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     n.var <- n.var + nrow(vcf)
 
+    ## build logical masks of carriers (unaffected) and affected individuals
+    ## variants in carriers should be heterozygous and affected should be homozygous alternative
     carriersMask <- rep(TRUE, times=nrow(vcf))
     if (nrow(unaff) > 0) {
       carriersMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "0/1"
