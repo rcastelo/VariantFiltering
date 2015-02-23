@@ -587,7 +587,8 @@ typeOfVariants <- function(variantsGR) {
 variantDescription <- function(variantsGR) {
   desc <- character()
   if (length(variantsGR) > 0) {
-    desc <- refAllele <- locAllele <- altAllele <- rep(NA_character_, length(variantsGR))
+    desc <- refAllele <- altAllele <- rep(NA_character_, length(variantsGR))
+    locAllele <- rep(NA_integer_, length(variantsGR))
 
     maskCoding <- variantsGR$LOCATION == "coding"
 
