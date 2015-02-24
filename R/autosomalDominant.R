@@ -1,122 +1,79 @@
 setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
           function(param, BPPARAM=bpparam()) {
 
+  ## store call for reproducing it later
   callobj <- match.call()
   callstr <- deparse(callobj)
-  input_list <- as.list(path(param$vcfFiles))
+
+  ## fetch necessary parameters
+  vcfFiles <- param$vcfFiles
   ped <- param$pedFilename
-  sinfo <- param$seqInfos[[1]]
-  orgdb <- param$orgdb
+  seqInfos <- param$seqInfos
   txdb <- param$txdb
-  snpdb <- param$snpdb
   bsgeonme <- param$bsgenome
-  radicalAAchangeMatrix <- param$radicalAAchangeMatrix
-  allTranscripts <- param$allTranscripts
-  otherAnnotations <- param$otherAnnotations
-  filterTag <- param$filterTag
- 
-  genomeInfo <- sinfo
 
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
-  
-  if (class(txdb) != "TxDb")
-    stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
- 
-  if (length(input_list) > 1) {
-    multiSample <- FALSE
-  } else if (length(input_list) == 1) {
-    multiSample <- TRUE
-  } else {
-    stop("A minimum of 1 vcf file have to be provided")
-  }
-  
-  pedf <- read.table(ped, header=F)
-  
-  unaff <- pedf[pedf[, 6] == 1, ]
-  unaff_ind <- as.character(unaff[, 2])
-  
-  aff <- pedf[pedf[, 6] == 2, ]
-  aff_ind <- as.character(aff[, 2])
-  
-  
-  if (multiSample) {
-    message("Reading input VCF file into main memory.")
-    vcf_vcf1 <- readVcf(unlist(input_list), genomeInfo)
-    
-    unaffected <- switch (nrow(unaff),
-                        one_ind_ms(vcf_vcf1, "0/0", unaff, filterTag),
-                        two_ind_ms(vcf_vcf1, "0/0", unaff, filterTag),
-                        three_ind_ms(vcf_vcf1, "0/0", unaff, filterTag),
-                        four_ind_ms(vcf_vcf1, "0/0", unaff, filterTag),
-                        five_ind_ms(vcf_vcf1, "0/0", unaff, filterTag))
-    
-    affected <- switch (nrow(aff)+1,
-                        stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                        one_ind_ms_2opt(vcf_vcf1, "0/1", "1/1", aff, filterTag),
-                        two_ind_ms_2opt(vcf_vcf1, "0/1", "1/1", aff, filterTag),
-                        three_ind_ms_2opt(vcf_vcf1, "0/1", "1/1", aff, filterTag),
-                        four_ind_ms_2opt(vcf_vcf1, "0/1", "1/1", aff, filterTag),
-                        five_ind_ms_2opt(vcf_vcf1, "0/1", "1/1", aff, filterTag))
-    
-    if (length(unaffected) < 1) {
-      dominant <- affected
-    } else {
-      realcommondominant <- sharedVariants(affected, unaffected)
-      dominant <- affected[realcommondominant]
-    }
-    
-  } else {
-    
-    input_list_ind <- sapply(input_list, function(x) gsub("\\.vcf$", "", gsub("\\.vcf\\.gz$", "", x, ignore.case=TRUE), ignore.case=TRUE))
-    
-    input_list_unaff_vector <- c()
-    input_list_aff_vector <- c()
-    
-    for (i in 1:length(input_list_ind)) {
-      if (input_list_ind[i] %in% unaff[, 2]) {
-        input_list_unaff_vector <- c(input_list_unaff_vector, i)
-      } else if (input_list_ind[i]%in% aff[, 2]) {
-        input_list_aff_vector <- c(input_list_aff_vector, i)
-      }
-    }
-    
-    input_list_unaff <- input_list[input_list_unaff_vector]
-    input_list_aff <- input_list[input_list_aff_vector]
-    
-    affected <- switch (length(input_list_aff)+1,
-                        stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                        one_ind_us_2opt(input_list_aff, "0/1", "1/1", filterTag, genomeInfo),
-                        two_ind_us_2opt(input_list_aff, "0/1", "1/1", filterTag, genomeInfo),
-                        three_ind_us_2opt(input_list_aff, "0/1", "1/1", filterTag, genomeInfo),
-                        four_ind_us_2opt(input_list_aff, "0/1", "1/1", filterTag, genomeInfo),
-                        five_ind_us_2opt(input_list_aff, "0/1", "1/1", filterTag, genomeInfo))
-    
-    if (length(input_list_unaff) < 1) {
-      dominant <- affected
-    } else {
-      dominant <- pullout_shared_us(affected, input_list_unaff, filterTag, genomeInfo)
-    }
-  }
-  
-  dominant <- .matchSeqinfo(dominant, txdb, bsgenome)
-  
-  ##########################
-  ##                      ##
-  ##      ANNOTATION      ##
-  ##                      ##
-  ##########################
-  
-  dominant_annotated <- annotationEngine(dominant, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
-                                         radicalAAchangeMatrix=radicalAAchangeMatrix,
-                                         otherAnnotations=otherAnnotations,
-                                         allTranscripts=allTranscripts, BPPARAM=BPPARAM)
 
-  ##########################
-  ##                      ##
-  ## BUILD RESULTS OBJECT ##
-  ##                      ##
-  ##########################
+  if (length(vcfFiles) > 1)
+    stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with software such as vcftools or GATK, or do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
+  else if (length(vcfFiles) < 1)
+    stop("A minimum of 1 vcf file has to be provided")
+
+  pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
+  pedf <- pedf[, 1:6]
+  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+
+  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
+  if (sum(pedf$Phenotype  == 2) < 1)
+    stop("No affected individuals detected. Something is wrong with the PED file.")
+  
+  unaff <- pedf[ped$Phenotype == 1, ]
+  aff <- pedf[pedf$Phenotype == 2, ]
+
+  annotated_variants <- VRanges()
+  open(vcfFiles[[1]])
+  n.var <- 0
+  while(nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
+  
+    ## insert an index for each variant in the VCF file
+    info(header(vcf)) <- rbind(info(header(vcf)),
+                               DataFrame(Number=1, Type="Integer",
+                                         Description="Variant index in the VCF file.",
+                                         row.names="VCFIDX"))
+    info(vcf)$VCFIDX <- (n.var+1):(n.var+nrow(vcf))
+    varIDs <- names(rowData(vcf))
+
+    n.var <- n.var + nrow(vcf)
+
+    ## build logical masks of affected and unaffected individuals
+    ## variants in unaffected individuals should be homozygous reference and
+    ## in affected individuals should be either homozygous alternative or heterozygous alternative
+    unaffectedMask <- rep(TRUE, times=nrow(vcf))
+    if (nrow(unaff) > 0) {
+      unaffectedMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "0/0"
+      unaffectedMask <- apply(unaffectedMask, 1, all)
+    }
+
+    affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "0/1" |
+                    geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "1/1"
+
+    ## filter out variants that do not segregate as a "de novo" trait
+    vcf <- vcf[unaffectedMask & affectedMask, ]
+
+    ## coerce the VCF object to a VRanges object
+    variants <- as(vcf, "VRanges")
+
+    ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
+    variants$VARID <- varIDs[variants$VCFIDX]
+
+    ## harmonize Seqinfo data between variants, annotations and reference genome
+    variants <- .matchSeqinfo(variants, txdb, bsgenome)
+  
+    ## annotate variants
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+  }
+  close(vcfFiles[[1]])
 
   locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
                                      levels(annotated_variants$LOCATION)))
