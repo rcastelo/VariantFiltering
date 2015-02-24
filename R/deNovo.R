@@ -11,7 +11,6 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   seqInfos <- param$seqInfos
   txdb <- param$txdb
   bsgenome <- param$bsgenome
-  filterTag <- param$filterTag
  
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
@@ -23,22 +22,22 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
 
   pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
   pedf <- pedf[, 1:6]
-  olnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
   
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedf$Phenotype  == 2) < 1)
+  if (sum(pedf$Phenotype == 2) < 1)
     stop("No affected individuals detected in PED file.")
-  if (nrow(pedf) != 3)
-    stop("Current 'de novo' analysis can only be performed in a trio of two unaffected parents with one affected child.")
+
+  if (sum(pedf$Phenotype == 1) != 2 || sort(pedf$Gender[pedf$Phenotype == 1]) != 1:2)
+    stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
   unaff <- pedf[pedf$Phenotype == 1, ]
   unaff_dad <- unaff[unaff$Gender == 1, "IndividualID"]
   unaff_mom <- unaff[unaff$Gender == 2, "IndividualID"]
   aff <- pedf[pedf$Phenotype == 2, ]
-  aff_ind <- aff$IndividualID
   
   if (aff$FatherID != unaff_dad || aff$MotherID != unaff_mom)
-    stop("Current 'de novo' analysis can only be performed in a trio of two unaffected parents with one affected child.")
+    stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
@@ -81,6 +80,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
 
     message(sprintf("%d variants processed", n.var))
   }
+  close(vcfFiles[[1]])
 
   locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
                                      levels(annotated_variants$LOCATION)))
