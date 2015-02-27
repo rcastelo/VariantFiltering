@@ -11,6 +11,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   seqInfos <- param$seqInfos
   txdb <- param$txdb
   bsgenome <- param$bsgenome
+  sampleNames <- param$sampleNames
     
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
@@ -18,7 +19,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   if (length(vcfFiles) > 1)
     stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with software such as vcftools or GATK, or do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
   else if (length(vcfFiles) < 1)
-    stop("A minimum of 1 vcf file has to be provided")
+    stop("A minimum of 1 VCF file has to be provided.")
   
   pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
   pedf <- pedf[, 1:6]
@@ -91,9 +92,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
-      inheritanceModel="autosomal recessive homozygous", variants=annotated_variants,
-      dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
-      locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
+      activeSamples=sampleNames, inheritanceModel="autosomal recessive homozygous",
+      variants=annotated_variants, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      variantType="Any", locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)

@@ -73,7 +73,8 @@ importMethodsFrom(IRanges, elementLengths,
 importMethodsFrom(GenomicFeatures, exonsBy,
                                    mapToTranscripts)
 importMethodsFrom(GenomicRanges, resize,
-                                 ranges)
+                                 ranges,
+                                 show)
 importMethodsFrom(Biostrings, getSeq,
                               subseq,
                               unlist,
@@ -137,6 +138,8 @@ exportMethods(VariantFilteringParam,
               wmScore,
 
               ## specific for the VariantFilteringResults
+              samples, "samples<-",
+              resetSamples,
               inheritanceModel,
               param,
               allVariants,

@@ -11,6 +11,8 @@ setGeneric("genePhylostratum", function(object, ids) standardGeneric("genePhylos
 setGeneric("genePhylostrata", function(object) standardGeneric("genePhylostrata"))
 
 ## for VariantFilteringResults class
+setGeneric("samples<-", function(object, value) standardGeneric("samples<-"))
+setGeneric("resetSamples", function(object, value) standardGeneric("resetSamples"))
 setGeneric("VariantFilteringResults", function(variants, ...) standardGeneric("VariantFilteringResults"))
 setGeneric("inheritanceModel", function(x) standardGeneric("inheritanceModel"))
 setGeneric("param", function(x) standardGeneric("param"))

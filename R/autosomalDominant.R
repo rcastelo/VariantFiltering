@@ -3,14 +3,15 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 
   ## store call for reproducing it later
   callobj <- match.call()
-  callstr <- deparse(callobj)
+  callstr <- gsub(".local", "autosomalDominant", deparse(callobj))
 
   ## fetch necessary parameters
   vcfFiles <- param$vcfFiles
   ped <- param$pedFilename
   seqInfos <- param$seqInfos
   txdb <- param$txdb
-  bsgeonme <- param$bsgenome
+  bsgenome <- param$bsgenome
+  sampleNames <- param$sampleNames
 
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
@@ -90,9 +91,9 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
-      inheritanceModel="autosomal dominant", variants=dominant_annotated,
-      dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
-      locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
+      activeSamples=sampleNames, inheritanceModel="autosomal dominant",
+      variants=annotated_variants, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      variantType="Any", locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)
