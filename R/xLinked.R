@@ -3,7 +3,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
   ## store call for reproducing it later
   callobj <- match.call()
-  callstr <- deparse(callobj)
+  callstr <- gsub(".local", "xLinked", deparse(callobj))
 
   ## fetch necessary parameters
   vcfFiles <- param$vcfFiles
@@ -11,6 +11,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   seqInfos <- param$seqInfos
   txdb <- param$txdb
   bsgenome <- param$bsgenome
+  sampleNames <- param$sampleNames
   
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
@@ -106,7 +107,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
-      inheritanceModel="X-linked", variants=xlinked_annotated,
+      activeSamples=sampleNames, inheritanceModel="X-linked", variants=annotated_variants,
       dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
       locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,

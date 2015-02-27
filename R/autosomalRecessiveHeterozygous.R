@@ -2,64 +2,58 @@
 setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringParam"),
           function(param, BPPARAM=bpparam()) {
 
-  callobj <- match.call()
-  callstr <- deparse(callobj)
-  input_list <- as.list(path(param$vcfFiles))
-  ped <- param$pedFilename
-  sinfo <- param$seqInfos[[1]]
-  orgdb <- param$orgdb
-  txdb <- param$txdb
-  snpdb <- param$snpdb
-  bsgenome <- param$bsgenome
-  radicalAAchangeMatrix <- param$radicalAAchangeMatrix
-  allTranscripts <- param$allTranscripts
-  otherAnnotations <- param$otherAnnotations
-  filterTag <- param$filterTag
+  stop("this is being updated and cannot be used at the moment.")
 
-  genomeInfo <- sinfo
-  
+  ## store call for reproducing it later
+  callobj <- match.call()
+  callstr <- gsub(".local", "autosomalRecessiveHeterozygous", deparse(callobj))
+
+  ## fetch necessary parameters
+  vcfFiles <- param$vcfFiles
+  ped <- param$pedFilename
+  seqInfos <- param$seqInfos
+  txdb <- param$txdb
+  bsgenome <- param$bsgenome
+  sampleNames <- param$sampleNames
+
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
+
+  if (length(vcfFiles) > 1)
+    stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with software such as vcftools or GATK, or do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
+  else if (length(vcfFiles) < 1)
+    stop("A minimum of 1 VCF file has to be provided.")
   
-  if (class(txdb) != "TxDb")
-    stop("argument 'txdb' should be a 'TxDb' object (see GenomicFeatures package)\n")
-  if (allTranscripts == TRUE) {
-     message("Compound heterozygous analysis cannot handle more than one transcript per gene.\n")
-     message("Automatically setting allTranscripts to FALSE")
-     allTranscripts <- FALSE
-  }
+  ## if (allTranscripts == TRUE) {
+  ##    message("Compound heterozygous analysis cannot handle more than one transcript per gene.\n")
+  ##    message("Automatically setting allTranscripts to FALSE")
+  ##    allTranscripts <- FALSE
+  ## }
    
-  if (length(input_list) > 1) {
-    multiSample <- FALSE
-  } else if (length(input_list) == 1) {
-    multiSample <- TRUE
-  } else {
-    stop("A minimum of 1 vcf file have to be provided")
-  }
+  pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
+  pedf <- pedf[, 1:6]
+  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
   
-  pedf <- read.table(ped, header=F)
+  if (sum(pedf$Phenotype == 2) < 1)
+    stop("No affected individuals detected. Something is wrong with the PED file.")
+
+  aff <- pedf[pedf$Phenotype == 2, ]
   
-  aff <- pedf[pedf[, 6] == 2, ]
-  aff_ind <- as.character(aff[, 2])
-  
-  carr1 <- unique(aff[, 4])
+  carr1 <- unique(aff$MotherID)
   if (length(carr1) > 1) {
-    stop("The mother of all the affected individuals has to be the same. Please check out the ped file")
-  } else if (length(carr1) < 1) {
-    stop("One individual has to be set as mother of the affected individuals")
-  }
-  row_carr1 <- pedf[pedf[, 2] == as.character(carr1), ]
+    stop("The mother of all the affected individuals has to be the same. Please check out the PED file.")
+  } else if (length(carr1) < 1)
+    stop("One individual has to be set as mother of the affected individual(s).")
+  row_carr1 <- pedf[pedf$IndividualID == as.character(carr1), ]
   
-  carr2 <- unique(aff[, 3])
+  carr2 <- unique(aff$FatherID)
   if (length(carr2) > 1) {
-    stop("The father of all the affected individuals has to be the same. Please check out the ped file")
-  } else if (length(carr2) < 1) {
-    stop("One individual has to be set as father of the affected individuals")
-  }
+    stop("The father of all the affected individuals has to be the same. Please check out the PED file.")
+  } else if (length(carr2) < 1)
+    stop("One individual has to be set as father of the affected individual(s)")
+  row_carr2 <- pedf[pedf$IndividualID == as.character(carr2), ]
   
-  row_carr2 <- pedf[pedf[, 2] == as.character(carr2), ]
-  
-  
+  ## CONTINUE HERE !!!!!
   # analysis
     
   mom_comphet <- dad_comphet <- NULL
@@ -221,9 +215,9 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
-      inheritanceModel="autosomal recessive heterozygous", variants=parents_contrib_sorted,
-      dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
-      locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
+      activeSamples=sampleNames, inheritanceModel="autosomal recessive heterozygous",
+      variants=parents_contrib_sorted, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      variantType="Any", locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)
