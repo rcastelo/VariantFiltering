@@ -1,12 +1,16 @@
 setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
           function(param, BPPARAM=bpparam()) {
 
+  ## store call for reproducing it later
   callobj <- match.call()
-  callstr <- deparse(callobj)
+  callstr <- gsub(".local", "unrelatedIndividuals", deparse(callobj))
+
+  ## fetch necessary parameters
   vcfFiles <- param$vcfFiles
   seqInfos <- param$seqInfos
   txdb <- param$txdb
   bsgenome <- param$bsgenome
+  sampleNames <- param$sampleNames
   
   if (!exists(as.character(substitute(BPPARAM))))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
@@ -63,7 +67,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
-      inheritanceModel="unrelated individuals", variants=annotated_variants,
+      activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
       dbSNPflag=NA_character_, OMIMflag=NA_character_,
       locationMask=locMask, consequenceMask=conMask, variantType="Any", aaChangeType="Any",

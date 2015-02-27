@@ -1,6 +1,9 @@
-## group by variant position when providing the summary by variant (??????)
+##
+## show methodss
+##
 
-## this is by now missing from VariantAnnotation
+## provide a concise show method for CompressedVRangesList objects
+## that result from doing split(vr, sampleNames(vr)) on a VRanges object 'vr'
 setMethod("show", signature(object="CompressedVRangesList"),
           function(object) {
             lo <- length(object)
@@ -10,6 +13,7 @@ setMethod("show", signature(object="CompressedVRangesList"),
               cat(BiocGenerics:::labeledLine("names", names(object)))
           })
 
+## group by variant position when providing the summary by variant (??????)
 setMethod("show", signature(object="VariantFilteringResults"),
           function(object) {
             cat("\nVariantFiltering results object\n\n")
@@ -87,6 +91,37 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat(sprintf("    %s (%.1f%%) located in intronic regions\n", sprintf(paddgts, vxloc["intron"]), 100*vxloc["intron"]/total))
             if (!is.na(match("intergenic", names(vxloc))))
               cat(sprintf("    %s (%.1f%%) located in intergenic regions\n", sprintf(paddgts, vxloc["intergenic"]), 100*vxloc["intergenic"]/total))
+          })
+
+##
+## getter and setter methods
+##
+
+setMethod("samples", signature(object="VariantFilteringResults"),
+          function(object) {
+            object@activeSamples
+          })
+
+setReplaceMethod("samples", signature(object="VariantFilteringResults"),
+                 function(object, value) {
+                   mask <- !value %in% param(object)$sampleNames
+                   if (any(mask)) {
+                     if (sum(mask) > 1)
+                       stop(sprintf("%s are not valid sample names.", value[mask]))
+                     else
+                       stop(sprintf("%s is not a valid sample name.", value[mask]))
+                   }
+
+                   object@activeSamples <- value
+
+                   object
+                 })
+
+setMethod("resetSamples", signature(object="VariantFilteringResults"),
+          function(object) {
+            object@activeSamples <- param(object)$sampleNames
+
+            object
           })
 
 setMethod("param", signature(x="VariantFilteringResults"),
@@ -438,14 +473,18 @@ setReplaceMethod("minCUFC", signature(x="VariantFilteringResults", value="numeri
                  })
 
 
+##
+## methods for retrieving variants
+##
+
 ## get all variants without applying any filter
 setMethod("allVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample") {
             vars <- x@variants
             if (groupBy[1] %in% "sample")
-              vars <- new("CompressedVRangesList", split(x@variants, sampleNames(x@variants)))
+              vars <- split(x@variants, sampleNames(x@variants))
             else if (groupBy[1] %in% colnames(mcols(x@variants)))
-              vars <- new("CompressedVRangesList", split(x@variants, mcols(x@variants)[, groupBy]))
+              vars <- split(x@variants, mcols(x@variants)[, groupBy])
 
             vars
           })
@@ -456,6 +495,15 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             varsxsam <- allVariants(x)
             vars <- varsxsam[[1]]
             rowsMask <- rep(TRUE, length(vars))
+            if (!all(param(x)$sampleNames %in% samples(x))) { ## not all samples are active
+              varsxsam <- varsxsam[samples(x)]
+
+              ## discard variants that are not present in active samples
+              gt <- sapply(varsxsam, function(x) x$GT)
+              gt <- apply(gt, 1, paste, collapse="")
+              gt <- gsub("/|\\|", "", gt)
+              rowsMask <- !gt %in% paste(rep("0", times=length(samples(x))), collapse="")
+            }
 
             ## presence in dbSNP
             if (!is.na(dbSNPpresent(x))) {
@@ -588,14 +636,17 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             vars <- vars[rowsMask, colsMask]
 
             if (groupBy[1] %in% "sample")
-              vars <- new("CompressedVRangesList", split(vars, sampleNames(vars)))
+              vars <- split(vars, sampleNames(vars))
             else if (groupBy[1] %in% colnames(mcols(vars)))
-              vars <- new("CompressedVRangesList", split(vars, mcols(vars)[, groupBy]))
+              vars <- split(vars, mcols(vars)[, groupBy])
 
             vars
           })
 
+##
 ## shiny app to filter and visualize variants
+##
+
 setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           function(vfResultsObj, type=c("shiny", "csv", "tsv"), file=NULL, UCSCorg=NA_character_) {
               
@@ -725,21 +776,6 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
                 downloadButton('generateReport', 'Generate Report'),
                 actionButton('closesavebutton', 'Save & Close')
               ),
-              ## mainPanel(
-              ##   tabsetPanel(
-              ##     tabPanel("Genome", tableOutput('tableGenome'), value="genome"),
-              ##     tabPanel("Gene", tableOutput('tableGene'), value="gene"),
-              ##     tabPanel("Transcript", tableOutput('tableTranscript'), value="transcript"),
-              ##     tabPanel("Protein", htmlOutput('tableProtein'), value="protein"),
-              ##     ## if (!is.na(mtMafDb))
-              ##       tabPanel("MAF", tableOutput('tableMAF'), value="maf"),
-              ##     ## if (!is.na(mtPhastConsDb) || !is.na(mtGenePhylostrataDb))
-              ##       tabPanel("Conservation", tableOutput('tableConservation'), value="conservation"),
-              ##     tabPanel("CrypSplice", tableOutput('tableCrypSplice'), value="cryp"),
-              ##     tabPanelAbout(),
-              ##     id="tsp"
-              ##   )
-              ## )
               mainPanel(
                 uiOutput('mytabs')
               )
