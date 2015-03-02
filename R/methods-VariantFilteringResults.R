@@ -23,9 +23,9 @@ setMethod("show", signature(object="VariantFilteringResults"),
                 cat(sprintf(" %s(%s)", paste(unique(genome(param(object)$seqInfos[[i]])), collapse=","),
                             seqlevelsStyle(param(object)$seqInfos[[i]])))
 
-            sampleNames <- ifelse(length(param(object)$sampleNames) <= 4, paste(param(object)$sampleNames, collapse=", "),
-                                  paste(paste(head(param(object)$sampleNames, n=4), collapse=", "), "...", sep=", "))
-            cat(sprintf("\n  Number of individuals: %d (%s)\n", length(param(object)$sampleNames), sampleNames))
+            sampleNames <- ifelse(length(samples(object)) <= 4, paste(samples(object), collapse=", "),
+                                  paste(paste(head(samples(object), n=4), collapse=", "), "...", sep=", "))
+            cat(sprintf("\n  Number of individuals: %d (%s)\n", length(samples(object)), sampleNames))
 
             if (inheritanceModel(object) != "any")
               cat(sprintf("  Variants segregate according to a(n) %s inheritance model\n", inheritanceModel(object)))
