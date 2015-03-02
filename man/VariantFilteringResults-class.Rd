@@ -23,6 +23,13 @@
 \alias{param,VariantFilteringResults-method}
 \alias{inheritanceModel}
 \alias{inheritanceModel,VariantFilteringResults-method}
+\alias{samples}
+\alias{samples<-}
+\alias{samples,VariantFilteringResults-method}
+\alias{samples<-,VariantFilteringResults-method}
+\alias{samples<-,VariantFilteringResults,character-method}
+\alias{resetSamples}
+\alias{resetSamples,VariantFilteringResults-method}
 \alias{selectIndividual}
 \alias{selectIndividual<-}
 \alias{selectIndividual,VariantFilteringResultsAIM-method}
