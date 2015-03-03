@@ -91,13 +91,14 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   message("Annotating location with VariantAnnotation::locateVariants()")
   located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
                                        region=AllVariants(intergenic=IntergenicVariants(0, 0)))
-  variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID]
+  variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID] ## REPLACE variantsGR_annotated by variantsGR ???
   variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
   variantsGR_annotated$QUERYID <- located_variantsGR$QUERYID
   variantsGR_annotated$TXID <- located_variantsGR$TXID
   variantsGR_annotated$CDSID <- located_variantsGR$CDSID
   variantsGR_annotated$GENEID <- located_variantsGR$GENEID
+  rm(located_variantsGR)
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
@@ -128,7 +129,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   if (any(variantsGR_annotated$LOCATION == "coding")) {
     variantsGR_annotated_coding <- variantsGR_annotated[variantsGR_annotated$LOCATION == "coding"]
 
-    ## harmonize sequence levels between variants, annotations and genome sequence
+    ## set temporarily the sequence style to the one of the genome package to
+    ## access the genome sequence without chromosome nomenclature problems
     origVarLevelsStyle <- seqlevelsStyle(variantsGR_annotated_coding)
     seqlevelsStyle(variantsGR_annotated_coding) <- seqlevelsStyle(bsgenome)
     origTxDbLevelsStyle <- seqlevelsStyle(txdb)
@@ -152,7 +154,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
                                        subject=txdb, seqSource=bsgenome, genetic.code=geneticCode,
                                        varAllele=DNAStringSet(alt(variantsGR_annotated_coding)))
 
-    seqlevelsStyle(GRanges_coding_uq) <- origVarLevelsStyle
+    ## set back the sequence style
+    seqlevelsStyle(variantsGR_annotated_coding) <- origVarLevelsStyle
     seqlevelsStyle(txdb) <- origTxDbLevelsStyle
   
     ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
@@ -200,11 +203,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     
       message("Annotating codon usage frequencies in coding synonymous variants")
     
-      ## GRanges_coding_uq_codonusage <- GRanges_coding_uq
-    
       ## create a mask for those variants that are codying and synonymous
 
-      ## mask <- GRanges_coding_uq_codonusage$CONSEQUENCE %in% "synonymous"
       mask <- variantsGR_annotated_coding$CONSEQUENCE %in% "synonymous"
     
       ## extract the reference codons and alt codons from the DNStringSet
