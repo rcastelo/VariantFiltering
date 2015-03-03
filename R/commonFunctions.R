@@ -399,6 +399,11 @@ matchChromosomes <- function(variantsGR, txdb) {
 }
 
 .matchSeqinfo <- function(variantsGR, txdb, bsgenome) {
+
+  ## set temporarily the sequence style of variants to that of
+  ## the genome and discard chromosomes that do not have the same
+  ## length. this is basically to handle situations such as with
+  ## NCBI GRCh37 / h19 vs b37 where the MT chromosome has different lengths
   seqlevelsStyle(variantsGR) <- seqlevelsStyle(bsgenome)
   slenVcf <- seqlengths(variantsGR)
   slenBSgenome <- seqlengths(bsgenome)
@@ -417,11 +422,17 @@ matchChromosomes <- function(variantsGR, txdb) {
     commonChr <- commonChr[slenVcf == slenBSgenome]
   }
 
+  ## set the genome build to the one of the genome package
   message(sprintf("Assuming the genome build of the input variants is %s.", unique(genome(bsgenome)[commonChr])))
   seqinfo(variantsGR, new2old=match(seqlevels(bsgenome), seqlevels(variantsGR))) <- seqinfo(bsgenome)
 
+  ## set the sequence style of variants to the one of annotations
+  message(sprintf("Switching to the %s chromosome-name style from the transcript-centric annotation package.", seqlevelsStyle(txdb)))
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
   commonChr <- intersect(seqlevels(variantsGR), seqlevels(txdb))
 
+  ## inform the user the genome build is going to be the one of the
+  ## variants and genome package, in case it does not match the one of the annotations
   if (any(is.na(genome(txdb)[commonChr])))
     warning(sprintf("Assuming the genome build of transcript-centric annotations is %s.", unique(genome(variantsGR)[commonChr])))
   else if (any(genome(variantsGR)[commonChr] != genome(txdb)[commonChr])) {
@@ -430,8 +441,7 @@ matchChromosomes <- function(variantsGR, txdb) {
                           collapse=" and ")))
   }
 
-  message(sprintf("Switching to the %s chromosome-name style from the transcript-centric annotation package.", seqlevelsStyle(txdb)))
-  seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
+  ## discard scaffold sequences
   message("Discarding scaffold sequences.")
   variantsGR <- keepStandardChromosomes(variantsGR)
 
