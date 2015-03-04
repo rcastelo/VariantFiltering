@@ -56,7 +56,10 @@ importMethodsFrom(VariantAnnotation, readVcf,
                                      ref,
                                      altDepth,
                                      refDepth)
-importMethodsFrom(Rsamtools, headerTabix)
+importMethodsFrom(Rsamtools, headerTabix,
+                             path,
+                             scanBamHeader,
+                             scanBam)
 importMethodsFrom(IRanges, elementLengths,
                            start,
                            width,
@@ -69,7 +72,8 @@ importMethodsFrom(IRanges, elementLengths,
                            subjectHits,
                            values,
                            findOverlaps,
-                           as.vector)
+                           as.vector,
+                           coverage)
 importMethodsFrom(GenomicFeatures, exonsBy,
                                    mapToTranscripts)
 importMethodsFrom(GenomicRanges, resize,
@@ -86,12 +90,13 @@ importMethodsFrom(AnnotationDbi, get,
                                  keytypes,
                                  columns,
                                  keys)
-importMethodsFrom(Rsamtools, path)
 
 importFrom(RSQLite, SQLite)
 importFrom(Rsamtools, TabixFile,
                       TabixFileList,
                       indexTabix,
+                      scanBamParam,
+                      scanBamFlag,
                       bgzip)
 importFrom(GenomeInfoDb, seqnames,
                          keepStandardChromosomes,
@@ -117,6 +122,11 @@ importFrom(VariantAnnotation, AllVariants,
                               IntergenicVariants,
                               VRanges,
                               VRangesList)
+importFrom(Gviz, GenomeAxisTrack,
+                 GeneRegionTrack,
+                 AnnotationTrack,
+                 SequenceTrack,
+                 plotTracks)
 
 exportClasses(MafDb, PhastConsDb, GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,

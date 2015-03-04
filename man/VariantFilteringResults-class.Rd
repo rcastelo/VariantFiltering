@@ -116,6 +116,7 @@
 \alias{reportVariants,VariantFilteringResultsAIM-method}
 \alias{reportVariants,VariantFilteringResultsUI-method}
 \alias{reportVariants}
+\alias{plot,VariantFilteringResults,ANY-method}
 
 \title{VariantFiltering results class}
 
@@ -218,7 +219,7 @@ An \code{VariantFilteringResults} object contains the following annotation data 
   }
 }
 }
-\section{Accessor methods}{
+\section{Methods}{
 In the calls below, \code{x} is a \code{VariantFilteringResults} object.
 \describe{
   \item{}{
@@ -290,7 +291,17 @@ In the calls below, \code{x} is a \code{VariantFilteringResults} object.
     When the \code{shiny} app is closed this method returns a
     \code{VariantFilteringResult} object with the corresponding filters
     switched on or off according to how the app has been interactively used.
-   }
+  }
+  \item{}{
+    \code{plot(x, what, flank, ...)}: Method to plot variants using the
+    \code{Gviz} package. The argument \code{what} can be either a character
+    vector specifying gene or variant identifiers or a chromosome name, or
+    a \code{GRanges} object specifying a genomic region. The argument
+    \code{flank} is a number of nucleotides to extend the plotting region
+    derived from the argument \code{what}. Further arguments in \code{...}
+    are passed to the \code{Gviz} function \code{plotTracks()}. See the
+    vignette of \code{Gviz} for what can these extra arguments be.
+  }
  }
 }
 
