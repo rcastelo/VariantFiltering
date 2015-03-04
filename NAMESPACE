@@ -95,7 +95,7 @@ importFrom(RSQLite, SQLite)
 importFrom(Rsamtools, TabixFile,
                       TabixFileList,
                       indexTabix,
-                      scanBamParam,
+                      ScanBamParam,
                       scanBamFlag,
                       bgzip)
 importFrom(GenomeInfoDb, seqnames,
