@@ -22,7 +22,9 @@ importMethodsFrom(RSQLite, dbConnect,
                            dbBegin,
                            dbGetPreparedQuery,
                            dbCommit)
-importMethodsFrom(BSgenome, referenceGenome,
+importMethodsFrom(BSgenome, snpcount,
+                            snplocs,
+                            referenceGenome,
                             organism,
                             species,
                             provider,
@@ -105,6 +107,8 @@ importFrom(GenomeInfoDb, seqnames,
                          seqlengths,
                          seqinfo,
                          Seqinfo)
+importFrom(BSgenome, snpcount,
+                     snplocs)
 importFrom(GenomicRanges, GRanges,
                           rowData)
 importFrom(BiocParallel, bpparam,

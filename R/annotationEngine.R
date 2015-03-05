@@ -331,7 +331,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 ## Annotate dbSNP identifiers
 ####
 
-## an odd thing here is that getSNPlocs needs not the explicit SNPlocs object (annObj) as input argument
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
           function(annObj, variantsGR, param, BPPARAM=bpparam()) {
             if (!"TYPE" %in% colnames(mcols(variantsGR))) {
@@ -339,7 +338,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             }
             seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
             masksnp <- variantsGR$TYPE == "SNV"
-            rsids_list <- loc2rsid(variantsGR[masksnp], BPPARAM=BPPARAM)
+            rsids_list <- loc2rsid(annObj, variantsGR[masksnp], BPPARAM=BPPARAM)
             rsids <- rep(NA_character_, times=length(variantsGR))
             elen <- elementLengths(rsids_list)
             rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
@@ -621,25 +620,13 @@ variantDescription <- function(variantsGR) {
 }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
-loc2rsid <- function(locs, BPPARAM=bpparam()) {
-  getSNPcountFun <- getSNPlocsFun <- NULL
-  tryCatch({
-    getSNPcountFun <- get("getSNPcount", mode="function")
-  }, error=function(err) {
-    stop("'getSNPcount() function not found. This is a problem related to loading the SNP-centric package.")
-  })
-
-  tryCatch({
-    getSNPlocsFun <- get("getSNPlocs", mode="function")
-  }, error=function(err) {
-    stop("'getSNPlocs() function not found. This is a problem related to loading the SNP-centric package.")
-  })
+loc2rsid <- function(SNPlocsObj, locs, BPPARAM=bpparam()) {
 
   if (!is(locs, "GRanges"))
     stop("'locs' must be a GRanges object")
   if (!all(width(locs) == 1L))
     stop("all ranges in 'locs' must be of width 1")
-  common_seqlevels <- intersect(seqlevels(locs), names(getSNPcountFun()))
+  common_seqlevels <- intersect(seqlevels(locs), names(snpcount(SNPlocsObj)))
   if (length(common_seqlevels) == 0L)
     stop("chromosome names (a.k.a. seqlevels) in 'locs' don't seem to ",
           "be\n  compatible with the chromosome names in the SNPlocs ",
@@ -659,7 +646,7 @@ loc2rsid <- function(locs, BPPARAM=bpparam()) {
                                ans2 <- vector("list", length=length(locs2))
                                if (length(locs2) == 0L || !(seqname %in% common_seqlevels))
                                    return(ans2)
-                               snplocs <- getSNPlocsFun(seqname, as.GRanges=TRUE)
+                               snplocs <- snplocs(SNPlocsObj, seqname, as.GRanges=TRUE)
                                hits <- findOverlaps(locs2, snplocs) ## findOverlaps on a GRanges faster than findMatches on a vector
                                ## hits <- findMatches(locs2, snplocs$loc)
                                if (length(hits) > 0) {
