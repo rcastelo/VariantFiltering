@@ -108,7 +108,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="X-linked", variants=annotated_variants,
-      dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
+      bamViews=BamViews(), dbSNPflag=NA_character_, OMIMflag=NA_character_, variantType="Any",
       locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,

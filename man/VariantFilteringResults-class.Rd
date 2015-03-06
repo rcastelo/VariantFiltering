@@ -30,6 +30,11 @@
 \alias{samples<-,VariantFilteringResults,character-method}
 \alias{resetSamples}
 \alias{resetSamples,VariantFilteringResults-method}
+\alias{bamFiles}
+\alias{bamFiles<-}
+\alias{bamFiles,VariantFilteringResults-method}
+\alias{bamFiles<-,VariantFilteringResults-method}
+\alias{bamFiles<-,VariantFilteringResults,BamViews-method}
 \alias{selectIndividual}
 \alias{selectIndividual<-}
 \alias{selectIndividual,VariantFilteringResultsAIM-method}

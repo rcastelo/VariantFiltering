@@ -124,6 +124,22 @@ setMethod("resetSamples", signature(object="VariantFilteringResults"),
             object
           })
 
+setMethod("bamFiles", signature(object="VariantFilteringResults"),
+          function(object) {
+            object@bamViews
+          })
+
+setReplaceMethod("bamFiles", signature(object="VariantFilteringResults", value="BamViews"),
+                 function(object, value) {
+                   mask <- rownames(bamSamples(value)) %in% param(object)$sampleNames
+                   if (!all(mask))
+                     stop("Sample names do not match.")
+
+                   object@bamViews <- value
+
+                   object
+                 })
+
 setMethod("param", signature(x="VariantFilteringResults"),
           function(x) {
             x@inputParameters
