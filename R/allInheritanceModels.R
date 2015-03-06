@@ -1,6 +1,8 @@
 setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
           function(param, BPPARAM=bpparam()) {
 
+  stop("this is being updated and cannot be used at the moment.")
+
   callobj <- match.call()
   callstr <- deparse(callobj)
   input_list <- as.list(path(param$vcfFiles))
@@ -149,7 +151,7 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
 
     
   new("VariantFilteringResultsAIM", callObj=callobj, callStr=callstr, inputParameters=param,
-      inheritanceModel="any", variants=allinheritance_annotated,
+      inheritanceModel="any", variants=allinheritance_annotated, bamViews=BamViews(),
       indselected=NA_character_, inheritancepattern="None", selectindexcase=NA_character_,
       selectcarrierrelative1=NA_character_, selectcarrierrelative2=NA_character_, selectaffectedrelative=NA_character_,
       selectcarrierallele1ch=NA_character_, selectcarrierallele2ch=NA_character_, selectaffrelative1ch=NA_character_,

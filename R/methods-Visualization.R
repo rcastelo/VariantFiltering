@@ -4,8 +4,8 @@
 
 ## plot method
 setMethod("plot", signature(x="VariantFilteringResults"),
-          function(x, what, flank=20, ...) {
-            require(Gviz)
+          function(x, what, flankingNt=20, showAlnNtCutoff=200, isPaired=FALSE, ...) {
+
             options(ucscChromosomeNames=FALSE)
 
             if (is.null(what) || missing(what))
@@ -49,7 +49,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
 
             } else if (class(what) == "GRanges") {
 
-              seqlevelsStyle(what) <- sealevelsStyle(param(x)$bsgenome) ## switch to the sequence style of the genome
+              seqlevelsStyle(what) <- seqlevelsStyle(param(x)$bsgenome) ## switch to the sequence style of the genome
               ov <- findOverlaps(what, vars1)
               if (length(ov) == 0)
                 stop("The genomic ranges in the 'what' argument do not overlap any variant in the given 'VariantFilteringResults' object 'x'.")
@@ -62,24 +62,20 @@ setMethod("plot", signature(x="VariantFilteringResults"),
             } else
               stop("The value of the 'what' argument must be either a character vector or a 'GRanges' object.")
 
-            if (class(what) != "GRanges" && flank > 0) {
+            if (class(what) != "GRanges" && flankingNt > 0) {
               chrlen <- seqlengths(param(x)$bsgenome)[as.character(seqnames(rng))]
-              if (start(rng) > flank && end(rng) < chrlen-flank)
-                rng <- flank(rng, width=flank, both=TRUE)
-              else {
-                if (start(rng)-flank < 1)
-                  start(rng) <- 1
-                else
-                  rng <- resize(rng, width=width(rng)+flank, fix="end")
+              if (start(rng)-flankingNt < 1)
+                start(rng) <- 1
+              else
+                rng <- resize(rng, width=width(rng)+flankingNt, fix="end")
 
-                if (end(rng)+flank > chrlen)
-                  end(rng) <- chrlen
-                else
-                  rng <- resize(rng, width=width(rng)+flank, fix="start")
-              }
-
+              if (end(rng)+flankingNt > chrlen)
+                end(rng) <- chrlen
+              else
+                rng <- resize(rng, width=width(rng)+flankingNt, fix="start")
             }
 
+            ## fetch all variants that can be anntotated in the plotting region
             ov <- findOverlaps(rng, vars1)
             vars1 <- vars1[subjectHits(ov)]
             txdb <- param(x)$txdb
@@ -94,15 +90,29 @@ setMethod("plot", signature(x="VariantFilteringResults"),
                                         chromosome=as.character(seqnames(vars1))[1], shape="arrow",
                                         name=paste(txdbmdata[txdbmdata$name %in% "Data source", "value"], "Genes"),
                                         transcriptAnnotation="symbol"))
-            tracks <- c(tracks,
-                        AnnotationTrack(start=start(vars1), width=width(vars1), chromosome=as.character(seqnames(vars1)),
-                                        strand=strand(vars1), genome=genome(param(x)$bsgenome)[1], shape="box",
-                                        id=sprintf("%s\n(%s)", vars1$VARID, vars1$DESC), name="Variants"))
 
-            tracks <- c(tracks, SequenceTrack(param(x)$bsgenome, chromosome=as.character(seqnames(vars1))[1]))
+            strack <- SequenceTrack(param(x)$bsgenome, chromosome=as.character(seqnames(vars1))[1])
+
+            if (width(rng) < showAlnNtCutoff && length(samples(x)) == 1 &&
+                samples(x)[1] %in% rownames(bamSamples(bamFiles(x)))) {
+              whbam <- which(rownames(bamSamples(bamFiles(x))) %in% samples(x)[1])
+              tracks <- c(tracks,
+                          AlignmentsTrack(range=bamPaths(bamFiles(x))[whbam], isPaired=isPaired,
+                                          referenceSequence=strack, showMismatches=TRUE))
+            } else {
+              idlabel <- ifelse(is.na(vars1$DESC), sprintf("%s", vars1$VARID),
+                                sprintf("%s\n(%s)", vars1$DESC))
+              tracks <- c(tracks,
+                          AnnotationTrack(start=start(vars1), width=width(vars1),
+                                          chromosome=as.character(seqnames(vars1)),
+                                          strand=strand(vars1), genome=genome(param(x)$bsgenome)[1],
+                                          shape="box", id=idlabel, name="Variants"))
+            }
+
+            tracks <- c(tracks, strack)
 
 
-            plotTracks(tracks, chromosome=as.vector(seqnames(vars1))[1],
+            plotTracks(tracks, chromosome=as.character(seqnames(vars1))[1],
                        from=start(rng), to=end(rng), featureAnnotation="id", fontcolor.feature="black", ...)
             
           })

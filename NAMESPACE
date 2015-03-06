@@ -13,7 +13,7 @@ importClassesFrom(VariantAnnotation, SpliceSiteVariants, PromoterVariants,
 importClassesFrom(GenomeInfoDb, Seqinfo, GenomeDescription)
 importClassesFrom(GenomicRanges, GRanges, GRangesList)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
-importClassesFrom(Rsamtools, TabixFile, TabixFileList)
+importClassesFrom(Rsamtools, TabixFile, TabixFileList, BamViews)
 
 importMethodsFrom(DBI, dbListFields)
 importMethodsFrom(RSQLite, dbConnect,
@@ -65,6 +65,7 @@ importMethodsFrom(Rsamtools, headerTabix,
 importMethodsFrom(IRanges, elementLengths,
                            start,
                            width,
+                           flank,
                            nchar,
                            unlist,
                            which,
@@ -97,6 +98,9 @@ importFrom(RSQLite, SQLite)
 importFrom(Rsamtools, TabixFile,
                       TabixFileList,
                       indexTabix,
+                      BamViews,
+                      bamPaths,
+                      bamSamples,
                       ScanBamParam,
                       scanBamFlag,
                       bgzip)
@@ -130,6 +134,7 @@ importFrom(Gviz, GenomeAxisTrack,
                  GeneRegionTrack,
                  AnnotationTrack,
                  SequenceTrack,
+                 AlignmentsTrack,
                  plotTracks)
 
 exportClasses(MafDb, PhastConsDb, GenePhylostrataDb,
@@ -154,6 +159,7 @@ exportMethods(VariantFilteringParam,
               ## specific for the VariantFilteringResults
               samples, "samples<-",
               resetSamples,
+              bamFiles, "bamFiles<-",
               inheritanceModel,
               param,
               allVariants,
