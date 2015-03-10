@@ -76,9 +76,16 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ##############################
 
   ## do this before variants get replicated because of different functional annotations
-  message(sprintf("Annotating dbSNP identifiers with %s", snpdb@data_pkgname))
-  mcols(variantsGR) <- cbind(mcols(variantsGR),
-                             annotateVariants(snpdb, variantsGR, param, BPPARAM=BPPARAM))
+  variantsGR$dbSNP <- rep(NA_character_, times=length(variantsGR))
+  for (i in seq_len(length(snpdb))) {
+    message(sprintf("Annotating dbSNP identifiers with %s", names(snpdb)[i]))
+    res <- annotateVariants(snpdb[[i]], variantsGR, param, BPPARAM=BPPARAM)
+    maskNAdbsnp <- is.na(res$dbSNP)
+    maskNAannotdbsnp <- is.na(variantsGR$dbSNP)
+    variantsGR$dbSNP[maskNAannotdbsnp & !maskNAdbsnp] <- res$dbSNP[maskNAannotdbsnp & !maskNAdbsnp]
+    variantsGR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp] <-
+      paste(variantsGR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], res$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], sep=", ")
+  }
 
   #######################
   ##                   ##
@@ -338,15 +345,38 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             }
             seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
             masksnp <- variantsGR$TYPE == "SNV"
-            rsids_list <- loc2rsid(annObj, variantsGR[masksnp], BPPARAM=BPPARAM)
             rsids <- rep(NA_character_, times=length(variantsGR))
-            elen <- elementLengths(rsids_list)
-            rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
+            if (any(masksnp)) {
+              rsids_list <- .loc2SNPid(annObj, variantsGR[masksnp], BPPARAM=BPPARAM)
+              elen <- elementLengths(rsids_list)
+              rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
-            ## paste together multiple dbSNP identifiers
-            rsids[masksnp][elen > 1] <- unlist(bplapply(rsids_list[elen > 1], paste, collapse=", ", BPPARAM=BPPARAM),
+              ## paste together multiple dbSNP identifiers
+              rsids[masksnp][elen > 1] <- unlist(bplapply(rsids_list[elen > 1], paste, collapse=", ", BPPARAM=BPPARAM),
                                                use.names=FALSE)
-            rsids[rsids == ""] <- NA_character_
+              rsids[rsids == ""] <- NA_character_
+            }
+            return(DataFrame(dbSNP=rsids))
+          })
+
+setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
+          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+            if (!"TYPE" %in% colnames(mcols(variantsGR))) {
+              stop("Variant type (SNV, InDel, MNV) has not been annotated.")
+            }
+            seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
+            maskxtrasnp <- variantsGR$TYPE != "SNV"
+            rsids <- rep(NA_character_, times=length(variantsGR))
+            if (any(maskxtrasnp)) {
+              rsids_list <- .loc2XtraSNPid(annObj, variantsGR[maskxtrasnp], BPPARAM=BPPARAM)
+              elen <- elementLengths(rsids_list)
+              rsids[maskxtrasnp][elen == 1] <- as.character(rsids_list[elen == 1])
+
+              ## paste together multiple dbSNP identifiers
+              rsids[maskxtrasnp][elen > 1] <- unlist(bplapply(rsids_list[elen > 1], paste, collapse=", ", BPPARAM=BPPARAM),
+                                                     use.names=FALSE)
+              rsids[rsids == ""] <- NA_character_
+            }
             return(DataFrame(dbSNP=rsids))
           })
 
@@ -620,7 +650,7 @@ variantDescription <- function(variantsGR) {
 }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
-loc2rsid <- function(SNPlocsObj, locs, BPPARAM=bpparam()) {
+.loc2SNPid <- function(SNPlocsObj, locs, BPPARAM=bpparam()) {
 
   if (!is(locs, "GRanges"))
     stop("'locs' must be a GRanges object")
@@ -646,11 +676,54 @@ loc2rsid <- function(SNPlocsObj, locs, BPPARAM=bpparam()) {
                                ans2 <- vector("list", length=length(locs2))
                                if (length(locs2) == 0L || !(seqname %in% common_seqlevels))
                                    return(ans2)
-                               snplocs <- snplocs(SNPlocsObj, seqname, as.GRanges=TRUE)
-                               hits <- findOverlaps(locs2, snplocs) ## findOverlaps on a GRanges faster than findMatches on a vector
-                               ## hits <- findMatches(locs2, snplocs$loc)
+                               locs3 <- snplocs(SNPlocsObj, seqname, as.GRanges=TRUE)
+                               hits <- findOverlaps(locs2, locs3) ## findOverlaps on a GRanges faster than findMatches on a vector
+                               ## hits <- findMatches(locs2, locs3$loc)
                                if (length(hits) > 0) {
-                                   rsids <- paste0("rs", snplocs$RefSNP_id[subjectHits(hits)])
+                                   rsids <- paste0("rs", locs3$RefSNP_id[subjectHits(hits)])
+                                   q_hits <- queryHits(hits)
+                                   tmp <- split(rsids, q_hits)
+                                   ans2[as.integer(names(tmp))] <- tmp
+                               }
+                               ans2
+                           }, BPPARAM=BPPARAM)
+  CharacterList(unsplit(rsids_by_chrom, f))
+}
+
+## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
+.loc2XtraSNPid <- function(XtraSNPlocsObj, locs, BPPARAM=bpparam()) {
+
+  if (!is(locs, "GRanges"))
+    stop("'locs' must be a GRanges object")
+
+  mcols(locs) <- NULL
+  locs <- as(locs, "GRanges") ## when 'locs' is a 'VRanges' object
+
+  common_seqlevels <- intersect(seqlevels(locs), names(snpcount(XtraSNPlocsObj)))
+  if (length(common_seqlevels) == 0L)
+    stop("chromosome names (a.k.a. seqlevels) in 'locs' don't seem to ",
+          "be\n  compatible with the chromosome names in the SNPlocs ",
+          "package. Maybe they\n  use a different naming convention? ",
+          "If that's the case then you first need\n  to rename the ",
+          "seqlevels in 'locs'. See '?seqlevels' for how to do this.")
+  f <- as.factor(seqnames(locs))
+  locs_by_chrom <- split(locs, f)
+  rsids_by_chrom <- bplapply(locs_by_chrom,
+                             function(locs2) {
+                               ans2 <- vector("list", length=length(locs2))
+                               if (length(locs2) == 0L)
+                                   return(ans2)
+
+                               seqname <- as.character(seqnames(locs2)[1])
+                               if (!seqname %in% common_seqlevels)
+                                   return(ans2)
+                               
+                               locs3 <- snpsByOverlaps(XtraSNPlocsObj, locs2, type="any",
+                                                       columns="RefSNP_id")
+                               hits <- findOverlaps(locs2, locs3)
+
+                               if (length(hits) > 0) {
+                                   rsids <- locs3$RefSNP_id[subjectHits(hits)]
                                    q_hits <- queryHits(hits)
                                    tmp <- split(rsids, q_hits)
                                    ans2[as.integer(names(tmp))] <- tmp
