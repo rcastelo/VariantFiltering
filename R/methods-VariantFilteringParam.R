@@ -141,7 +141,14 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
                       txdb$packageName, unique(genome(txdb)), seqlevelsStyle(txdb)))
             }
 
-            snpdb <- .loadAnnotationPackageObject(snpdb, "snpdb", "SNPlocs")
+            snpdblst <- as.list(snpdb)
+            names(snpdblst) <- snpdb
+            ## assume the first bit of the name of the package contains the class name
+            snpdb <- lapply(as.list(snpdblst),
+                            function(pkg) .loadAnnotationPackageObject(pkg, "snpdb",
+                                                                       strsplit(pkg, ".", fixed=TRUE)[[1]][1]))
+
+            ## snpdb <- .loadAnnotationPackageObject(snpdb, "snpdb", "SNPlocs")
 
             if (!is.logical(allTranscripts))
               stop("argument 'allTranscripts' should be logical.")
@@ -165,8 +172,7 @@ setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
             }
 
             new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
-                sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
-                snpdb=snpdb,
+                sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
                 spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
                 radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
                 codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
@@ -196,8 +202,9 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat(sprintf("  Genome-centric annotation package: %s (%s %s %s)\n",
                         object$bsgenome@pkgname, provider(object$bsgenome),
                         providerVersion(object$bsgenome), releaseName(object$bsgenome)))
-            cat(sprintf("  SNP-centric annotation package: %s (%s %s)\n",
-                        object$snpdb@data_pkgname, provider(object$snpdb), releaseName(object$snpdb)))
+            cat(sprintf("  Variant-centric annotation package: %s (%s %s)\n",
+                        names(object$snpdb), sapply(object$snpdb, provider), sapply(object$snpdb, releaseName)),
+                sep="")
             if (length(object$txdb$packageName) > 0)
               cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb$packageName))
             else

@@ -24,6 +24,7 @@ importMethodsFrom(RSQLite, dbConnect,
                            dbCommit)
 importMethodsFrom(BSgenome, snpcount,
                             snplocs,
+                            snpsByOverlaps,
                             referenceGenome,
                             organism,
                             species,
