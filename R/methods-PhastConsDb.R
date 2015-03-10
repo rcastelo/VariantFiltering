@@ -41,6 +41,8 @@ setMethod("seqlengths", "PhastConsDb", function(x) seqlengths(referenceGenome(x)
 
 setMethod("seqlevelsStyle", "PhastConsDb", function(x) seqlevelsStyle(referenceGenome(x)))
 
+## this can be improved using RleViews as discussed in
+## https://stat.ethz.ch/pipermail/bioconductor/2013-December/056409.html
 rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric") {
   summaryFun <- match.fun(summaryFun)
   coercionFun <- match.fun(coercionFun)
@@ -76,13 +78,23 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
             pcrlelist <- get("phastCons100way", envir=object@.data_cache)
             missingMask <- !snames %in% names(pcrlelist)
             for (sname in snames[missingMask]) {
-              load(file.path(object@data_dirpath, paste0(sname, ".phastCons100way.RData")), envir=object@.data_cache)
-              objname <- paste0("phastCons100way_", sname)
-              if (exists(objname, envir=object@.data_cache)) {
-                pcrlelist[[sname]] <- get(objname, envir=object@.data_cache)
-                rm(list=objname, envir=object@.data_cache)
-              } else
+              if (file.exists(file.path(object@data_dirpath, paste0(sname, ".phastCons100way.RData")))) {
+                warning("You are using a PhastConsDb annotation package version < 3.1.0, consider upgrading to the lastest version >= 3.1.0.")
+                load(file.path(object@data_dirpath, paste0(sname, ".phastCons100way.RData")), envir=object@.data_cache)
+                objname <- paste0("phastCons100way_", sname)
+                if (exists(objname, envir=object@.data_cache)) {
+                  pcrlelist[[sname]] <- get(objname, envir=object@.data_cache)
+                  rm(list=objname, envir=object@.data_cache)
+                } else {
+                  warning(sprintf("No phastCons scores for chromosome %s.", sname))
+                  pcrlelist[[sname]] <- Rle(raw())
+                }
+              } else if (file.exists(file.path(object@data_dirpath, sprintf("phastCons100way.%s.rds", sname))))
+                pcrlelist[[sname]] <- readRDS(file.path(object@data_dirpath, sprintf("phastCons100way.%s.rds", sname)))
+              else {
+                warning(sprintf("No phastCons scores for chromosome %s.", sname))
                 pcrlelist[[sname]] <- Rle(raw())
+              }
             }
 
             if (any(missingMask) && caching)
