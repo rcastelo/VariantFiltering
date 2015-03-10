@@ -32,7 +32,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
                                          Description="Variant index in the VCF file.",
                                          row.names="VCFIDX"))
     info(vcf)$VCFIDX <- (n.var+1):(n.var+nrow(vcf))
-    varIDs <- names(rowData(vcf))
+    varIDs <- rownames(vcf)
 
     n.var <- n.var + nrow(vcf)
 

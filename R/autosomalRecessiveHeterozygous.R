@@ -88,8 +88,8 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     
     # now, a filter to discard same changes of one parent wich appears in the other AS HOMOZYGOUS, therefore, are not responsible
     # for the phenotype (this parent would present an het change in one candidate and a hom change in the other one, passing the first filters and also being compound heterozygous himself)
-    homodiscard1 <- rowData(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr1[, 2]] == "1/1", ])
-    homodiscard2 <- rowData(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr2[, 2]] == "1/1", ])
+    homodiscard1 <- rowRanges(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr1[, 2]] == "1/1", ])
+    homodiscard2 <- rowRanges(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr2[, 2]] == "1/1", ])
     
     mom_comphet <- carr1[!names(carr1) %in% names(homodiscard2), ]
     dad_comphet <- carr2[!names(carr2) %in% names(homodiscard1), ]
@@ -150,8 +150,8 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     
     # now, a filter to discard same changes of one parent wich appears in the other AS HOMOZYGOUS, therefore, are not responsible
     # for the phenotype (this parent would present an het change in one candidate and a hom change in the other one, passing the first filters and also being compound heterozygous himself)
-    homodiscard1 <- rowData(vcf_carrier1[geno(vcf_carrier1)$GT[, 1] == "1/1", ])
-    homodiscard2 <- rowData(vcf_carrier2[geno(vcf_carrier2)$GT[, 1] == "1/1", ])
+    homodiscard1 <- rowRanges(vcf_carrier1[geno(vcf_carrier1)$GT[, 1] == "1/1", ])
+    homodiscard2 <- rowRanges(vcf_carrier2[geno(vcf_carrier2)$GT[, 1] == "1/1", ])
     
     mom_comphet <- carr1[!names(carr1) %in% names(homodiscard2), ]
     dad_comphet <- carr2[!names(carr2) %in% names(homodiscard1), ]

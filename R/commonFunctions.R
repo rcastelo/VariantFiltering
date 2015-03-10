@@ -460,7 +460,7 @@ sharedVariants <- function(query1, query2) {
 vcf2GR <- function(vcf, genot, ind, filterTag){
   maskgenvcf <- geno(vcf)$GT[, ind] == genot
   genvcf <- vcf[maskgenvcf, ]
-  gr <- rowData(genvcf)
+  gr <- rowRanges(genvcf)
   if (sum(elementLengths(gr$ALT) > 1) >= 1) {
     biallelic <- which(elementLengths(gr$ALT) > 1)
     gr <- gr[-biallelic]
@@ -474,7 +474,7 @@ vcf2GR <- function(vcf, genot, ind, filterTag){
 vcf2GR_2options <- function(vcf, genot1, genot2, ind, filterTag){
   maskgenvcf <- geno(vcf)$GT[, ind] == genot1 | geno(vcf)$GT[, ind] == genot2
   genvcf <- vcf[maskgenvcf, ]
-  gr <- rowData(genvcf)
+  gr <- rowRanges(genvcf)
   if (sum(elementLengths(gr$ALT) > 1) >= 1) {
     biallelic <- which(elementLengths(gr$ALT) > 1)
     gr <- gr[-biallelic]
