@@ -54,7 +54,7 @@ setMethod("allInheritanceModels", signature(param="VariantFilteringParam"),
   message("Reading input VCF file into main memory.")
   vcf1 <- readVcf(unlist(input_list), genomeInfo)
 
-  gr1 <- rowData(vcf1)
+  gr1 <- rowRanges(vcf1)
   gr1 <- .matchSeqinfo(gr1, txdb, bsgenome)
 
   ##########################
