@@ -33,8 +33,8 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat("  Variants are not filtered by inheritance model\n")
             cat("  Functional annotation filters\n")
             if (!is.na(dbSNPpresent(object)))
-              cat(sprintf("    Present in %s (%s): %s\n", provider(param(object)$snpdb),
-                          releaseName(param(object)$snpdb), dbSNPpresent(object)))
+              cat(sprintf("    Present in %s (%s): %s\n", sapply(param(object)$snpdb, provider),
+                          sapply(param(object)$snpdb, releaseName), dbSNPpresent(object)))
             cat(sprintf("    Variant type: %s\n", variantType(object)))
             if (minCUFC(object) > 0)
               cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
