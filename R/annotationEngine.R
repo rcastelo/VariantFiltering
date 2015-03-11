@@ -66,7 +66,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   ##                          ##
   ##############################
   
-  message("Annotating variant type (SNV, InDel, MNV)")
+  message("Annotating variant type (SNV, Insertion, Deletion, MNV, DelIns)")
   mcols(variantsGR) <- cbind(mcols(variantsGR), typeOfVariants(variantsGR))
 
   ##############################
@@ -341,7 +341,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
           function(annObj, variantsGR, param, BPPARAM=bpparam()) {
             if (!"TYPE" %in% colnames(mcols(variantsGR))) {
-              stop("Variant type (SNV, InDel, MNV) has not been annotated.")
+              stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
             seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
             masksnp <- variantsGR$TYPE == "SNV"
@@ -362,7 +362,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
 setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
           function(annObj, variantsGR, param, BPPARAM=bpparam()) {
             if (!"TYPE" %in% colnames(mcols(variantsGR))) {
-              stop("Variant type (SNV, InDel, MNV) has not been annotated.")
+              stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
             seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
             maskxtrasnp <- variantsGR$TYPE != "SNV"
@@ -598,10 +598,12 @@ readAAradicalChangeMatrix <- function(file) {
 
 typeOfVariants <- function(variantsGR) {
 
-  type <- factor(levels=c("DelIns", "InDel", "MNV", "SNV"))
+  type <- factor(levels=c("SNV", "Insertion", "Deletion", "MNV", "DelIns"))
   if (length(variantsGR) > 0) {
-    type <- factor(rep("SNV", times=length(variantsGR)), levels=c("DelIns", "InDel", "MNV", "SNV"))
-    type[isIndel(variantsGR)] <- "InDel"
+    type <- factor(rep("SNV", times=length(variantsGR)),
+                   levels=c("SNV", "Insertion", "Deletion", "MNV", "DelIns"))
+    type[isInsertion(variantsGR)] <- "Insertion"
+    type[isDeletion(variantsGR)] <- "Deletion"
     type[isSubstitution(variantsGR) & !isSNV(variantsGR)] <- "MNV"
     type[isDelins(variantsGR)] <- "DelIns"
   }
