@@ -223,7 +223,7 @@ setMethod("variantType", signature(x="VariantFilteringResults"),
           })
 
 setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="character"),
-                 function(x, value=c("Any", "SNV", "InDel", "MNV", "DelIns")) {
+                 function(x, value=c("Any", "SNV", "Insertion", "Deletion", "MNV", "DelIns")) {
                    value <- match.arg(value)
                    x@variantType <- value
                    x
@@ -724,7 +724,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
                                  selectInput("dbSNPpresent", "Present in dbSNP:",
                                              choices=c("Yes", "No"))),
                 conditionalPanel(condition="input.tsp == 'genome'", selectInput("variantType", "Variant Type:",
-                                                                    choices=c("Any", "SNV", "InDel", "MNV", "DelIns"))),
+                                                                    choices=c("Any", "SNV", "Insertion", "Deletion",  "MNV", "DelIns"))),
                 ## transcript tab
                 conditionalPanel(condition="input.tsp == 'transcript'", numericInput('minCUFC', 'Minimum Codon Usage Absolute log2-Fold Change:', 0.00)),
                 conditionalPanel(condition="input.tsp == 'transcript'", helpText(strong("Restrict variants to the following locations:"))),
