@@ -142,85 +142,89 @@ The class \code{VariantFilteringResults} serves as a purpose of manipulating the
 An \code{VariantFilteringResults} object contains the following annotation data for each variant:
 \describe{
   \item{GENE}{
-  Gene name by the HGNC
+  Gene name given by HGNC.
   }
   \item{CHR}{
-  Chromosome number, following the UCSC standards
+  Chromosome name where the variant is located.
   }
   \item{POS}{
-  Location of the variant inside de chromosome
+  Nucleotide position of the variant within the chromosome.
   }
   \item{LOCATION}{
-  Region where the variant is located (coding, splice site, promoter...)
+  Region where the variant is located (coding, intronic, splice site, promoter...)
   }
   \item{TYPE}{
-  Type of variant (SNV, InDel...)
+  Type of variant among single nucleotide variant (SNV), insertion,
+  deletion, multinucleotide variant (MNV) and deletion followed by an
+  insertion (Delins). These types are determined using functions \code{isSNV()},
+  \code{isInsertion()}, \code{isDeletion()}, \code{isSubstitution()} and
+  \code{isDelins()} from the \code{\link[VariantAnnotation]{VariantAnnotation}}
+  package.
   }
   \item{dbSNP}{
-  dbSNP ID
+  dbSNP identifier derived by position from the annotation packages given
+  in the \code{snpdb} argument of the \code{\link{VariantFilteringParam()}}
+  function.
   }
   \item{CONSEQUENCE}{
-  Consequence in the translation of the sequence
+  Consequence of the variant when located in the coding region (synonymous,
+  nonsynonymous, etc.)
   }
   \item{TXNAME}{
-  Transcript name extracted from the \code{TxDb} object defined at \code{txdb}
+  Transcript name extracted from the \code{TxDb} annotation package given
+  by the \code{txdb} argument of the \code{\link{VariantFilteringParam()}}
+  function.
   }
-  \item{CDS}{
-  Reference and variant nucleotides in the cDNA
+  \item{DESC}{
+  HGVS description of the variant.
   }
   \item{PROT}{
-  Reference and variant amino acid in the amino acid chain
+  Reference and alternative amino acid in the amino acid chain.
   }
   \item{PolyPhen2}{
-  PolyPhen2 prediction for the variant
+  PolyPhen2 prediction for the variant, if corresponding annotation package
+  is provided to the \code{otherAnnotations} argument of the
+  \code{\link{VariantFilteringParam()}} function.
   }
   \item{SIFT}{
-  SIFT prediction for the variant
+  SIFT/PROVEAN prediction for the variant, if corresponding annotation package
+  is provided to the \code{otherAnnotations} argument of the
+  \code{\link{VariantFilteringParam()}} function.
   }
   \item{OMIM}{
-  OMIM ID entry for the gene
+  OMIM identifier of the gene associated to the variant.
   }
-  \item{AFKG}{
-  Minor Allele Frequency from the 1000 Genomes project, all populations
+  \item{(POP)_AFKG}{
+  Minor Allele Frequencies (MAF) from the 1000 Genomes project, where \code{(POP)}
+  is the acronym for the population from where the MAF values are derived.
+  When \code{(POP)} is empty, then the MAF value refers to the global MAF for
+  that annotation source.
   }
-  \item{AMR_AFKG}{
-  Minor Allele Frequency from the 1000 Genomes project, Ad Mixed American
-  }
-  \item{ASN_AFKG}{
-  Minor Allele Frequency from the 1000 Genomes project, East Asian
-  }
-  \item{AFR_AFKG}{
-  Minor Allele Frequency from the 1000 Genomes project, African
-  }  
-  \item{EUR_AFKG}{
-  Minor Allele Frequency from the 1000 Genomes project, European
-  }    
-  \item{AFESP}{
-  Minor Allele Frequency from the NHLBI Exome Sequencing Project, all populations
-  }
-  \item{EA_AFESP}{
-  Minor Allele Frequency from the NHLBI Exome Sequencing Project, European American
-  }
-  \item{AA_AFESP}{
-  Minor Allele Frequency from the NHLBI Exome Sequencing Project, African American
+  \item{(POP)_AFESP}{
+  Minor Allele Frequencies (MAF) from the NHLBI Exome Sequencing project, where \code{(POP)}
+  is the acronym for the population from where the MAF values are derived.
+  When \code{(POP)} is empty, then the MAF value refers to the global MAF for
+  that annotation source.
   }
   \item{CRYP5ssREF}{
-  Score for the cryptic 5'ss for the REF allele respect to the ALT allele
+  Score for the cryptic 5'ss for the REF allele respect to the ALT allele.
   }
   \item{CRYP5ssALT}{
-  Maximum score for the cryptic 5'ss taking into account all the possible positions within the window
+  Maximum score for a potential cryptic 5'ss created by the ALT allele.
   }
   \item{CRYP5ssPOS}{
-  Position of the allele respect to the position of the dinucleotide GT, considering those as positions 1 and 2
+  Position of the allele respect to the position of the dinucleotide \code{GT},
+  considering those as positions 1 and 2.
   }
   \item{CRYP3ssREF}{
-  Score for the cryptic 3'ss for the REF allele respect to the ALT allele
+  Score for the cryptic 3'ss for the REF allele respect to the ALT allele.
   }
   \item{CRYP3ssALT}{
-  Maximum score for the cryptic 3'ss taking into account all the possible positions within the window
+  Maximum score for a potential cryptic 3'ss created by the ALT allele.
   }
   \item{CRYP3ssPOS}{
-  Position of the allele respect to the position of the dinucleotide AG, considering those as positions 1 and 2
+  Position of the allele respect to the position of the dinucleotide \code{AG},
+  considering those as positions 1 and 2.
   }
 }
 }
