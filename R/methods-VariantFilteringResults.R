@@ -35,7 +35,8 @@ setMethod("show", signature(object="VariantFilteringResults"),
             if (!is.na(dbSNPpresent(object)))
               cat(sprintf("    Present in %s (%s): %s\n", sapply(param(object)$snpdb, provider),
                           sapply(param(object)$snpdb, releaseName), dbSNPpresent(object)))
-            cat(sprintf("    Variant type: %s\n", variantType(object)))
+            if (!all(variantType(object)))
+              cat(sprintf("    Variant type restricted to: %s\n", paste(names(variantType(object))[variantType(object)], collapse=",")))
             if (minCUFC(object) > 0)
               cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
             cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
@@ -219,13 +220,31 @@ setReplaceMethod("OMIMpresent", signature(x="VariantFilteringResults", value="AN
 
 setMethod("variantType", signature(x="VariantFilteringResults"),
           function(x) {
-            x@variantType
+            x@variantTypeMask
           })
 
-setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="character"),
-                 function(x, value=c("Any", "SNV", "Insertion", "Deletion", "MNV", "DelIns")) {
-                   value <- match.arg(value)
-                   x@variantType <- value
+setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="logical"),
+                 function(x, typkey=NA, value) {
+                   if (any(is.na(value)))
+                     stop("The given value(s) must be either TRUE or FALSE.")
+
+                   if (is.na(typkey)) {
+                     typkey <- names(x@variantTypeMask)
+                     if (is.null(names(value))) {
+                       if (length(value) > 1)
+                         stop("When given multiple values they must be a logical vector whose names match the available location keywords.")
+                       value <- do.call("names<-", list(rep(value, length(typkey)), typkey))
+                     } else if (any(is.na(match(names(value), names(x@variantTypeMask)))))
+                       stop(sprintf("Element names %s do not match the available variant type keywords",
+                                    names(value)[is.na(match(names(value), names(x@variantTypeMask)))]))
+                     else
+                       typkey <- names(value)
+                   } else {
+                     if (any(is.na(match(typkey, names(x@variantTypeMask)))))
+                       stop(sprintf("%s does not match the available variant type keywords", typkey))
+                   }
+
+                   x@variantTypeMask[typkey] <- value
                    x
                  })
 
@@ -248,7 +267,6 @@ setMethod("variantLocation", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("variantLocation", signature(x="VariantFilteringResults", value="logical"),
                  function(x, lockey=NA, value) {
-
                    if (any(is.na(value)))
                      stop("The given value(s) must be either TRUE or FALSE.")
 
@@ -540,8 +558,8 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             }
 
             ## type of variant
-            if (variantType(x) != "Any")
-              rowsMask <- rowsMask & vars$TYPE == variantType(x)
+            if (!all(variantType(x)))
+              rowsMask <- rowsMask & vars$TYPE %in% names(variantType(x))[variantType(x)]
 
             ## location of variant
             if (!all(variantLocation(x)))
@@ -723,8 +741,12 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
                 conditionalPanel(condition="input.tsp == 'genome' && input.dbSNPpresentFlag == true",
                                  selectInput("dbSNPpresent", "Present in dbSNP:",
                                              choices=c("Yes", "No"))),
-                conditionalPanel(condition="input.tsp == 'genome'", selectInput("variantType", "Variant Type:",
-                                                                    choices=c("Any", "SNV", "Insertion", "Deletion",  "MNV", "DelIns"))),
+                conditionalPanel(condition="input.tsp == 'genome'", helpText(strong("Restrict variants to the following types:"))),
+                conditionalPanel(condition="input.tsp == 'genome'", checkboxInput("SNV", "SNV", TRUE)),
+                conditionalPanel(condition="input.tsp == 'genome'", checkboxInput("Insertion", "Insertion", TRUE)),
+                conditionalPanel(condition="input.tsp == 'genome'", checkboxInput("Deletion", "Deletion", TRUE)),
+                conditionalPanel(condition="input.tsp == 'genome'", checkboxInput("MNV", "MNV", TRUE)),
+                conditionalPanel(condition="input.tsp == 'genome'", checkboxInput("Delins", "Delins", TRUE)),
                 ## transcript tab
                 conditionalPanel(condition="input.tsp == 'transcript'", numericInput('minCUFC', 'Minimum Codon Usage Absolute log2-Fold Change:', 0.00)),
                 conditionalPanel(condition="input.tsp == 'transcript'", helpText(strong("Restrict variants to the following locations:"))),
@@ -816,7 +838,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           OMIMpresent(vfResultsObj) <- NA_character_
 
         ## type of variant
-        variantType(vfResultsObj) <- input$variantType
+        varTypMask <- variantType(vfResultsObj)
+        for (i in names(varTypMask))
+          varTypMask[i] <- input[[i]]
+        variantType(vfResultsObj) <- varTypMask
 
         ## variant location
         locMask <- variantLocation(vfResultsObj)
@@ -896,7 +921,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         OMIMpresent(vfResultsObj) <- NA_character_
 
       ## type of variant
-      variantType(vfResultsObj) <- input$variantType
+      varTypMask <- variantType(vfResultsObj)
+      for (i in names(varTypMask))
+        varTypMask[i] <- input[[i]]
+      variantType(vfResultsObj) <- varTypMask
 
       ## variant location
       locMask <- variantLocation(vfResultsObj)
@@ -1118,7 +1146,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           OMIMpresent(vfResultsObj) <- NA_character_
 
         ## type of variant
-        variantType(vfResultsObj) <- input$variantType
+        varTypMask <- variantType(vfResultsObj)
+        for (i in names(varTypMask))
+          varTypMask[i] <- input[[i]]
+        variantType(vfResultsObj) <- varTypMask
  
         ## variant location
         locMask <- variantLocation(vfResultsObj)
@@ -1211,7 +1242,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           OMIMpresent(vfResultsObj) <- NA_character_
 
         ## type of variant
-        variantType(vfResultsObj) <- input$variantType
+        varTypMask <- variantType(vfResultsObj)
+        for (i in names(varTypMask))
+          varTypMask[i] <- input[[i]]
+        variantType(vfResultsObj) <- varTypMask
 
         ## variant location
         locMask <- variantLocation(vfResultsObj)
@@ -1281,8 +1315,8 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           cat(sprintf("> dbSNPpresent(res) <- \"%s\"\n", dbSNPpresent(vfResultsObj)))
         if (!is.na(OMIMpresent(vfResultsObj)))
           cat(sprintf("> OMIMpresent(res) <- \"%s\"\n", OMIMpresent(vfResultsObj)))
-        if (variantType(vfResultsObj) != "Any")
-          cat(sprintf("> variantType(res) <- \"%s\"\n", variantType(vfResultsObj)))
+        if (!all(variantType(vfResultsObj)))
+            cat(sprintf("> variantType(res) <- c(%s)\n", paste(paste(names(variantType(vfResultsObj)), as.character(variantType(vfResultsObj)), sep="="), collapse=", ")))
         if (!all(variantLocation(vfResultsObj)))
             cat(sprintf("> variantLocation(res) <- c(%s)\n", paste(paste(names(variantLocation(vfResultsObj)), as.character(variantLocation(vfResultsObj)), sep="="), collapse=", ")))
         if (!all(variantConsequence(vfResultsObj)))

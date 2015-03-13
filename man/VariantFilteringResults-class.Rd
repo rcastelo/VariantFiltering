@@ -51,7 +51,9 @@
 \alias{variantType}
 \alias{variantType<-}
 \alias{variantType,VariantFilteringResults-method}
-\alias{variantType<-,VariantFilteringResults,character-method}
+\alias{variantType<-,VariantFilteringResults-method}
+\alias{variantType<-,VariantFilteringResults,logical-method}
+\alias{variantType<-,VariantFilteringResults,ANY,logical-method}
 \alias{variantLocation}
 \alias{variantLocation<-}
 \alias{variantLocation,VariantFilteringResults-method}
@@ -156,14 +158,17 @@ An \code{VariantFilteringResults} object contains the following annotation data 
   \item{TYPE}{
   Type of variant among single nucleotide variant (SNV), insertion,
   deletion, multinucleotide variant (MNV) and deletion followed by an
-  insertion (Delins). These types are determined using functions \code{isSNV()},
-  \code{isInsertion()}, \code{isDeletion()}, \code{isSubstitution()} and
-  \code{isDelins()} from the \code{\link[VariantAnnotation]{VariantAnnotation}}
-  package.
+  insertion (Delins). These types are determined using functions
+  \code{\link[VariantAnnotation]{isSNV()}},
+  \code{\link[VariantAnnotation]{isInsertion()}},
+  \code{\link[VariantAnnotation]{isDeletion()}},
+  \code{\link[VariantAnnotation]{isSubstitution()}} and
+  \code{\link[VariantAnnotation]{isDelins()}} from the
+  \code{VariantAnnotation} package.
   }
   \item{dbSNP}{
   dbSNP identifier derived by position from the annotation packages given
-  in the \code{snpdb} argument of the \code{\link{VariantFilteringParam()}}
+  in the \code{snpdb} argument of the \code{\link{VariantFilteringParam}()}
   function.
   }
   \item{CONSEQUENCE}{
@@ -172,7 +177,7 @@ An \code{VariantFilteringResults} object contains the following annotation data 
   }
   \item{TXNAME}{
   Transcript name extracted from the \code{TxDb} annotation package given
-  by the \code{txdb} argument of the \code{\link{VariantFilteringParam()}}
+  by the \code{txdb} argument of the \code{\link{VariantFilteringParam}()}
   function.
   }
   \item{DESC}{
@@ -184,12 +189,12 @@ An \code{VariantFilteringResults} object contains the following annotation data 
   \item{PolyPhen2}{
   PolyPhen2 prediction for the variant, if corresponding annotation package
   is provided to the \code{otherAnnotations} argument of the
-  \code{\link{VariantFilteringParam()}} function.
+  \code{\link{VariantFilteringParam}()} function.
   }
   \item{SIFT}{
   SIFT/PROVEAN prediction for the variant, if corresponding annotation package
   is provided to the \code{otherAnnotations} argument of the
-  \code{\link{VariantFilteringParam()}} function.
+  \code{\link{VariantFilteringParam}()} function.
   }
   \item{OMIM}{
   OMIM identifier of the gene associated to the variant.
@@ -241,7 +246,7 @@ In the calls below, \code{x} is a \code{VariantFilteringResults} object.
     \code{dbSNPpresent(x)}: flag whether to filter variants present or absent from dbSNP (\code{NA} -do not filter-, \code{"Yes"}, \code{"No"}).
   }
   \item{}{
-    \code{variantType(x)}: filter by type of variant (\code{"Any"}, \code{"SNV"}, \code{"Indel"}, \code{"MNV"}).
+    \code{variantType(x)}: filter by type of variant ( \code{"SNV"}, \code{"Insertion"}, \code{"Deletion"}, \code{"MNV"}, \code{"Delins"}).
   }
   \item{}{
     \code{variantLocation(x)}: filter by variant location (\code{"coding"}, \code{"intron"}, \code{"threeUTR"}, \code{"fiveUTR"}, \code{"intergenic"}, \code{"spliceSite"}, \code{"promoter"}).

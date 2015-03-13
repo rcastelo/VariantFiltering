@@ -81,6 +81,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
                                      levels(annotated_variants$LOCATION)))
   conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
                                      levels(annotated_variants$CONSEQUENCE)))
+  varTypMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$TYPE)),
+                                        levels(annotated_variants$TYPE)))
   MAFpopMask <- NA
   if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
@@ -94,7 +96,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="autosomal recessive homozygous",
       variants=annotated_variants, bamViews=BamViews(), dbSNPflag=NA_character_, OMIMflag=NA_character_,
-      variantType="Any", locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
+      variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)

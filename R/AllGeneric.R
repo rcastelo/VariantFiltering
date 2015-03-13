@@ -25,7 +25,7 @@ setGeneric("dbSNPpresent<-", function(x, value) standardGeneric("dbSNPpresent<-"
 setGeneric("OMIMpresent", function(x) standardGeneric("OMIMpresent"))
 setGeneric("OMIMpresent<-", function(x, value) standardGeneric("OMIMpresent<-"))
 setGeneric("variantType", function(x) standardGeneric("variantType"))
-setGeneric("variantType<-", function(x, value) standardGeneric("variantType<-"))
+setGeneric("variantType<-", function(x, typkey=NA, value) standardGeneric("variantType<-"))
 setGeneric("variantLocation", function(x) standardGeneric("variantLocation"))
 setGeneric("variantLocation<-", function(x, lockey=NA, value) standardGeneric("variantLocation<-"))
 setGeneric("variantConsequence", function(x) standardGeneric("variantConsequence"))
