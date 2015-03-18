@@ -46,10 +46,10 @@ Dei M. Elurbe and R. Castelo
 \examples{
 \dontrun{
 
-CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.gz")
+CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
 CEUped <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.ped")
-param <- VariantFilteringParam(vcfFileNames=CEUvcf,
-                     pedFileName=CEUped)
+param <- VariantFilteringParam(vcfFilenames=CEUvcf,
+                     pedFilename=CEUped)
 aDo <- autosomalDominant(param)
 aDo
 }

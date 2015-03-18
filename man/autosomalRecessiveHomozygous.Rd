@@ -48,10 +48,10 @@ Dei M. Elurbe and R. Castelo
 library(VariantFiltering)
 
 CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"),
-                    "CEUtrio.vcf.gz")
+                    "CEUtrio.vcf.bgz")
 CEUped <- file.path(system.file("extdata", package="VariantFiltering"),
                     "CEUtrio.ped")
-param <- VariantFilteringParam(vcfFileNames=CEUvcf, pedFileName=CEUped)
+param <- VariantFilteringParam(vcfFilenames=CEUvcf, pedFilename=CEUped)
 reHo <- autosomalRecessiveHomozygous(param)
 reHo
 }
