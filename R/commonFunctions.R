@@ -530,4 +530,8 @@ adjustForStrandSense <- function(variantsGR, alleles){
   res <- res[res$TXID == res$TXID2]
 
   start(res$cDNALOC)
+
+  ## this could probably be done faster by doing something like
+  ## cDNA <- mapToTranscripts(gr[!duplicated(ranges(gr))], exonsbytx)
+  ## cDNA <- ranges(cDNA)[togroup(gr$QUERYID)]
 }

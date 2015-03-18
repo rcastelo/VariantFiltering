@@ -201,6 +201,13 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
     variantsGR_annotated_coding$varAllele <- GRanges_coding_uq$varAllele
     variantsGR_annotated_coding$CONSEQUENCE <- GRanges_coding_uq$CONSEQUENCE
   
+    ## annotate start and end positions of CDS (to determine start and stop gains and losses)
+    cdsinfo <- select(txdb, keys=unique(as.character(unlist(variantsGR_annotated_coding$CDSID, use.names=FALSE))),
+                      columns=c("CDSSTART", "CDSEND"), keytype="CDSID")
+    mt <- match(as.character(unlist(variantsGR_annotated_coding$CDSID, use.names=FALSE)), cdsinfo$CDSID)
+    variantsGR_annotated_coding$CDSSTART <- relist(cdsinfo$CDSSTART[mt], variantsGR_annotated_coding$CDSID)
+    variantsGR_annotated_coding$CDSEND <- relist(cdsinfo$CDSEND[mt], variantsGR_annotated_coding$CDSID)
+
     ## annotate codon usage difference in synonymous mutations
 
     variantsGR_annotated_coding$CUREF <- NA_real_
@@ -244,6 +251,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
                        VARAA=AAStringSet(rep("", n.noncoding)),
                        varAllele=DNAStringSet(rep("", n.noncoding)),
                        CONSEQUENCE=factor(rep(NA, n.noncoding), levels=c("nonsynonymous", "synonymous")),
+                       CDSSTART=IntegerList(as.list(rep(NA, n.noncoding))),
+                       CDSEND=IntegerList(as.list(rep(NA, n.noncoding))),
                        CUREF=rep(NA_real_,n.noncoding),
                        CUALT=rep(NA_real_,n.noncoding))
   
@@ -254,6 +263,13 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   } else
     variantsGR_annotated <- sort(variantsGR_annotated_noncoding)
 
+  ## annotate start and end positions of TX (to determine pre-mRNA positions)
+  ## FIXME: with intergenic variants
+  txinfo <- select(txdb, keys=unique(as.character(unlist(variantsGR_annotated$TXID, use.names=FALSE))),
+                   columns=c("TXSTART", "TXEND"), keytype="TXID")
+  mt <- match(as.character(unlist(variantsGR_annotated$TXID, use.names=FALSE)), txinfo$TXID)
+  variantsGR_annotated$TXSTART <- txinfo$TXSTART[mt]
+  variantsGR_annotated$TXEND <- txinfo$TXEND[mt]
   
   #############################################################
   ##                                                         ##
@@ -292,7 +308,6 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
   mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
                                        annotateVariants(txdb, variantsGR_annotated, param))
 
-  ## TODO: REPLACE THIS BY THE HGVS NOMENCLATURE !!!!!
   ########################
   ##                    ##
   ##    DESCRIPTION     ##
@@ -613,42 +628,127 @@ typeOfVariants <- function(variantsGR) {
 
 ## this function tries to provide a variant description following
 ## HGVS nomenclature at http://www.hgvs.org/mutnomen
-## this is a very first version covering only a couple of cases
+## this is a very first version covering only coding descriptions
 ## hopefully it will become more comprehensive in the near future
 variantDescription <- function(variantsGR) {
-  desc <- character()
-  if (length(variantsGR) > 0) {
-    desc <- refAllele <- altAllele <- rep(NA_character_, length(variantsGR))
-    locAllele <- rep(NA_integer_, length(variantsGR))
 
-    maskCoding <- variantsGR$LOCATION == "coding"
+  if (length(variantsGR) == 0)
+    return(DataFrame(pDESC=character(), cDESC=character(), gDESC=character()))
 
-    ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-    refAllele[maskCoding] <- as.character(adjustForStrandSense(variantsGR[maskCoding],
-                                                               ref(variantsGR)[maskCoding]))
-    locAllele[maskCoding] <- start(variantsGR$CDSLOC[maskCoding])
-    altAllele[maskCoding] <- as.character(variantsGR$varAllele[maskCoding])
+  if (!all(c("LOCATION", "TYPE", "cDNALOC") %in% colnames(mcols(variantsGR))))
+    stop("Metadata columns LOCATION, TYPE and cDNALOC should be annotated before calling variantDescription().")
 
-    ## SNVs
-    maskSNVs <- variantsGR$TYPE == "SNV"
-    desc[maskCoding & maskSNVs] <- sprintf("c.%d%s>%s", locAllele[maskCoding & maskSNVs],
-                                           refAllele[maskCoding & maskSNVs], altAllele[maskCoding & maskSNVs])
+  pDesc <- gDesc <- cDesc <- refAllele <- altAllele <- rep(NA_character_, length(variantsGR))
+  locAllele <- rep(NA_integer_, length(variantsGR))
 
-    ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
-    ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-    refAllele[!maskCoding] <- as.character(adjustForStrandSense(variantsGR[!maskCoding],
-                                                                ref(variantsGR)[!maskCoding]))
-    altAllele[!maskCoding] <- adjustForStrandSense(variantsGR[!maskCoding],
-                                                   alt(variantsGR)[!maskCoding])
-    mask5UTR <- variantsGR$LOCATION == "fiveUTR"
-    desc[!maskCoding & maskSNVs & mask5UTR] <- sprintf("c.-??%s>%s", refAllele[!maskCoding & maskSNVs & mask5UTR],
-                                                                  altAllele[!maskCoding & maskSNVs & mask5UTR])
-    mask3UTR <- variantsGR$LOCATION == "threeUTR"
-    desc[!maskCoding & maskSNVs & mask3UTR] <- sprintf("c.*??%s>%s", refAllele[!maskCoding & maskSNVs & mask3UTR],
-                                                                  altAllele[!maskCoding & maskSNVs & mask3UTR])
-  }
+  ## HGVS coding annotations
 
-  DataFrame(DESC=desc)
+  maskCoding <- variantsGR$LOCATION == "coding"
+
+  ## for coding variants we use the 'varAllele' column which is already adjusted for strand
+  refAllele[maskCoding] <- as.character(adjustForStrandSense(variantsGR[maskCoding],
+                                                             ref(variantsGR)[maskCoding]))
+  ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
+  ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
+  refAllele[!maskCoding] <- as.character(adjustForStrandSense(variantsGR[!maskCoding],
+                                                              ref(variantsGR)[!maskCoding]))
+  altAllele <- as.character(variantsGR$varAllele)
+  altAllele[!maskCoding] <- adjustForStrandSense(variantsGR[!maskCoding],
+                                                 alt(variantsGR)[!maskCoding])
+
+  locStartAllele <- as.integer(start(variantsGR$CDSLOC))
+  locEndAllele <- as.integer(start(variantsGR$CDSLOC))
+  widthAllele <- as.integer(width(variantsGR$CDSLOC))
+
+  ## SNVs
+  mask <- maskCoding & variantsGR$TYPE == "SNV"
+  cDesc[mask] <- sprintf("c.%d%s>%s", locStartAllele[mask], refAllele[mask], altAllele[mask])
+
+  ## Insertions
+  mask <- maskCoding & variantsGR$TYPE == "Insertion"
+  cDesc[mask] <- sprintf("c.%d_%dins%s", locStartAllele[mask], locStartAllele[mask]+1, altAllele[mask])
+
+  ## Deletions
+  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele == 1
+  cDesc[mask] <- sprintf("c.%ddel%s", locStartAllele[mask], altAllele[mask])
+
+  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele > 1
+  cDesc[mask] <- sprintf("c.%d_%del%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
+
+  ## Deletions-insertions
+  mask <- maskCoding & variantsGR$TYPE == "Delins"
+  cDesc[mask] <- sprintf("c.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
+
+  ## HGVS genomic annotations
+
+  stra <- as.character(strand(variantsGR))
+  locStartAllele <- as.integer(start(variantsGR))
+  locEndAllele <- as.integer(start(variantsGR))
+  widthAllele <- as.integer(width(variantsGR))
+  
+  ## SNVs
+  mask <- stra == "+" & variantsGR$TYPE == "SNV"
+  gDesc[mask] <- sprintf("g.%d%s>%s", locStartAllele[mask] - variantsGR$TXSTART[mask] + 1L,
+                         refAllele[mask], altAllele[mask])
+  mask <- stra == "-" & variantsGR$TYPE == "SNV"
+  gDesc[mask] <- sprintf("g.%d%s>%s", variantsGR$TXEND[mask] - locStartAllele[mask] + 1L,
+                         refAllele[mask], altAllele[mask])
+
+  ## Insertions
+  mask <- stra == "+" & variantsGR$TYPE == "Insertion"
+  gDesc[mask] <- sprintf("g.%d_%dins%s", locStartAllele[mask] - variantsGR$TXSTART[mask] + 1L,
+                         locStartAllele[mask] - variantsGR$TXSTART[mask] + 2, altAllele[mask])
+  mask <- stra == "-" & variantsGR$TYPE == "Insertion"
+  gDesc[mask] <- sprintf("g.%d_%dins%s", variantsGR$TXEND[mask] - locStartAllele[mask] + 1L,
+                         variantsGR$TXEND[mask] - locStartAllele[mask] + 2, altAllele[mask])
+
+  ## Deletions
+  mask <- stra == "+" & variantsGR$TYPE == "Deletion" & widthAllele == 1
+  gDesc[mask] <- sprintf("g.%ddel%s", locStartAllele[mask] - variantsGR$TXSTART[mask] + 1L, altAllele[mask])
+  mask <- stra == "+" & variantsGR$TYPE == "Deletion" & widthAllele > 1
+  gDesc[mask] <- sprintf("g.%d_%ddel%s", locStartAllele[mask] - variantsGR$TXSTART[mask] + 1L,
+                         locEndAllele[mask] - variantsGR$TXEND[mask] + 1L, altAllele[mask])
+  mask <- stra == "-" & variantsGR$TYPE == "Deletion" & widthAllele == 1
+  gDesc[mask] <- sprintf("g.%ddel%s", variantsGR$TXEND[mask] - locStartAllele[mask] + 1, altAllele[mask])
+  mask <- stra == "-" & variantsGR$TYPE == "Deletion" & widthAllele > 1
+  gDesc[mask] <- sprintf("g.%d_%ddel%s", variantsGR$TXSTART[mask] - locStartAllele[mask] + 1L,
+                         variantsGR$TXEND[mask] - locEndAllele[mask] + 1L, altAllele[mask])
+  ## Deletions-insertions
+  mask <- stra == "+" & variantsGR$TYPE == "Delins"
+  gDesc[mask] <- sprintf("g.%d_%ddelins%s", locStartAllele[mask] - variantsGR$TXSTART[mask] + 1L,
+                         locEndAllele[mask] - variantsGR$TXEND[mask] + 1L, altAllele[mask])
+  mask <- stra == "-" & variantsGR$TYPE == "Delins"
+  gDesc[mask] <- sprintf("g.%d_%ddelins%s", variantsGR$TXSTART[mask] - locStartAllele[mask] + 1L,
+                         variantsGR$TXEND[mask] - locEndAllele[mask] + 1L, altAllele[mask])
+
+  ## HGVS protein annotations
+
+  locStartAllele <- as.integer(sapply(variantsGR$PROTEINLOC, "[", 1))
+  locEndAllele <- as.integer(sapply(variantsGR$PROTEINLOC, "[", 2))
+  mask <- !is.na(locStartAllele) & is.na(locEndAllele)
+  locEndAllele[mask] <- locStartAllele[mask]
+  widthAllele <- locEndAllele - locStartAllele + 1L
+
+  ## SNVs
+  mask <- maskCoding & variantsGR$TYPE == "SNV"
+  pDesc[mask] <- sprintf("p.%d%s>%s", locStartAllele[mask], variantsGR$REFAA[mask], variantsGR$VARAA[mask])
+
+  ## Insertions
+  mask <- maskCoding & variantsGR$TYPE == "Insertion"
+  pDesc[mask] <- sprintf("p.%d_%dins%s", locStartAllele[mask], locStartAllele[mask] + 1L, variantsGR$VARAA[mask])
+
+  ## Deletions
+  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele == 1
+  pDesc[mask] <- sprintf("p.%ddel%s", locStartAllele[mask], variantsGR$VARAA[mask])
+
+  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele > 1
+  pDesc[mask] <- sprintf("p.%d_%del%s", locStartAllele[mask], locEndAllele[mask], variantsGR$VARAA[mask])
+
+  ## Deletions-insertions
+  mask <- maskCoding & variantsGR$TYPE == "Delins"
+  pDesc[mask] <- sprintf("p.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], variantsGR$VARAA[mask])
+  
+  DataFrame(pDESC=pDesc, cDESC=cDesc, gDESC=gDesc)
 }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
