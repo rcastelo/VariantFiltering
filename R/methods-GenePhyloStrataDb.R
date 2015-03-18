@@ -24,7 +24,7 @@ GenePhylostrataDb <- function(organism, download_url, download_date,
 
 ## accessors
 
-setMethod("organism", "GenePhylostrataDb", function(x) x@organism)
+setMethod("organism", "GenePhylostrataDb", function(object) object@organism)
 
 setMethod("genePhylostratum", c("GenePhylostrataDb", "missing"),
           function(object, ids) {
