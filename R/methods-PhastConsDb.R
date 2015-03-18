@@ -29,9 +29,11 @@ setMethod("providerVersion", "PhastConsDb", function(x) x@provider_version)
 
 setMethod("referenceGenome", "PhastConsDb", function(x) x@reference_genome)
 
-setMethod("organism", "PhastConsDb", function(x) organism(referenceGenome(x)))
+setMethod("organism", "PhastConsDb",
+    function(object) organism(referenceGenome(object))
+)
 
-## setMethod("species", "PhastConsDb", function(x) species(referenceGenome(x)))
+## setMethod("species", "PhastConsDb", function(object) species(referenceGenome(object)))
 
 setMethod("seqinfo", "PhastConsDb", function(x) seqinfo(referenceGenome(x)))
 

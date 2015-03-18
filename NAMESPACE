@@ -24,12 +24,7 @@ importMethodsFrom(RSQLite, dbConnect,
                            dbCommit)
 importMethodsFrom(BSgenome, snpcount,
                             snplocs,
-                            snpsByOverlaps,
-                            referenceGenome,
-                            organism,
-                            species,
-                            provider,
-                            providerVersion)
+                            snpsByOverlaps)
 importMethodsFrom(GenomeInfoDb, "seqinfo<-",
                                 seqlevels,
                                 "seqlevels<-",
@@ -39,6 +34,9 @@ importMethodsFrom(GenomeInfoDb, "seqinfo<-",
                                 "isCircular<-",
                                 genome,
                                 "genome<-",
+                                referenceGenome,
+                                provider,
+                                providerVersion,
                                 releaseName)
 importMethodsFrom(VariantAnnotation, readVcf,
                                      scanVcfHeader,
