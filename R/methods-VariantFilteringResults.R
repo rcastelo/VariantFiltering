@@ -1063,19 +1063,19 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     })
 
     output$tableGenome <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "dbSNP", "TYPE", "DP", "REFDP", "ALTDP")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "dbSNP", "TYPE", "gDESC", "DP", "REFDP", "ALTDP")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableGene <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "DESC", "OMIM")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "cDESC", "OMIM")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableTranscript <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "DESC", "CUREF", "CUALT", "CUFC")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "cDESC", "CUREF", "CUALT", "CUFC")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({
-      selcols <- c("VarID", "GENE", "CONSEQUENCE", "AAchange", "AAchangeType")
+      selcols <- c("VarID", "GENE", "pDESC", "CONSEQUENCE", "AAchange", "AAchangeType")
       if ("PolyPhenDb" %in% annotationObjClasses)
         selcols <- c(selcols, "PolyPhen2")
       if ("PROVEANDb" %in% annotationObjClasses)

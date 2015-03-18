@@ -47,8 +47,8 @@ Dei M. Elurbe and R. Castelo
 \examples{
 \dontrun{
 
-CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.gz")
-param <- VariantFilteringParam(vcfFileNames=CEUvcf)
+CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
+param <- VariantFilteringParam(vcfFilenames=CEUvcf)
 aim <- allInheritanceModels(param)
 aim
 }

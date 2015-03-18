@@ -52,10 +52,10 @@ Dei M. Elurbe and R. Castelo
 \dontrun{
 
 ## This actually won't run b/c in this trio de descendant is a female
-CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.gz")
+CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
 CEUped <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.ped")
-param <- VariantFilteringParam(vcfFileNames=CEUvcf,
-                     pedFileName=CEUped)
+param <- VariantFilteringParam(vcfFilenames=CEUvcf,
+                     pedFilename=CEUped)
 xlid <- xLinked(param)
 xlid
 }
