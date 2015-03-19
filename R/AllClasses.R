@@ -17,10 +17,10 @@ setClass("PhastConsDb",
                                        provider_version="character", ## creation date in compact format
                                        download_url="character", ## download URL of all phastCons data
                                        download_date="character", ## date on which data was downloaded
-                                       reference_genome="GenomeDescription", ## extracted from BSgenome.Hsapiens.UCSC.hg19
+                                       reference_genome="GenomeDescription", ## extracted from BSgenome.*
 
                                        ## package name and absolute path to local directory where to find
-                                       ## the serializd object containing the phastCons scores
+                                       ## the serialized objects containing the phastCons scores
                                        data_pkgname="character",
                                        data_dirpath="character",
                                        data_serialized_objnames="character",
