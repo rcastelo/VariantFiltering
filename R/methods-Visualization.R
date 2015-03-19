@@ -100,8 +100,8 @@ setMethod("plot", signature(x="VariantFilteringResults"),
                           AlignmentsTrack(range=bamPaths(bamFiles(x))[whbam], isPaired=isPaired,
                                           referenceSequence=strack, showMismatches=TRUE))
             } else {
-              idlabel <- ifelse(is.na(vars1$DESC), sprintf("%s", vars1$VARID),
-                                sprintf("%s\n(%s)", vars1$DESC))
+              idlabel <- ifelse(is.na(vars1$HGVSc), sprintf("%s(%s)", vars1$VARID, vars1$HGVSg),
+                                sprintf("%s\n(%s)", vars1$VARID, vars1$HGVSc))
               tracks <- c(tracks,
                           AnnotationTrack(start=start(vars1), width=width(vars1),
                                           chromosome=as.character(seqnames(vars1)),

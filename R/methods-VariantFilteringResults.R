@@ -36,7 +36,7 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat(sprintf("    Present in %s (%s): %s\n", sapply(param(object)$snpdb, provider),
                           sapply(param(object)$snpdb, releaseName), dbSNPpresent(object)))
             if (!all(variantType(object)))
-              cat(sprintf("    Variant type restricted to: %s\n", paste(names(variantType(object))[variantType(object)], collapse=",")))
+              cat(sprintf("    Variant type restricted to: %s\n", paste(names(variantType(object))[variantType(object)], collapse=", ")))
             if (minCUFC(object) > 0)
               cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
             cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
@@ -1063,19 +1063,19 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     })
 
     output$tableGenome <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "dbSNP", "TYPE", "gDESC", "DP", "REFDP", "ALTDP")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "dbSNP", "TYPE", "HGVSg", "DP", "REFDP", "ALTDP")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableGene <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "cDESC", "OMIM")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "LOCATION", "HGVSc", "OMIM")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableTranscript <- renderTable({
-      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "cDESC", "CUREF", "CUALT", "CUFC")]
+      filteredVariantsReact()[, c("VarID", "POSITION", "GENE", "TXID", "LOCATION", "LOCSTART", "cDNALOC", "HGVSc", "CUREF", "CUALT", "CUFC")]
     }, NA.string="NA",  sanitize.text.function=function(x){x})
 
     output$tableProtein <- renderTable({
-      selcols <- c("VarID", "GENE", "pDESC", "CONSEQUENCE", "AAchange", "AAchangeType")
+      selcols <- c("VarID", "GENE", "HGVSp", "CONSEQUENCE", "AAchange", "AAchangeType")
       if ("PolyPhenDb" %in% annotationObjClasses)
         selcols <- c(selcols, "PolyPhen2")
       if ("PROVEANDb" %in% annotationObjClasses)
