@@ -9,7 +9,7 @@ PhastConsDb <- function(provider, provider_version, download_url,
   if (file.exists(file.path(data_dirpath, "phastCons100way.rda")))
     load(file.path(data_dirpath, "phastCons100way.rda"), envir=data_cache)
   else
-    assign("phastCons100way", RleList(compress=FALSE), envir=data_cache)
+    assign(data_pkgname, RleList(compress=FALSE), envir=data_cache)
 
   new("PhastConsDb", provider=provider,
                      provider_version=provider_version,
@@ -29,9 +29,7 @@ setMethod("providerVersion", "PhastConsDb", function(x) x@provider_version)
 
 setMethod("referenceGenome", "PhastConsDb", function(x) x@reference_genome)
 
-setMethod("organism", "PhastConsDb",
-    function(object) organism(referenceGenome(object))
-)
+setMethod("organism", "PhastConsDb", function(object) organism(referenceGenome(object)))
 
 ## setMethod("species", "PhastConsDb", function(object) species(referenceGenome(object)))
 
@@ -77,13 +75,13 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
               stop("Sequence names %s in GRanges object not present in PhastConsDb object.",
                    paste(snames[!snames %in% seqnames(object)], collapse=", "))
 
-            pcrlelist <- get("phastCons100way", envir=object@.data_cache)
+            pcrlelist <- get(object@data_pkgname, envir=object@.data_cache)
             missingMask <- !snames %in% names(pcrlelist)
             for (sname in snames[missingMask]) {
               if (file.exists(file.path(object@data_dirpath, paste0(sname, ".phastCons100way.RData")))) {
                 warning("You are using a PhastConsDb annotation package version < 3.1.0, consider upgrading to the lastest version >= 3.1.0.")
                 load(file.path(object@data_dirpath, paste0(sname, ".phastCons100way.RData")), envir=object@.data_cache)
-                objname <- paste0("phastCons100way_", sname)
+                objname <- paste("phastCons100way_", sname)
                 if (exists(objname, envir=object@.data_cache)) {
                   pcrlelist[[sname]] <- get(objname, envir=object@.data_cache)
                   rm(list=objname, envir=object@.data_cache)
@@ -91,8 +89,8 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
                   warning(sprintf("No phastCons scores for chromosome %s.", sname))
                   pcrlelist[[sname]] <- Rle(raw())
                 }
-              } else if (file.exists(file.path(object@data_dirpath, sprintf("phastCons100way.%s.rds", sname))))
-                pcrlelist[[sname]] <- readRDS(file.path(object@data_dirpath, sprintf("phastCons100way.%s.rds", sname)))
+              } else if (file.exists(file.path(object@data_dirpath, sprintf("%s.%s.rds", object@data_pkgname, sname))))
+                pcrlelist[[sname]] <- readRDS(file.path(object@data_dirpath, sprintf("%s.%s.rds", object@data_pkgname, sname)))
               else {
                 warning(sprintf("No phastCons scores for chromosome %s.", sname))
                 pcrlelist[[sname]] <- Rle(raw())
@@ -100,7 +98,7 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
             }
 
             if (any(missingMask) && caching)
-              assign("phastCons100way", pcrlelist, envir=object@.data_cache)
+              assign(object@data_pkgname, pcrlelist, envir=object@.data_cache)
 
             sco <- rleGetValues(pcrlelist, gpos, summaryFun=summaryFun, coercionFun=coercionFun) / 10
             rm(pcrlelist)
