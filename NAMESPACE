@@ -117,8 +117,7 @@ importFrom(GenomeInfoDb, seqnames,
 importFrom(BSgenome, snpcount,
                      snplocs)
 importFrom(GenomicRanges, GRanges,
-                          rowRanges,
-                          rowData)
+                          rowRanges)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
