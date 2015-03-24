@@ -68,10 +68,13 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     names(MAFpopMask) <- cnAF
   }
 
+  gSO <- sequence_variant.gSOXP
+  nodeDataDefaults(gSO, "varIdx") <- integer(0)
+
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
-      bamViews=BamViews(), dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      bamViews=BamViews(), gSO=gSO, dbSNPflag=NA_character_, OMIMflag=NA_character_,
       locationMask=locMask, consequenceMask=conMask, variantTypeMask=varTypMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
