@@ -93,9 +93,12 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     names(MAFpopMask) <- cnAF
   }
 
+  gSO <- sequence_variant.gSOXP
+  nodeDataDefaults(gSO, "varIdx") <- integer(0)
+
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="autosomal recessive homozygous",
-      variants=annotated_variants, bamViews=BamViews(), dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      variants=annotated_variants, bamViews=BamViews(), gSO=gSO, dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
