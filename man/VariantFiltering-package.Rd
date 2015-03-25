@@ -19,10 +19,10 @@ frequencies, cryptic splice site potential, conservation, etc.
     \item \code{\link{xLinked}} identify variants that appear only in the X chromosome of the unaffected females as heterozygous, don't appear in the unaffected males analyzed and finally are present (as homozygous) in the affected male(s). X-linked inheritance pattern.
     \item \code{\link{deNovo}} identify variants in the affected
     individual that have not been inherited.
-    \item \code{\link{allInheritanceModels}} annotates all the variants
-    present in the VCF file allowing to select the filtering according
-    to a certain inheritance model interactively through a shiny app.
-    \item\code{\link{unrelatedIndividuals}}
+    %% \item \code{\link{allInheritanceModels}} annotates all the variants
+    %% present in the VCF file allowing to select the filtering according
+    %% to a certain inheritance model interactively through a shiny app.
+    \item\code{\link{unrelatedIndividuals}} annotate variants without filtering by any inheritance pattern.
   }
 }
 \author{

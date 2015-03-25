@@ -1,6 +1,8 @@
 \name{VariantFilteringParam-class}
 \docType{class}
 
+\alias{sequence_variant.gSOXP}
+
 %% Classes:
 \alias{class:VariantFilteringParam}
 \alias{VariantFilteringParam}
@@ -30,7 +32,7 @@ The class \code{VariantFilteringParam} is defined to ease configuring the call t
                                             codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),"humanCodonUsage.txt"),
                                             geneticCode=getGeneticCode("SGC0"),
                                             allTranscripts=FALSE,
-                                            otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137.dbSNP138",
+                                            otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137",
                                                                "MafDb.ALL.wgs.phase1.release.v3.20101123",
                                                                "PolyPhen.Hsapiens.dbSNP131",
                                                                "SIFT.Hsapiens.dbSNP137",

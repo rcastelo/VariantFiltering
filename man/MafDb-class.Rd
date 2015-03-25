@@ -11,8 +11,8 @@
 \alias{annotateVariants,SNPlocs-method}
 \alias{annotateVariants,XtraSNPlocs-method}
 \alias{annotateVariants,TxDb-method}
-\alias{fetchKnownVariantsByID,MafDb-method}
-\alias{fetchKnownVariantsByID}
+\alias{snpid2maf,MafDb-method}
+\alias{snpid2maf}
 \alias{knownVariantsMAFcols,MafDb-method}
 \alias{knownVariantsMAFcols}
 \alias{keytypes,MafDb-method}
@@ -32,7 +32,7 @@
 Class for annotation packages storing minimum allele frequency data.
 }
 \usage{
-\S4method{fetchKnownVariantsByID}{MafDb}(mafdb, varID)
+\S4method{snpid2maf}{MafDb}(mafdb, varID)
 \S4method{knownVariantsMAFcols}{MafDb}(mafdb)
 \S4method{keytypes}{MafDb}(x)
 \S4method{keys}{MafDb}(x, keytype)
@@ -66,11 +66,11 @@ annotation packages are:
 
 \tabular{ll}{
   \code{MafDb.ALL.wgs.phase1.release.v3.20101123} \tab MAF values from the 1000 Genomes project
-        downloaded in November 2013 from
+        downloaded in October 2013 from
         \url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz}. \cr
 
-  \code{MafDb.ESP6500SI.V2.SSA137.dbSNP138} \tab MAF values from 6500 ESP exomes downloaded in November 2013 from
-        \url{http://evs.gs.washington.edu/evs_bulk_data/ESP6500SI-V2-SSA137.dbSNP138-rsIDs.snps_indels.vcf.tar.gz}. \cr
+  \code{MafDb.ESP6500SI.V2.SSA137} \tab MAF values from 6500 ESP exomes downloaded in March 2015 from
+        \url{http://evs.gs.washington.edu/evs_bulk_data/ESP6500SI-V2-SSA137.GRCh38-liftover.snps_indels.vcf.tar.gz}. \cr
 }
 
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
@@ -78,46 +78,60 @@ for millions of SNPs by coding AF float values, which range between 0 and 1, int
 \code{raw} object type. To achieve this, the original AF values are rounded and coded as follows:
 
 \itemize{
-  \item AF < 0.001 values are rounded to 4 digits, where values 0, 0.0001, ..., 0.0009 are coded
-        as raw byte values 1 to 10.
-  \item AF < 0.01 values are rouneded to 3 digits, where values 0.001, ... 0.009, are coded as
-        raw byte values 11 to 19.
-  \item AF >= 0.01 values are rounded to 2 digits and coded as raw byte values 20 to 119.
+  \item AF >= 0.01 & AF <= 1 values are rounded to 2 digits, where values 0.01, ..., 0.99, 1, are coded as
+        raw byte values 1 to 100.
+  \item AF >= 0.001 & AF < 0.01 values are rounded to 3 digits, where values 0.001, ..., 0.009 are coded
+        as raw byte values 101 to 109.
+  \item AF >= 0.0001 & AF < 0.001 are rounded to 4 digits, where values 0.0001, ..., 0.0009 are coded
+        as raw byte values 111 to 119.
+  \item AF >= 0.00001 & AF < 0.0001 are rounded to 5 digits, where values 0.00001, ..., 0.00009 are coded
+        as raw byte values 121 to 129.
+  \item AF < 0.00001 are rounded to 6 digits, where values 0, 0.000001, ..., 0.000009 are coded
+        as raw byte values 130 to 139.
   \item AF \code{NA} values are coded to raw byte value of 255. Note that by default \code{NA}
         values are coded by the raw byte value 0 but this corresponds by default to the null
-        string when raw byte values are coerced into char. This precludes using this original coding
+        string when raw byte values are coerced into char, which is problematic when storing
+        this data as \code{CHAR} values in a SQLite database. This precludes using this original coding
         of \code{NA} values.
 }
 
 A further compression of these data is performed in the cases of variants with mutiple
 alternative alleles. In those cases, instead of storing the AF of each alternate allele only
-the maximum AF value is stored and as alternate allele the string concatenation of all alleles,
-separated by a slash character, is stored.
+the maximum AF value is stored.
 }
 \value{.}
 \author{R. Castelo}
 \seealso{
   \code{\link[MafDb.ALL.wgs.phase1.release.v3.20101123]{MafDb.ALL.wgs.phase1.release.v3.20101123}}
-  \code{\link[MafDb.ESP6500SI.V2.SSA137.dbSNP138]{MafDb.ESP6500SI.V2.SSA137.dbSNP138}}
+  \code{\link[MafDb.ESP6500SI.V2.SSA137]{MafDb.ESP6500SI.V2.SSA137}}
 }
 \examples{
-  if (require(MafDb.ESP6500SI.V2.SSA137.dbSNP138)) {
-    MafDb.ESP6500SI.V2.SSA137.dbSNP138
+
+  ## lookup allele frequencies for rs1129038, a SNP associated to blue and brown eye colors
+  ## as reported by Eiberg et al. Blue eye color in humans may be caused by a perfectly associated
+  ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
+  ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
+
+  if (require(MafDb.ESP6500SI.V2.SSA137)) {
+    MafDb.ESP6500SI.V2.SSA137
 
     ## specialized interface
-    knownVariantsMAFcols(MafDb.ESP6500SI.V2.SSA137.dbSNP138)
-    fetchKnownVariantsByID(MafDb.ESP6500SI.V2.SSA137.dbSNP138, "rs199529001")
+    knownVariantsMAFcols(MafDb.ESP6500SI.V2.SSA137)
+    snpid2maf(MafDb.ESP6500SI.V2.SSA137, "rs1129038")
 
     ## standard AnnotationDbi interface
-    keytypes(MafDb.ESP6500SI.V2.SSA137.dbSNP138)
-    columns(MafDb.ESP6500SI.V2.SSA137.dbSNP138)
-    select(MafDb.ESP6500SI.V2.SSA137.dbSNP138,
-           keys="rs199529001", columns=c("varID", "chrom", "AF"))
+    keytypes(MafDb.ESP6500SI.V2.SSA137)
+    columns(MafDb.ESP6500SI.V2.SSA137)
+    select(MafDb.ESP6500SI.V2.SSA137,
+           keys="rs1129038", columns=c("varID", "AF"))
   }
+
 }
 \source{
   \url{ftp://ftp.1000genomes.ebi.ac.uk}
 
   \url{http://evs.gs.washington.edu/EVS}
+
+  \url{http://exac.broadinstitute.org}
 }
 \keyword{datasets}
