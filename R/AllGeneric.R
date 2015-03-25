@@ -1,6 +1,7 @@
 ## for MafDb class
 setGeneric("dbConn", function(x) standardGeneric("dbConn"))
 setGeneric("knownVariantsMAFcols", function(mafdb, ...) standardGeneric("knownVariantsMAFcols"))
+setGeneric("snpid2maf", function(mafdb, ...) standardGeneric("snpid2maf"))
 setGeneric("fetchKnownVariantsByID", function(mafdb, ...) standardGeneric("fetchKnownVariantsByID"))
 
 ## for PhastConsDb class

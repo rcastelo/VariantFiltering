@@ -13,8 +13,14 @@ setMethod("knownVariantsMAFcols", signature(mafdb="MafDb"),
             res
           })
 
-## method for fetching variants in a MafDb database object
 setMethod("fetchKnownVariantsByID", signature(mafdb="MafDb"),
+          function(mafdb, varID) {
+            .Deprecated("snpid2maf")
+            snpid2maf(mafdb, varID)
+          })
+
+## method for fetching variants in a MafDb database object
+setMethod("snpid2maf", signature(mafdb="MafDb"),
           function(mafdb, varID) {
 
             conn <- dbConn(mafdb)
@@ -68,7 +74,7 @@ setMethod("select", "MafDb",
               stop(sprintf("Columns %s do not form part of this annotation package.",
                            paste(columns[!(columns %in% columns(x))], collapse=", ")))
 
-            res <- fetchKnownVariantsByID(x, keys)
+            res <- snpid2maf(x, keys)
             res[, columns]
           })
 
@@ -110,32 +116,48 @@ load_taginfo <- function(mafdb) {
   dbCommit(conn)
 }
 
-## code and decode allele frequencies into a single-byte raw type, where AF values >= 0.01 are rounded to 2 digits.
-## AF values < 0.01 are rounded to 3 digits and AF values < 0.001 are rounded to 4 digits. The latter
-## (0, 0.0001, 0.0002, ..., 0.0009) are stored as raw byte values 1 to 10, the next precision level
-## (0.001, 0.002, ... 0.009) are stored as raw byte values 11 to 19 and the lower precision level
-## (0.01, 0.02, ..., 0.98, 0.99, 1.0) are stored as the raw byte values 20 to 119
+## based on the precision requirements of MAF data, particularly from ExAC MAF data,
+## we the lowest observed allele frequency value is 8.236e-06, we
+## code and decode allele frequencies into a single-byte raw type, where:
+##
+## AF values < 0.00001 are rounded to 6 digits;
+## AF values >= 0.00001 & values < 0.0001 are rounded to 5 digits;
+## AF values >= 0.0001 & values < 0.001 are rounded to 4 digits;
+## AF values >= 0.001 & values < 0.01 are rounded to 3 digits;
+## AF values >= 0.01 & values <= 1 are rounded to 2 digits;
+##
+## and
+##
+## AF values >= 0.01 & values <= 1 rounded to 2 digits are stored as raw byte values 1 to 100
+## AF values >= 0.001 & values < 0.01 rounded to 3 digits are stored as raw byte values 101 to 109
+## AF values >= 0.0001 & values < 0.001 rounded to 4 digits are stored as raw byte values 111 to 119
+## AF values >= 0.00001 & values < 0.0001 rounded to 5 digits are stored as raw byte values 121 to 129
+## AF values < 0.00001 rounded to 6 digits are stored as raw byte values 130 to 139 (include 0 in the lowest range)
+##
 ## because NAs are encoded by the raw byte value 0, and this corresponds by default to the null string
-## when raw byte values are coerced into char, which will be necessary when they are stored in the database.
+## when raw byte values are coerced into char, which will be necessary when they are stored in the database,
 ## NAs will be recoded to the highest possible raw byte value of 255
+
 codeAF2RAW <- function(x) {
   maskNAs <- is.na(x)
   z <- x[!maskNAs]
-  maskLevel1 <- z < 0.001
+  maskLevel1 <- z >= 0.01
   maskLevel2 <- z >= 0.001 & z < 0.01
-  maskLevel3 <- z >= 0.01
+  maskLevel3 <- z >= 0.0001 & z < 0.001
+  maskLevel4 <- z >= 0.00001 & z < 0.0001
+  maskLevel5 <- z < 0.00001
 
-  z[maskLevel1] <- round(z[maskLevel1], digits=4)
+  z[maskLevel1] <- round(z[maskLevel1], digits=2)
   z[maskLevel2] <- round(z[maskLevel2], digits=3)
-  z[maskLevel3] <- round(z[maskLevel3], digits=2)
+  z[maskLevel3] <- round(z[maskLevel3], digits=4)
+  z[maskLevel4] <- round(z[maskLevel4], digits=5)
+  z[maskLevel5] <- round(z[maskLevel5], digits=6)
   
-  maskLevel1 <- z < 0.001
-  maskLevel2 <- z >= 0.001 & z < 0.01
-  maskLevel3 <- z >= 0.01
-
-  z[maskLevel1] <- z[maskLevel1] * 10000 + 1     ## zero is coded as 1 to avoid the 'nul' byte meaning throughout
-  z[maskLevel2] <- z[maskLevel2] * 1000 + 9 + 1  ## as for instance when coercing to char to store these bytes
-  z[maskLevel3] <- z[maskLevel3] * 100 + 18 + 1  ## in a mysql database, this implies all values are shifted by 1
+  z[maskLevel1] <- z[maskLevel1] * 100
+  z[maskLevel2] <- z[maskLevel2] * 1000    + 100
+  z[maskLevel3] <- z[maskLevel3] * 10000   + 110
+  z[maskLevel4] <- z[maskLevel4] * 100000  + 120
+  z[maskLevel5] <- z[maskLevel5] * 1000000 + 130 ## zero is coded here as 130
 
   x[!maskNAs] <- z
   x[maskNAs] <- 255 ## code NAs as raw byte value 255
@@ -147,16 +169,19 @@ decodeRAW2AF <- function(x) {
   maskNAs <- x == 255 ## decode raw byte value 255 as NAs
   z <- x[!maskNAs]
 
-  maskLevel1 <- z < 10
-  maskLevel2 <- z > 9 & z < 20
-  maskLevel3 <- z > 19
+  maskLevel1 <- z <= 100
+  maskLevel2 <- z > 100 & z < 110
+  maskLevel3 <- z > 110 & z < 120
+  maskLevel4 <- z > 120 & z < 130
+  maskLevel5 <- z >= 130
 
-  z[maskLevel1] <- (z[maskLevel1]-1) / 10000
-  z[maskLevel2] <- (z[maskLevel2]-9-1) / 1000
-  z[maskLevel3] <- (z[maskLevel3]-18-1) / 100
+  z[maskLevel1] <- z[maskLevel1] / 100
+  z[maskLevel2] <- (z[maskLevel2]-100) / 1000
+  z[maskLevel3] <- (z[maskLevel3]-110) / 10000
+  z[maskLevel4] <- (z[maskLevel4]-120) / 100000
+  z[maskLevel5] <- (z[maskLevel5]-130) / 1000000
 
   x[!maskNAs] <- z
   x[maskNAs] <- NA
   x
 }
-

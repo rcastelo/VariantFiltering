@@ -47,6 +47,12 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     n.var <- n.var + nrow(vcf)
 
+    ## restrict upfront variants to those in autosomal chromosomes
+    autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
+                                                                seqlevelsStyle(vcf),
+                                                                group="auto")
+    vcf <- vcf[autosomalMask, ]
+
     ## build logical masks of carriers (unaffected) and affected individuals
     ## variants in carriers should be heterozygous and affected should be homozygous alternative
     carriersMask <- rep(TRUE, times=nrow(vcf))
