@@ -31,8 +31,6 @@ setMethod("referenceGenome", "PhastConsDb", function(x) x@reference_genome)
 
 setMethod("organism", "PhastConsDb", function(object) organism(referenceGenome(object)))
 
-## setMethod("species", "PhastConsDb", function(object) species(referenceGenome(object)))
-
 setMethod("seqinfo", "PhastConsDb", function(x) seqinfo(referenceGenome(x)))
 
 setMethod("seqnames", "PhastConsDb", function(x) seqnames(referenceGenome(x)))

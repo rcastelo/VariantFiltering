@@ -47,6 +47,12 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 
     n.var <- n.var + nrow(vcf)
 
+    ## restrict upfront variants to those in autosomal chromosomes
+    autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
+                                                                seqlevelsStyle(vcf),
+                                                                group="auto")
+    vcf <- vcf[autosomalMask, ]
+
     ## build logical masks of affected and unaffected individuals
     ## variants in unaffected individuals should be homozygous reference and
     ## in affected individuals should be either homozygous alternative or heterozygous alternative

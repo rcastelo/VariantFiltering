@@ -52,8 +52,12 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
     n.var <- n.var + nrow(vcf)
 
-    ## restrict variants upfront to those in chromosome X
-    vcf <- vcf[seqnames(vcf) %in% c("chrX", "X"), ]
+    ## restrict upfront variants to those in chromosome X
+    XchromosomeMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
+                                                                  seqlevelsStyle(vcf),
+                                                                  group="sex")[1]
+    vcf <- vcf[XchromosomeMask, ]
+
 
     ## build logical mask of carrier females, unaffected males and affected males
     ## variants in carrier females should be heterozygous, in unaffected males

@@ -19,6 +19,7 @@
 \alias{show,VariantFilteringResults-method}
 \alias{show,VariantFilteringResultsAIM-method}
 \alias{show,VariantFilteringResultsUI-method}
+\alias{summary,VariantFilteringResults-method}
 \alias{param}
 \alias{param,VariantFilteringResults-method}
 \alias{inheritanceModel}
@@ -159,11 +160,11 @@ An \code{VariantFilteringResults} object contains the following annotation data 
   Type of variant among single nucleotide variant (SNV), insertion,
   deletion, multinucleotide variant (MNV) and deletion followed by an
   insertion (Delins). These types are determined using functions
-  \code{\link[VariantAnnotation]{isSNV()}},
-  \code{\link[VariantAnnotation]{isInsertion()}},
-  \code{\link[VariantAnnotation]{isDeletion()}},
-  \code{\link[VariantAnnotation]{isSubstitution()}} and
-  \code{\link[VariantAnnotation]{isDelins()}} from the
+  \code{\link[VariantAnnotation]{isSNV}()},
+  \code{\link[VariantAnnotation]{isInsertion}()},
+  \code{\link[VariantAnnotation]{isDeletion}()},
+  \code{\link[VariantAnnotation]{isSubstitution}()} and
+  \code{\link[VariantAnnotation]{isDelins}()} from the
   \code{VariantAnnotation} package.
   }
   \item{dbSNP}{
