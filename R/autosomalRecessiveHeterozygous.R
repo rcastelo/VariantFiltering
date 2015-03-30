@@ -216,8 +216,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     names(MAFpopMask) <- cnAF
   }
 
-  gSO <- sequence_variant.gSOXP
-  nodeDataDefaults(gSO, "varIdx") <- integer(0)
+  gSO <- annotateSO(annotated_variants)
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="autosomal recessive heterozygous",
