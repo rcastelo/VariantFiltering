@@ -83,6 +83,8 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   }
   close(vcfFiles[[1]])
 
+  gSO <- annotateSO(annotated_variants)
+
   locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
                                      levels(annotated_variants$LOCATION)))
   conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
@@ -98,9 +100,6 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     MAFpopMask <- rep(TRUE, length(cnAF))
     names(MAFpopMask) <- cnAF
   }
-
-  gSO <- sequence_variant.gSOXP
-  nodeDataDefaults(gSO, "varIdx") <- integer(0)
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="de novo", variants=annotated_variants,

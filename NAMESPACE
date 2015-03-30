@@ -24,7 +24,9 @@ importMethodsFrom(RSQLite, dbConnect,
                            dbGetPreparedQuery,
                            dbCommit)
 importMethodsFrom(graph, nodeDataDefaults,
-                         "nodeDataDefaults<-")
+                         "nodeDataDefaults<-",
+                         nodeData,
+                         "nodeData<-")
 importMethodsFrom(BSgenome, snpcount,
                             snplocs,
                             snpsByOverlaps,
