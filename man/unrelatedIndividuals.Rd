@@ -11,7 +11,7 @@ variants presented by a group of unrelated individuals
 }
 \usage{
 \S4method{unrelatedIndividuals}{VariantFilteringParam}(param,
-                                                       BPPARAM=bpparam())
+                                                       BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{

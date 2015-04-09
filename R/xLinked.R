@@ -1,5 +1,5 @@
 setMethod("xLinked", signature(param="VariantFilteringParam"),
-          function(param, BPPARAM=bpparam()) {
+          function(param, BPPARAM=bpparam("SerialParam")) {
 
   ## store call for reproducing it later
   callobj <- match.call()
@@ -96,7 +96,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   }
   close(vcfFiles[[1]])
 
-  gSO <- annotateSO(annotated_variants)
+  gSO <- annotateSO(annotated_variants, sog(param))
 
   locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
                                      levels(annotated_variants$LOCATION)))
@@ -116,7 +116,8 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="X-linked", variants=annotated_variants,
-      bamViews=BamViews(), gSO=gSO, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      bamViews=BamViews(), gSO=gSO, filters=filters(param), cutoffs=cutoffs(param),
+      dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,

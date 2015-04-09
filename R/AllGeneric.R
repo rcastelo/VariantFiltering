@@ -11,6 +11,15 @@ setGeneric("scores", function(object, gpos, ...) standardGeneric("scores"))
 setGeneric("genePhylostratum", function(object, ids) standardGeneric("genePhylostratum"))
 setGeneric("genePhylostrata", function(object) standardGeneric("genePhylostrata"))
 
+## for VariantFilteringParam and VariantFilteringResults class
+setGeneric("filters", function(x) standardGeneric("filters"))
+setGeneric("filters<-", function(x, value) standardGeneric("filters<-"))
+setGeneric("cutoffs", function(x) standardGeneric("cutoffs"))
+setGeneric("cutoffs<-", function(x, value) standardGeneric("cutoffs<-"))
+setGeneric("sog", function(x) standardGeneric("sog"))
+setGeneric("sodmat", function(x) standardGeneric("sodmat"))
+setGeneric("soamat", function(x) standardGeneric("soamat"))
+
 ## for VariantFilteringResults class
 setGeneric("samples<-", function(object, value) standardGeneric("samples<-"))
 setGeneric("resetSamples", function(object, value) standardGeneric("resetSamples"))
@@ -99,7 +108,6 @@ setGeneric("selectGene<-", function(x, value) standardGeneric("selectGene<-"))
 setGeneric("reportVariants", function(vfResultsObj, ...) standardGeneric("reportVariants"))
 
 ## for the rest ..
-setGeneric("VariantFilteringParam", function(vcfFilenames, ...) standardGeneric("VariantFilteringParam"))
 setGeneric("xLinked", function(param, ...) standardGeneric("xLinked"))
 setGeneric("autosomalRecessiveHomozygous", function(param, ...) standardGeneric("autosomalRecessiveHomozygous"))
 setGeneric("autosomalDominant", function(param, ...) standardGeneric("autosomalDominant"))

@@ -13,7 +13,6 @@ setMethod("show", signature(object="CompressedVRangesList"),
               cat(BiocGenerics:::labeledLine("names", names(object)))
           })
 
-## group by variant position when providing the summary by variant (??????)
 setMethod("show", signature(object="VariantFilteringResults"),
           function(object) {
             cat("\nVariantFiltering results object\n")
@@ -32,14 +31,15 @@ setMethod("show", signature(object="VariantFilteringResults"),
             else
               cat("  Variants are not filtered by inheritance model\n")
             cat("  Functional annotation filters\n")
-            if (!is.na(dbSNPpresent(object)))
-              cat(sprintf("    Present in %s (%s): %s\n", sapply(param(object)$snpdb, provider),
-                          sapply(param(object)$snpdb, releaseName), dbSNPpresent(object)))
-            if (!all(variantType(object)))
-              cat(sprintf("    Variant type restricted to: %s\n", paste(names(variantType(object))[variantType(object)], collapse=", ")))
+            print(active(filters(object)))
+            ## if (!is.na(dbSNPpresent(object)))
+            ##   cat(sprintf("    Present in %s (%s): %s\n", sapply(param(object)$snpdb, provider),
+            ##               sapply(param(object)$snpdb, releaseName), dbSNPpresent(object)))
+            ## if (!all(variantType(object)))
+            ##   cat(sprintf("    Variant type restricted to: %s\n", paste(names(variantType(object))[variantType(object)], collapse=", ")))
             if (minCUFC(object) > 0)
               cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
-            cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
+            ## cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
             if (!all(variantLocation(object)))
               cat(sprintf("    Location restricted to: %s\n", paste(names(variantLocation(object))[variantLocation(object)], collapse=", ")))
             if (!all(variantConsequence(object)))
@@ -67,54 +67,144 @@ setMethod("show", signature(object="VariantFilteringResults"),
               if (!is.na(minCRYP3ss(object)))
                 cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minCRYP3ss(object)))
             }
-            ## fv <- filteredVariants(object)
-            ## total <- length(fv[[1]])
-            ## nvars <- length(unique(fv[[1]]$VCFIDX))
-            ## vxloc <- table(fv[[1]]$LOCATION)
-            ## vxcon <- table(fv[[1]]$CONSEQUENCE)
-            ## cat(sprintf("\n  Total number of variants: %d leading to %d annotations\n", nvars, total))
-            ## paddgts <- sprintf("%%%dd", nchar(as.character(total)))
-            ## if (!is.na(match("nonsynonymous", names(vxcon))))
-            ##   cat(sprintf("    %s (%.1f%%) are coding non-synonymous\n", sprintf(paddgts, vxcon["nonsynonymous"]), 100*vxcon["nonsynonymous"]/total))
-            ## if (!is.na(match("synonymous", names(vxcon))))
-            ##   cat(sprintf("    %s (%.1f%%) are coding synonymous\n", sprintf(paddgts, vxcon["synonymous"]), 100*vxcon["synonymous"]/total))
-            ## if (!is.na(match("nonsense", names(vxcon))))
-            ##   cat(sprintf("    %s (%.1f%%) are coding nonsense\n", sprintf(paddgts, vxcon["nonsense"]), 100*vxcon["nonsense"]/total))
-            ## if (!is.na(match("spliceSite", names(vxloc))))
-            ##   cat(sprintf("    %s (%.1f%%) located in known splice sites\n", sprintf(paddgts, vxloc["spliceSite"]), 100*vxloc["spliceSite"]/total))
-            ## if (!is.na(match("promoter", names(vxloc))))
-            ##   cat(sprintf("    %s (%.1f%%) located in promoter regions\n", sprintf(paddgts, vxloc["promoter"]), 100*vxloc["promoter"]/total))
-            ## if (!is.na(match("fiveUTR", names(vxloc))))
-            ##   cat(sprintf("    %s (%.1f%%) located in 5' UTR regions\n", sprintf(paddgts, vxloc["fiveUTR"]), 100*vxloc["fiveUTR"]/total))
-            ## if (!is.na(match("threeUTR", names(vxloc))))
-            ##   cat(sprintf("    %s (%.1f%%) located in 3' UTR regions\n", sprintf(paddgts, vxloc["threeUTR"]), 100*vxloc["threeUTR"]/total))
-            ## if (!is.na(match("intron", names(vxloc))))
-            ##   cat(sprintf("    %s (%.1f%%) located in intronic regions\n", sprintf(paddgts, vxloc["intron"]), 100*vxloc["intron"]/total))
-            ## if (!is.na(match("intergenic", names(vxloc))))
-            ##   cat(sprintf("    %s (%.1f%%) located in intergenic regions\n", sprintf(paddgts, vxloc["intergenic"]), 100*vxloc["intergenic"]/total))
           })
 
 setMethod("summary", signature(object="VariantFilteringResults"),
-          function(object) {
+          function(object, method=c("SO", "SOfull", "bioc")) {
+
+            method <- match.arg(method)
+
             fv <- filteredVariants(object)
-            total <- length(fv[[1]])
-            nvars <- length(unique(fv[[1]]$VCFIDX))
-            vxloc <- table(fv[[1]]$LOCATION)
-            vxcon <- table(fv[[1]]$CONSEQUENCE)
-            vxloc <- table(unique(mcols(fv[[1]])[, c("VCFIDX", "LOCATION")])$LOCATION)
-            vxcon <- table(unique(mcols(fv[[1]])[, c("VCFIDX", "CONSEQUENCE")])$CONSEQUENCE)
-            res <- data.frame("Nr. Variants"=c(as.integer(vxloc), as.integer(vxcon)),
-                              row.names=c(names(vxloc), names(vxcon)), check.names=FALSE)
-            f <- res[[1]] / nvars
-            nd <- max(-floor(log10(f[f > 0]))-1)
-            res$"% Variants" <- round(100*f, digits=nd)
+            fv1 <- fv[[1]]
+            nvars <- length(unique(fv1$VCFIDX))
+
+            res <- data.frame()
+            if (method == "bioc") {
+              total <- length(fv1)
+              vxloc <- table(fv1$LOCATION)
+              vxcon <- table(fv1$CONSEQUENCE)
+              vxloc <- table(unique(mcols(fv1)[, c("VCFIDX", "LOCATION")])$LOCATION)
+              vxcon <- table(unique(mcols(fv1)[, c("VCFIDX", "CONSEQUENCE")])$CONSEQUENCE)
+              res <- data.frame("BIOCID"=c(names(vxloc), names(vxcon)),
+                                "Nr. Variants"=c(as.integer(vxloc), as.integer(vxcon)),
+                                check.names=FALSE)
+              res <- res[res[[2]] > 0, ]
+              f <- res[[2]] / nvars
+              nd <- max(-floor(log10(f[f > 0]))-1)
+              res$"% Variants" <- round(100*f, digits=nd)
+            } else if (method == "SO" || method == "SOfull") {
+              if (!"SOterms" %in% names(cutoffs(object)))
+                stop("There is no 'SOterms' entry in the list of cutoff values.")
+
+              soterms <- cutoffs(object)$SOterms
+              gSO <- sog(object)
+
+              ## no SO terms specified or no active SOterms filter, imply no restriction
+              if (is.null(soterms) || all(is.na(soterms)) || !active(filters(object))["SOterms"])
+                soterms <- nodes(gSO)[sapply(nodeData(gSO, nodes(gSO), "vcfIdx"), length) > 0]
+              else
+                soterms <- .findSOIDs(soterms, gSO)
+
+              description <- character(0)
+              numvariants <- integer(0)
+              if (length(soterms) > 0) {
+                if (method == "SO") { ## show only given SO terms
+                  soterms <- soterms[order(match(soterms, tsort(gSO)))] ## show SO terms in topological order
+                  numvariants <- sapply(nodeData(gSO, soterms, "vcfIdx"),
+                                        function(vcfidx, allvcfidx) length(unique(vcfidx[vcfidx %in% allvcfidx])),
+                                        fv1$VCFIDX)
+                  description <- unlist(nodeData(gSO, soterms, "label"))
+                  res <- data.frame("SOID"=soterms[numvariants > 0],
+                                    "Description"=description[numvariants > 0],
+                                    "Nr. Variants"=numvariants[numvariants > 0],
+                                    check.names=FALSE, row.names=NULL, stringsAsFactors=FALSE)
+                } else { ## show hierarchy involving the given SO terms
+
+                  asoterms <- unique(c(soterms, .ancestorsSO(param(object), soterms)))
+                  avcfidx <- nodeData(gSO, asoterms, "vcfIdx")
+                  asoterms <- names(avcfidx)[sapply(avcfidx, length) > 0]
+                  soterms <- unique(c(soterms, asoterms))
+                  subgSO <- sog(param(object))
+                  nodeDataDefaults(subgSO, "vcfIdx") <- integer(0)
+                  nodeData(subgSO, soterms, "vcfIdx") <- nodeData(gSO, soterms, "vcfIdx")
+
+                  dsoterms <- unique(c(soterms, .descendantsSO(param(object), soterms)))
+                  subgSO <- subGraph(dsoterms, subgSO)
+                  to <- tsort(subgSO)
+                  soterms <- character(0)
+                  for (v in to) {
+                    soterms <- c(soterms, v)
+                    parentterms <- inEdges(subgSO)[[v]]
+                    parentvcfidx <- unlist(lapply(parentterms, function(x) nodeData(subgSO, x, "vcfIdx")), use.names=FALSE)
+                    nodeData(subgSO, v, "vcfIdx")[[v]] <- unique(c(nodeData(subgSO, v, "vcfIdx")[[1]], parentvcfidx))
+                    vcfidx <- nodeData(subgSO, v, "vcfIdx")[[v]]
+                    numvariants <- c(numvariants, length(unique(vcfidx[vcfidx %in% fv1$VCFIDX])))
+                    description <- c(description, unlist(nodeData(subgSO, v, "label"), use.names=FALSE))
+                  }
+                  alld <- dijkstra.sp(g=as(t(as(subgSO, "matrix")), "graphNEL"), start=to[length(to)])$distances
+                  res <- data.frame("SOID"=soterms,
+                                    "Level"=alld[soterms],
+                                    "Description"=description,
+                                    "Nr. Variants"=numvariants,
+                                    check.names=FALSE, row.names=NULL, stringsAsFactors=FALSE)
+                }
+              }
+
+              if (nrow(res) > 0) {
+                f <- res[["Nr. Variants"]] / nvars
+                nd <- max(-floor(log10(f[f > 0]))-1)
+                res$"% Variants" <- round(100*f, digits=nd)
+              } else
+                res$"% Variants" <- numeric(0)
+            }
 
             res
           })
 
+
 ##
 ## getter and setter methods
 ##
+
+setMethod("length", "VariantFilteringResults", function(x) length(x@variants))
+
+setMethod("filters", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@filters
+          })
+
+setReplaceMethod("filters", signature(x="VariantFilteringResults"),
+                 function(x, value) {
+                   x@filters <- value
+                   x
+                 })
+
+setMethod("cutoffs", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@cutoffs
+          })
+
+setReplaceMethod("cutoffs", signature(x="VariantFilteringResults"),
+                 function(x, value) {
+                   x@cutoffs <- value
+                   x
+                 })
+
+setMethod("softFilterMatrix", signature(x="VariantFilteringResults"),
+          function(x) {
+            softFilterMatrix(allVariants(x, groupBy="nothing"))
+          })
+
+setReplaceMethod("softFilterMatrix", signature(x="VariantFilteringResults"),
+                 function(x, value) {
+                   softFilterMatrix(x@variants) <- value
+                   x
+                 })
+
+setMethod("sog", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@gSO
+          })
 
 setMethod("samples", signature(object="VariantFilteringResults"),
           function(object) {
@@ -123,6 +213,9 @@ setMethod("samples", signature(object="VariantFilteringResults"),
 
 setReplaceMethod("samples", signature(object="VariantFilteringResults"),
                  function(object, value) {
+                   if (inheritanceModel(object) != "unrelated individuals")
+                     stop("Active samples can only be changed when no inheritance model is used (unrelated individuals).")
+
                    mask <- !value %in% param(object)$sampleNames
                    if (any(mask)) {
                      if (sum(mask) > 1)
@@ -263,6 +356,7 @@ setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="lo
                    }
 
                    x@variantTypeMask[typkey] <- value
+                   cutoffs(x)$variantType <- x@variantTypeMask
                    x
                  })
 
@@ -275,6 +369,7 @@ setReplaceMethod("aaChangeType", signature(x="VariantFilteringResults", value="c
                  function(x, value=c("Any", "Radical", "Conservative")) {
                    value <- match.arg(value)
                    x@aaChangeType <- value
+                   cutoffs(x)$aaChangeType <- value
                    x
                  })
 
@@ -525,6 +620,12 @@ setReplaceMethod("minCUFC", signature(x="VariantFilteringResults", value="numeri
                  })
 
 
+setMethod("filters", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@filters
+          })
+
+
 ##
 ## methods for retrieving variants
 ##
@@ -542,11 +643,15 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
           })
 
 ## get variants after applying all filters
+## CHECK WHETHER VARIANTS ARE CORRECTLY FILTERED !!!
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample", unusedColumns.rm=FALSE) {
+            if (length(x@filters) > 0)
+              x <- softFilter(x, filters(x))
             varsxsam <- allVariants(x)
             vars <- varsxsam[[1]]
-            rowsMask <- rep(TRUE, length(vars))
+            selcols <- names(active(filters(x)))[active(filters(x))] ## default VCF filters may or may not show up
+            rowsMask <- apply(softFilterMatrix(vars)[, selcols, drop=FALSE], 1, all, na.rm=TRUE)
             if (!all(param(x)$sampleNames %in% samples(x))) { ## not all samples are active
               varsxsam <- varsxsam[samples(x)]
 
@@ -554,7 +659,9 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               gt <- sapply(varsxsam, function(x) x$GT)
               gt <- apply(gt, 1, paste, collapse="")
               gt <- gsub("/|\\|", "", gt)
-              rowsMask <- !gt %in% paste(rep("0", times=length(samples(x))), collapse="")
+              gt <- gsub(".", "0", gt, fixed=TRUE)
+              gt <- gsub("0+", "0", gt)
+              rowsMask <- rowsMask & !gt %in% "0"
             }
 
             ## presence in dbSNP

@@ -2,7 +2,7 @@
 ## input GRanges object. It uses different functions from this package and
 ## from the VariantAnnotation package
 
-annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
+annotationEngine <- function(variantsGR, param, BPPARAM=bpparam("SerialParam")) {
   
   if (length(variantsGR) == 0) {
     variantsGR_annotated <- variantsGR
@@ -354,7 +354,7 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam()) {
 ####
 
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
             if (!"TYPE" %in% colnames(mcols(variantsGR))) {
               stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
@@ -375,7 +375,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
           })
 
 setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
             if (!"TYPE" %in% colnames(mcols(variantsGR))) {
               stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
@@ -400,7 +400,7 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
 ####
 
 setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
-          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
             PolyPhen2 <- rep(NA_character_, length(variantsGR))
             if (!coding)
               return(DataFrame(PolyPhen2=PolyPhen2))
@@ -424,7 +424,7 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
 
 ## USE VARID WHERE dbSNP IS MISSING !!!
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
-          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
             PROVEAN <- rep(NA_character_, length(variantsGR))
             if (!coding)
               return(DataFrame(PROVEAN=PROVEAN))
@@ -444,9 +444,8 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
 ## Annotate MAF values
 #####
 
-## USE VARID WHERE dbSNP IS MISSING !!!
 setMethod("annotateVariants", signature(annObj="MafDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
 
             ## get the MAF columns
             mafCols <- knownVariantsMAFcols(annObj) ## assumes all MAF column names contain 'AF'
@@ -457,18 +456,20 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             uniqVarIDs <- unique(varIDs)
             uniqVarIDs <- uniqVarIDs[!is.na(uniqVarIDs)]
             if (length(varIDs) > 0) {
-              uniqMAFvalues <- fetchKnownVariantsByID(annObj, uniqVarIDs)
+              uniqMAFvalues <- snpid2maf(annObj, uniqVarIDs)
               mt <- match(varIDs, uniqMAFvalues$varID)
               mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
 
               ## for missing entries then fetch by given identifier
               varIDs <- variantsGR$VARID
               if (!is.null(varIDs) && any(!is.na(varIDs))) {
+                maskNotFound <- apply(uniqMAFvalues[, mafCols], 1, function(x) all(is.na(x)))
                 missingdbsnpIDs <- unique(c(varIDs[is.na(variantsGR$dbSNP)],
-                                            varIDs[!is.na(match(variantsGR$dbSNP, uniqMAFvalues$varID[is.na(uniqMAFvalues$chrom)]))]))
+                                            varIDs[!is.na(variantsGR$dbSNP) &
+                                                   variantsGR$dbSNP %in% uniqMAFvalues$varID[maskNotFound]]))
                 missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
                 if (length(missingdbsnpIDs) > 0) {
-                  uniqMAFvalues <- fetchKnownVariantsByID(annObj, missingdbsnpIDs)
+                  uniqMAFvalues <- snpid2maf(annObj, missingdbsnpIDs)
                   mt <- match(varIDs, uniqMAFvalues$varID)
                   mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
                 }
@@ -489,7 +490,7 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 ####
 
 setMethod("annotateVariants", signature(annObj="OrgDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
 
             genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
             geneIDs <- variantsGR$GENEID
@@ -523,7 +524,7 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
           })
 
 setMethod("annotateVariants", signature(annObj="TxDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
 
             txlevel_annot <- DataFrame(TXNAME=character())
             txIDs <- variantsGR$TXID
@@ -547,7 +548,7 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="PhastConsDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
 
             sco <- scores(annObj, variantsGR)
 
@@ -559,7 +560,7 @@ setMethod("annotateVariants", signature(annObj="PhastConsDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam()) {
+          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
 
             gps <- genePhylostratum(annObj, variantsGR$GENEID)
 
@@ -646,14 +647,14 @@ variantHGVS <- function(variantsGR) {
   maskCoding <- variantsGR$LOCATION == "coding"
 
   ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-  refAllele[maskCoding] <- as.character(adjustForStrandSense(variantsGR[maskCoding],
+  refAllele[maskCoding] <- as.character(.adjustForStrandSense(variantsGR[maskCoding],
                                                              ref(variantsGR)[maskCoding]))
   ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
   ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-  refAllele[!maskCoding] <- as.character(adjustForStrandSense(variantsGR[!maskCoding],
+  refAllele[!maskCoding] <- as.character(.adjustForStrandSense(variantsGR[!maskCoding],
                                                               ref(variantsGR)[!maskCoding]))
   altAllele <- as.character(variantsGR$varAllele)
-  altAllele[!maskCoding] <- adjustForStrandSense(variantsGR[!maskCoding],
+  altAllele[!maskCoding] <- .adjustForStrandSense(variantsGR[!maskCoding],
                                                  alt(variantsGR)[!maskCoding])
 
   locStartAllele <- as.integer(start(variantsGR$CDSLOC))
@@ -743,7 +744,7 @@ variantHGVS <- function(variantsGR) {
 }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
-.loc2SNPid <- function(SNPlocsObj, locs, BPPARAM=bpparam()) {
+.loc2SNPid <- function(SNPlocsObj, locs, BPPARAM=bpparam("SerialParam")) {
 
   if (!is(locs, "GRanges"))
     stop("'locs' must be a GRanges object")
@@ -784,7 +785,7 @@ variantHGVS <- function(variantsGR) {
 }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
-.loc2XtraSNPid <- function(XtraSNPlocsObj, locs, BPPARAM=bpparam()) {
+.loc2XtraSNPid <- function(XtraSNPlocsObj, locs, BPPARAM=bpparam("SerialParam")) {
 
   if (!is(locs, "GRanges"))
     stop("'locs' must be a GRanges object")
@@ -934,7 +935,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 }
 
 ## assumes variantsGR is a VRanges object
-.scoreSpliceSiteVariants <- function(variantsGR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam()) {
+.scoreSpliceSiteVariants <- function(variantsGR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam("SerialParam")) {
 
   ## adapt to sequence style and genome version from the input
   ## BSgenome object, thus assuming positions are based on the same

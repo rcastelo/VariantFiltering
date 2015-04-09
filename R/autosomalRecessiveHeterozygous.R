@@ -1,8 +1,6 @@
 
 setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringParam"),
-          function(param, BPPARAM=bpparam()) {
-
-  stop("this is being updated and cannot be used at the moment.")
+          function(param, BPPARAM=bpparam("SerialParam")) {
 
   ## store call for reproducing it later
   callobj <- match.call()
@@ -34,171 +32,126 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   pedf <- pedf[, 1:6]
   colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
   
+  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
   if (sum(pedf$Phenotype == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
 
+  unaff <- pedf[pedf$Phenotype == 2, ]
   aff <- pedf[pedf$Phenotype == 2, ]
   
-  carr1 <- unique(aff$MotherID)
-  if (length(carr1) > 1) {
+  motherID <- unique(aff$MotherID)
+  if (length(motherID) > 1) {
     stop("The mother of all the affected individuals has to be the same. Please check out the PED file.")
-  } else if (length(carr1) < 1)
+  } else if (length(motherID) < 1)
     stop("One individual has to be set as mother of the affected individual(s).")
-  row_carr1 <- pedf[pedf$IndividualID == as.character(carr1), ]
+  carrierMother <- pedf[pedf$IndividualID == as.character(motherID), ]
   
-  carr2 <- unique(aff$FatherID)
-  if (length(carr2) > 1) {
+  fatherID <- unique(aff$FatherID)
+  if (length(fatherID) > 1) {
     stop("The father of all the affected individuals has to be the same. Please check out the PED file.")
-  } else if (length(carr2) < 1)
+  } else if (length(fatherID) < 1)
     stop("One individual has to be set as father of the affected individual(s)")
-  row_carr2 <- pedf[pedf$IndividualID == as.character(carr2), ]
+  carrierFather <- pedf[pedf$IndividualID == as.character(fatherID), ]
   
-  ## CONTINUE HERE !!!!!
-  # analysis
-    
   mom_comphet <- dad_comphet <- NULL
 
-  if (multiSample) {
-    vcf_vcf1 <- readVcf(unlist(input_list), genomeInfo)
-    
-    gr_carr1 <- one_ind_ms(vcf_vcf1, "0/1", row_carr1, filterTag)
-    if (length(gr_carr1) < 1) {
-      stop("Unable to find the data about the mother inside de VCF file. Please check that the id is the same for both files")
-    }
-    gr_carr2 <- one_ind_ms(vcf_vcf1, "0/1", row_carr2, filterTag)
-    if (length(gr_carr2) < 1) {
-      stop("Unable to find the data about the father inside de VCF file. Please check that the id is the same for both files")
-    }
-    
-    
-    affected <- switch(nrow(aff)+1,
-                       stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                       one_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                       two_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                       three_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                       four_ind_ms(vcf_vcf1, "0/1", aff, filterTag),
-                       five_ind_ms(vcf_vcf1, "0/1", aff, filterTag))
-    
-    realcommongen12 <- sharedVariants(gr_carr1, gr_carr2)
-    realcommongen21 <- sharedVariants(gr_carr2, gr_carr1)
-    
-    # i have the shared ones. I want all the others.
-    carr1 <- gr_carr1[-realcommongen12]
-    carr2 <- gr_carr2[-realcommongen21]
-    
-    # now, a filter to discard same changes of one parent wich appears in the other AS HOMOZYGOUS, therefore, are not responsible
-    # for the phenotype (this parent would present an het change in one candidate and a hom change in the other one, passing the first filters and also being compound heterozygous himself)
-    homodiscard1 <- rowRanges(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr1[, 2]] == "1/1", ])
-    homodiscard2 <- rowRanges(vcf_vcf1[geno(vcf_vcf1)$GT[, row_carr2[, 2]] == "1/1", ])
-    
-    mom_comphet <- carr1[!names(carr1) %in% names(homodiscard2), ]
-    dad_comphet <- carr2[!names(carr2) %in% names(homodiscard1), ]
-    
-    mom_comphet <- matchChromosomes(mom_comphet, txdb)
-    dad_comphet <- matchChromosomes(dad_comphet, txdb)
-    
-  } else {
-    
-    input_list_ind <- sapply(input_list, function(x) gsub("\\.vcf$", "", gsub("\\.vcf\\.gz$", "", x, ignore.case=TRUE), ignore.case=TRUE))
-    
-    input_list_father_vector <- c()
-    input_list_mother_vector <- c()
-    input_list_aff_vector <- c()
-    
-    for (i in 1:length(input_list_ind)) {
-      if (input_list_ind[i] %in% aff[, 3]) {
-        input_list_father_vector <-  i
-      } else if (input_list_ind[i]%in% aff[, 4]) {
-        input_list_mother_vector <-  i
-      } else if (input_list_ind[i]%in% aff[, 2]) {
-        input_list_aff_vector <- c(input_list_aff_vector, i)
-      }
-    }
-    
-    input_list_father <- input_list[input_list_father_vector]
-    input_list_mother <- input_list[input_list_mother_vector]
-    input_list_aff <- input_list[input_list_aff_vector] 
-  
-    vcf_carrier1 <- readVcf(unlist(input_list_mother), genomeInfo)
-    vcf_carrier2 <- readVcf(unlist(input_list_father), genomeInfo)
-    
-    affected <- switch(length(input_list_aff)+1,
-                       stop("No affected individuals detected. Something might be wrong with the .ped file..."),
-                       one_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
-                       two_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
-                       three_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
-                       four_ind_us(input_list_aff, "0/1", filterTag, genomeInfo),
-                       five_ind_us(input_list_aff, "0/1", filterTag, genomeInfo))
-    
-    gr_carr1 <- vcf2GR(vcf_carrier1, "0/1", filterTag)
-    gr_carr2 <- vcf2GR(vcf_carrier2, "0/1", filterTag)
-    
-  
-    # now we want to discard shared changes on the same position, because it will lead to a compound het
-    # in one of the healthy parents
-    
-    # in few steps we verificate that exactly same changes are present in both individuals, checking same alleles and so on
-    # and then, we discard them
-    
-    
-    realcommongen12 <- sharedVariants(gr_carr1, gr_carr2)
-    realcommongen21 <- sharedVariants(gr_carr2, gr_carr1)
-    
-    # i have the shared ones. Now i have to select all the others.
-    carr1 <- gr_carr1[-realcommongen12]
-    carr2 <- gr_carr2[-realcommongen21]
-    
-    # now, a filter to discard same changes of one parent wich appears in the other AS HOMOZYGOUS, therefore, are not responsible
-    # for the phenotype (this parent would present an het change in one candidate and a hom change in the other one, passing the first filters and also being compound heterozygous himself)
-    homodiscard1 <- rowRanges(vcf_carrier1[geno(vcf_carrier1)$GT[, 1] == "1/1", ])
-    homodiscard2 <- rowRanges(vcf_carrier2[geno(vcf_carrier2)$GT[, 1] == "1/1", ])
-    
-    mom_comphet <- carr1[!names(carr1) %in% names(homodiscard2), ]
-    dad_comphet <- carr2[!names(carr2) %in% names(homodiscard1), ]
-    
-    mom_comphet <- matchChromosomes(mom_comphet, txdb)
-    dad_comphet <- matchChromosomes(dad_comphet, txdb)
+  annotated_variants <- VRanges()
+  open(vcfFiles[[1]])
+  n.var <- 0
+  while(nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
+
+    ## insert an index for each variant in the VCF file, and indicator
+    ## values for heterozygous variants in affected and one of the parents only
+    info(header(vcf)) <- rbind(info(header(vcf)),
+                               DataFrame(Number=rep(1, 3), Type=rep("Integer", 3),
+                                         Description=c("Variant index in the VCF file.",
+                                                       "Heterozygous in affected and mother only.",
+                                                       "Heterozygous in affected and father only."),
+                                         row.names=c("VCFIDX", "COMPHETMOTHER", "COMPHETFATHER")))
+    info(vcf)$VCFIDX <- (n.var+1):(n.var+nrow(vcf))
+    varIDs <- rownames(vcf)
+
+    n.var <- n.var + nrow(vcf)
+
+    ## restrict upfront variants to those in autosomal chromosomes
+    autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
+                                                                seqlevelsStyle(vcf),
+                                                                group="auto")
+    vcf <- vcf[autosomalMask, ]
+
+    ## heterozygous mask for *all* affected individuals
+    affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "0/1"
+    affectedMask <- apply(affectedMask, 1, all)
+
+    ## heterozygous mask for mother
+    motherHetMask <- geno(vcf)$GT[, motherID, drop=FALSE] == "0/1"
+
+    ## heterozygous mask for father
+    fatherHetMask <- geno(vcf)$GT[, fatherID, drop=FALSE] == "0/1"
+
+    ## homozygous alternative mask for *any* of the unaffected individuals
+    unaffHomMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "1/1"
+    unaffHomMask <- apply(unaffHomMask, 1, any)
+
+    ## candidate variants are heterozygous in affected individuals,
+    ## heterozygous in one of the parents but not in the other and
+    ## are not homozygous in the unaffected individuals
+    compHetMotherMask <- affectedMask & motherHetMask & !fatherHetMask & !unaffHomMask
+    compHetFatherMask <- affectedMask & !motherHetMask & fatherHetMask & !unaffHomMask
+    compHetMask <- compHetMotherMask | compHetFatherMask
+
+    ## annotate separately father and mother contributions to the
+    ## compound heterozygous segregation
+    info(vcf)$COMPHETMOTHER <- compHetMotherMask + 0L
+    info(vcf)$COMPHETFATHER <- compHetFatherMask + 0L
+
+    ## filter out variants that do not segregate as an autosomal recessive heterozygous trait
+    ## still a final filter needs to be applied after annotating the variants to genes,
+    ## to select those that occur within a common gene where at least one comes from each parent
+    vcf <- vcf[compHetMask, ]
+
+    ## coerce the VCF object to a VRanges object
+    variants <- as(vcf, "VRanges")
+
+    ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
+    variants$VARID <- varIDs[variants$VCFIDX]
+
+    ## harmonize Seqinfo data between variants, annotations and reference genome
+    variants <- .matchSeqinfo(variants, txdb, bsgenome)
+
+    ## annotate variants
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+
+    message(sprintf("%d variants processed", n.var))
   }
+  close(vcfFiles[[1]])
   
-  affected <- .matchSeqinfo(affected, txdb, bsgenome)
+  ## candidate variants should occur within a common gene where at least one comes from each parent
+  geneMask <- !is.na(annotated_variants$GENEID)
+  annotated_variants <- annotated_variants[geneMask] ## discard variants wo/ gene annotation
 
-  ##########################
-  ##                      ##
-  ##      ANNOTATION      ##
-  ##                      ##
-  ##########################
-  
-  affected_annotated <- annotationEngine(affected, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
-                                         radicalAAchangeMatrix=radicalAAchangeMatrix,
-                                         otherAnnotations=otherAnnotations,
-                                         allTranscripts=allTranscripts, BPPARAM=BPPARAM)
+  vcfidxbygene <- split(annotated_variants$VCFIDX, annotated_variants$GENEID) ## group variants by gene
+  vcfidxbygene <- lapply(vcfidxbygene, ## within each gene, select variants contributed from different parents
+                         function(vcfidx, mothervcfidx, fathervcfidx) {
+                           motherMask <- vcfidx %in% mothervcfidx
+                           fatherMask <- vcfidx %in% fathervcfidx       
+                           xorMask <- (motherMask | fatherMask) & !(motherMask & fatherMask)
+                           if (sum(xorMask & motherMask) > 1 & sum(xorMask & fatherMask) > 1)
+                             vcfidx <- vcfidx[xorMask]
+                           else                    ## if there is no variant contributed from
+                             vcfidx <- integer(0)  ## any of the parents, discard everything
 
-  afflist <- affected_annotated[which(duplicated(affected_annotated$GENE))]
-  afflist <- afflist[!is.na(afflist$GENE)]
-  
-  realcommonAffMom <- sharedVariants(afflist, mom_comphet)
-  affMom_comphet <- afflist[realcommonAffMom]
+                           vcfidx
+                         }, annotated_variants$VCFIDX[annotated_variants$COMPHETMOTHER == 1L],
+                         annotated_variants$VCFIDX[annotated_variants$COMPHETFATHER == 1L])
+  elen <- elementLengths(vcfidxbygene)
+  vcfidxbygene <- vcfidxbygene[elen > 1] ## discard variants found alone in a gene
+  compHetMask <- annotated_variants$VCFIDX %in% unique(unlist(vcfidxbygene, use.names=FALSE))
 
-  realcommonAffDad <- sharedVariants(afflist, dad_comphet)
-  affDad_comphet <- afflist[realcommonAffDad]
+  ## select the final set of variant segregating as a compound heterozygous trait
+  annotated_variants <- annotated_variants[compHetMask]
 
-  # now only lefts checking if there is at least one change per gene per parent 
-  
-  mom_contrib <- affMom_comphet[affMom_comphet$GENEID %in% affDad_comphet$GENEID]
-  dad_contrib <- affDad_comphet[affDad_comphet$GENEID %in% affMom_comphet$GENEID]
-
-  mcols(mom_contrib) <- cbind(mcols(mom_contrib), DataFrame(SOURCE=rep(as.character(aff[, 4]), length(mom_contrib))))
-  mcols(dad_contrib) <- cbind(mcols(dad_contrib), DataFrame(SOURCE=rep(as.character(aff[, 3]), length(dad_contrib))))
-
- parents_contrib <- c(mom_contrib, dad_contrib)
-
- parents_contrib_sorted <- parents_contrib[order(parents_contrib$GENE)]
-  
-  ##########################
-  ##                      ##
-  ## BUILD RESULTS OBJECT ##
-  ##                      ##
-  ##########################
+  gSO <- annotateSO(annotated_variants, sog(param))
 
   locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
                                      levels(annotated_variants$LOCATION)))
@@ -216,11 +169,12 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     names(MAFpopMask) <- cnAF
   }
 
-  gSO <- annotateSO(annotated_variants)
+  gSO <- annotateSO(annotated_variants, sog(param))
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="autosomal recessive heterozygous",
-      variants=parents_contrib_sorted, bamViews=BamViews(), gSO=gSO, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=filters(param),
+      cutoffs=cutoffs(param), dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
