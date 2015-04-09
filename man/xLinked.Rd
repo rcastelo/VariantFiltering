@@ -11,7 +11,7 @@ This function identifies variants that appear only in the X chromosome of the un
 
 \usage{
 \S4method{xLinked}{VariantFilteringParam}(param,
-                                          BPPARAM=bpparam())
+                                          BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{

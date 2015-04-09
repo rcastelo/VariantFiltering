@@ -10,7 +10,7 @@ This function works analyzing the variants of the unaffected individuals storing
 }
 \usage{
 \S4method{autosomalRecessiveHomozygous}{VariantFilteringParam}(param,
-                                                               BPPARAM=bpparam())
+                                                               BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{
