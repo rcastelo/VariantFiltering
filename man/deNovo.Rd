@@ -10,7 +10,7 @@ This function has been created in order to search for \emph{de novo} variants in
 }
 \usage{
 \S4method{deNovo}{VariantFilteringParam}(param,
-                                         BPPARAM=bpparam())
+                                         BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{

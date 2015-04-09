@@ -10,7 +10,7 @@ This function aims to analyze the variants of the unaffected individuals, storin
 
 \usage{
 \S4method{autosomalRecessiveHeterozygous}{VariantFilteringParam}(param,
-                                                                 BPPARAM=bpparam())
+                                                                 BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{

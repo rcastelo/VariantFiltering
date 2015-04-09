@@ -10,7 +10,7 @@ This function identifies variants present in all the affected individual(s) disc
 }
 \usage{
 \S4method{autosomalDominant}{VariantFilteringParam}(param,
-                                                    BPPARAM=bpparam())
+                                                    BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{

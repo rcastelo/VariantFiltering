@@ -1,184 +1,199 @@
-setMethod("VariantFilteringParam", signature(vcfFilenames="character"),
-          function(vcfFilenames, pedFilename=NA_character_,
-                   bsgenome="BSgenome.Hsapiens.UCSC.hg19",
-                   orgdb="org.Hs.eg.db",
-                   txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
-                   snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
-                   spliceSiteMatricesFilenames=c(file.path(system.file("extdata", package="VariantFiltering"),
-                                                           "hsap.donors.hcmc10_15_1.ibn"),
-                                                 file.path(system.file("extdata", package="VariantFiltering"),
-                                                           "hsap.acceptors.hcmc10_15_1.ibn")),
-                   radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
-                                                     "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
-                   codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),"humanCodonUsage.txt"),
-                   geneticCode=getGeneticCode("SGC0"),
-                   allTranscripts=FALSE,
-                   otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137",
-                                      "MafDb.ALL.wgs.phase1.release.v3.20101123",
-                                      "PolyPhen.Hsapiens.dbSNP131",
-                                      "SIFT.Hsapiens.dbSNP137",
-                                      "phastCons100way.UCSC.hg19",
-                                      "humanGenesPhylostrata"),
-                   filterTag=NA_character_,
-                   geneKeytype=NA_character_,
-                   yieldSize=NA_integer_) {
+VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
+                                  bsgenome="BSgenome.Hsapiens.UCSC.hg19",
+                                  orgdb="org.Hs.eg.db",
+                                  txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
+                                  snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
+                                  spliceSiteMatricesFilenames=NA,
+                                  radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
+                                                                    "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
+                                  codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),
+                                                               "humanCodonUsage.txt"),
+                                  geneticCode=getGeneticCode("SGC0"),
+                                  allTranscripts=FALSE,
+                                  otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137",
+                                                     "MafDb.ALL.wgs.phase1.release.v3.20101123",
+                                                     "MafDb.ExAC.r0.3.sites",
+                                                     "PolyPhen.Hsapiens.dbSNP131",
+                                                     "SIFT.Hsapiens.dbSNP137",
+                                                     "phastCons100way.UCSC.hg19",
+                                                     "humanGenesPhylostrata"),
+                                  geneKeytype=NA_character_,
+                                  yieldSize=NA_integer_) {
 
-            ## store call for reproducing it later
-            callobj <- match.call()
-            callstr <- gsub(".local", "VariantFilteringParam", deparse(callobj))
-            callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
+  ## store call for reproducing it later
+  callobj <- match.call()
+  callstr <- gsub(".local", "VariantFilteringParam", deparse(callobj))
+  callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
 
-            ## check if input VCF, PED, splice site and radical AA change files exist
-            tryCatch({
-              .io_check_exists(c(vcfFilenames, radicalAAchangeFilename, codonusageFilename))
-            }, error=function(err) {
-                 stop(conditionMessage(err), call.=FALSE)
-            })
+  ## check if input VCF, PED, splice site and radical AA change files exist
+  tryCatch({
+    .io_check_exists(c(vcfFilenames, radicalAAchangeFilename, codonusageFilename))
+  }, error=function(err) {
+       stop(conditionMessage(err), call.=FALSE)
+  })
 
-            if (!is.na(pedFilename) && length(pedFilename) == 1)
-              tryCatch({
-                .io_check_exists(pedFilename)
-              }, error=function(err) {
-                   stop(conditionMessage(err), call.=FALSE)
-              })
-            else
-              pedFilename <- NA_character_
+  if (!is.na(pedFilename) && length(pedFilename) == 1)
+    tryCatch({
+      .io_check_exists(pedFilename)
+    }, error=function(err) {
+         stop(conditionMessage(err), call.=FALSE)
+    })
+  else
+    pedFilename <- NA_character_
 
-            if (!is.na(spliceSiteMatricesFilenames) && length(spliceSiteMatricesFilenames) == 2)
-              tryCatch({
-                .io_check_exists(spliceSiteMatricesFilenames)
-              }, error=function(err) {
-                   stop(conditionMessage(err), call.=FALSE)
-              })
-            else
-              spliceSiteMatricesFilenames <- NA_character_
+  if (!is.na(spliceSiteMatricesFilenames) && length(spliceSiteMatricesFilenames) == 2)
+    tryCatch({
+      .io_check_exists(spliceSiteMatricesFilenames)
+    }, error=function(err) {
+         stop(conditionMessage(err), call.=FALSE)
+    })
+  else
+    spliceSiteMatricesFilenames <- NA_character_
 
-            maskGz <- grepl("vcf.bgz$", vcfFilenames)
+  maskGz <- grepl("vcf.bgz$", vcfFilenames)
 
-            ## files that are no bgzipped should get bgzipped for the indexTabix() call below
-            if (any(!maskGz)) {
-              maskVcf <- grepl("vcf$", vcfFilenames[!maskGz])
-              if (!all(maskVcf))
-                stop(sprintf("file(s) %s have no .vcf extension.", paste(vcfFilenames[!maskGz][!maskVcf], collapse=", ")))
-              sapply(vcfFilenames[!maskGz], function(f) {
-                                              message(sprintf("Tabix compressing with bgzip %s", f))
-                                              bgzip(f, overwrite=TRUE)
-                                            })
-              vcfFilenames[!maskGz] <- paste0(vcfFilenames[!maskGz], ".bgz")
-            }
+  ## files that are no bgzipped should get bgzipped for the indexTabix() call below
+  if (any(!maskGz)) {
+    maskVcf <- grepl("vcf$", vcfFilenames[!maskGz])
+    if (!all(maskVcf))
+      stop(sprintf("file(s) %s have no .vcf extension.", paste(vcfFilenames[!maskGz][!maskVcf], collapse=", ")))
+    sapply(vcfFilenames[!maskGz], function(f) {
+                                    message(sprintf("Tabix compressing with bgzip %s", f))
+                                    bgzip(f, overwrite=TRUE)
+                                  })
+    vcfFilenames[!maskGz] <- paste0(vcfFilenames[!maskGz], ".bgz")
+  }
 
-            maskTbi <- .io_exists_mask(paste0(vcfFilenames, ".tbi"))
-            ## files with no tabix index should get built their tabix index
-            if (any(!maskTbi)) {
-              for (f in vcfFilenames) {
-                tryCatch({
-                  message(sprintf("Tabix indexing %s", f))
-                  indexTabix(f, format="vcf")
-                }, error=function(err) {
-                  stop(conditionMessage(err), call.=TRUE)
-                })
-              }
-            }
+  maskTbi <- .io_exists_mask(paste0(vcfFilenames, ".tbi"))
+  ## files with no tabix index should get built their tabix index
+  if (any(!maskTbi)) {
+    for (f in vcfFilenames) {
+      tryCatch({
+        message(sprintf("Tabix indexing %s", f))
+        indexTabix(f, format="vcf")
+      }, error=function(err) {
+        stop(conditionMessage(err), call.=TRUE)
+      })
+    }
+  }
 
-            sampleNames <- character()
-            seqinfos <- vector(mode="list", length=length(vcfFilenames))
-            tfl <- list()
-            for (i in seq(along=vcfFilenames)) {
-              hd <- scanVcfHeader(vcfFilenames[i])
-              seqinfos[[i]] <- seqinfo(hd)
-              sampleNames <- c(sampleNames, samples(hd))
-              tfl[[i]] <- TabixFile(vcfFilenames[i], yieldSize=yieldSize)
-            }
-            tfl <- do.call(TabixFileList, tfl)
+  sampleNames <- character()
+  seqinfos <- vector(mode="list", length=length(vcfFilenames))
+  tfl <- list()
+  for (i in seq(along=vcfFilenames)) {
+    hd <- scanVcfHeader(vcfFilenames[i])
+    seqinfos[[i]] <- seqinfo(hd)
+    sampleNames <- c(sampleNames, samples(hd))
+    tfl[[i]] <- TabixFile(vcfFilenames[i], yieldSize=yieldSize)
+  }
+  tfl <- do.call(TabixFileList, tfl)
 
-            ## check that the genome information is identical for all VCFs with genome information
-            wh <- which(sapply(seqinfos, length) > 0)
-            for (i in wh)
-              if (!identical(seqinfos[[i]], seqinfos[[wh[1]]]))
-                stop("Genome version for VCF file %s is different from VCF file %s\n",
-                     basename(vcfFilenames[i]), basename(vcfFilenames[wh[1]]))
+  ## check that the genome information is identical for all VCFs with genome information
+  wh <- which(sapply(seqinfos, length) > 0)
+  for (i in wh)
+    if (!identical(seqinfos[[i]], seqinfos[[wh[1]]]))
+      stop("Genome version for VCF file %s is different from VCF file %s\n",
+           basename(vcfFilenames[i]), basename(vcfFilenames[wh[1]]))
 
-            ## those VCFs without genome information take the genome information from
-            ## VCFs with genome information (if any)
-            wh0 <- which(sapply(seqinfos, length) == 0)
-            if (length(wh0) > 0 && length(wh) > 0) {
-              seqinfos[wh0] <- seqinfos[wh[1]]
-              warning(sprintf("Genome information missing in VCF file(s) %s is taken from VCF file %s.",
-                              paste(sapply(vcfFilenames[wh0], basename), collapse=", "),
-                              basename(vcfFilenames[wh[1]])))
-            }
+  ## those VCFs without genome information take the genome information from
+  ## VCFs with genome information (if any)
+  wh0 <- which(sapply(seqinfos, length) == 0)
+  if (length(wh0) > 0 && length(wh) > 0) {
+    seqinfos[wh0] <- seqinfos[wh[1]]
+    warning(sprintf("Genome information missing in VCF file(s) %s is taken from VCF file %s.",
+                    paste(sapply(vcfFilenames[wh0], basename), collapse=", "),
+                    basename(vcfFilenames[wh[1]])))
+  }
 
-            ## read splice site matrices
-            spliceSiteMatrices <- list()
-            if (any(!is.na(spliceSiteMatricesFilenames))) {
-              if (class(spliceSiteMatricesFilenames) != "character" || length(spliceSiteMatricesFilenames) != 2)
-                stop("'spliceSiteMatricesFilenames' should be a character vector with two filenames of donor and acceptor splice site matrices, respectively.")
-              spliceSiteMatrices <- list(wmDonorSites=readWm(spliceSiteMatricesFilenames[1]),
-                                         wmAcceptorSites=readWm(spliceSiteMatricesFilenames[2]))
-            }
+  ## read splice site matrices
+  spliceSiteMatrices <- list()
+  if (any(!is.na(spliceSiteMatricesFilenames))) {
+    if (class(spliceSiteMatricesFilenames) != "character" || length(spliceSiteMatricesFilenames) != 2)
+      stop("'spliceSiteMatricesFilenames' should be a character vector with two filenames of donor and acceptor splice site matrices, respectively.")
+    spliceSiteMatrices <- list(wmDonorSites=readWm(spliceSiteMatricesFilenames[1]),
+                               wmAcceptorSites=readWm(spliceSiteMatricesFilenames[2]))
+  }
 
-            ## read radical amino acid change matrix
-            radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
+  ## read radical amino acid change matrix
+  radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
 
-            ## read codon usage table
-            codonusageTable <- read.table(file=codonusageFilename, sep=";")
-            codonusageTable <- do.call("names<-", list(codonusageTable[[3]], codonusageTable[[1]]))
-            
-            ## check that the given annotation packages are installed and can be loaded,
-            ## load them and save the annotation object into the argument
+  ## read codon usage table
+  codonusageTable <- read.table(file=codonusageFilename, sep=";")
+  codonusageTable <- do.call("names<-", list(codonusageTable[[3]], codonusageTable[[1]]))
+  
+  ## check that the given annotation packages are installed and can be loaded,
+  ## load them and save the annotation object into the argument
 
-            bsgenome <- .loadAnnotationPackageObject(bsgenome, "begenome", "BSgenome")
+  bsgenome <- .loadAnnotationPackageObject(bsgenome, "begenome", "BSgenome")
 
-            orgdb <- .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
+  orgdb <- .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
 
-            txdb <- .loadAnnotationPackageObject(txdb, "txdb", "TxDb")
+  txdb <- .loadAnnotationPackageObject(txdb, "txdb", "TxDb")
 
-            ## when no VCF has genome information, this information is taken from the TxDb package
-            wh0 <- which(sapply(seqinfos, length) == 0)
-            if (length(wh0) > 0) {
-              seqinfos[wh0] <- seqinfo(txdb)
-              warning(sprintf("No genome information available from any VCF file. This information will be taken from the transcript-centric package %s, thus assuming a genome version %s with %s chromosome nomenclature\n",
-                      txdb$packageName, unique(genome(txdb)), seqlevelsStyle(txdb)))
-            }
+  ## when no VCF has genome information, this information is taken from the TxDb package
+  wh0 <- which(sapply(seqinfos, length) == 0)
+  if (length(wh0) > 0) {
+    seqinfos[wh0] <- seqinfo(txdb)
+    warning(sprintf("No genome information available from any VCF file. This information will be taken from the transcript-centric package %s, thus assuming a genome version %s with %s chromosome nomenclature\n",
+            txdb$packageName, unique(genome(txdb)), seqlevelsStyle(txdb)))
+  }
 
-            snpdblst <- as.list(snpdb)
-            names(snpdblst) <- snpdb
-            ## assume the first bit of the name of the package contains the class name
-            snpdb <- lapply(as.list(snpdblst),
-                            function(pkg) .loadAnnotationPackageObject(pkg, "snpdb",
-                                                                       strsplit(pkg, ".", fixed=TRUE)[[1]][1]))
+  snpdblst <- as.list(snpdb)
+  names(snpdblst) <- snpdb
+  ## assume the first bit of the name of the package contains the class name
+  snpdb <- lapply(as.list(snpdblst),
+                  function(pkg) .loadAnnotationPackageObject(pkg, "snpdb",
+                                                             strsplit(pkg, ".", fixed=TRUE)[[1]][1]))
 
-            ## snpdb <- .loadAnnotationPackageObject(snpdb, "snpdb", "SNPlocs")
+  if (!is.logical(allTranscripts))
+    stop("argument 'allTranscripts' should be logical.")
 
-            if (!is.logical(allTranscripts))
-              stop("argument 'allTranscripts' should be logical.")
+  if (!is.character(otherAnnotations))
+    stop("argument 'otherAnnotations' should contain names of objects or installed packages that can be used by VariantFiltering to annotate genetic variants.")
 
-            if (!is.character(otherAnnotations))
-              stop("argument 'otherAnnotations' should contain names of objects or installed packages that can be used by VariantFiltering to annotate genetic variants.")
+  otherannotations <- list()
+  for (name in otherAnnotations)  {
+    if (!exists(name)) {
+      if (!name %in% installed.packages()[, "Package"])
+        stop(sprintf("please install the Bioconductor package %s.", name))
+      if (!.isPkgLoaded(name)) {
+        message("Loading annotation package ", name)
+        if (!suppressPackageStartupMessages(require(name, character.only=TRUE)))
+          stop(sprintf("package %s could not be loaded.", name))
+      }
+    } else
+      message("Fetching annotation object ", name)
+    otherannotations[[name]] <- get(name)
+  }
 
-            otherannotations <- list()
-            for (name in otherAnnotations)  {
-              if (!exists(name)) {
-                if (!name %in% installed.packages()[, "Package"])
-                  stop(sprintf("please install the Bioconductor package %s.", name))
-                if (!.isPkgLoaded(name)) {
-                  message("Loading annotation package ", name)
-                  if (!suppressPackageStartupMessages(require(name, character.only=TRUE)))
-                    stop(sprintf("package %s could not be loaded.", name))
-                }
-              } else
-                message("Fetching annotation object ", name)
-              otherannotations[[name]] <- get(name)
-            }
+  ## set the empty sequence ontology graph (sequence variant) and its matrix of descendants
+  gSO <- sequence_variant.gSOXP
+  gSOdmat <- .buildDescendantsMatrix(gSO)
+  gSOamat <- .buildAncestorsMatrix(gSO)
 
-            new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
-                sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
-                spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
-                radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
-                codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
-                otherAnnotations=otherannotations, allTranscripts=allTranscripts, filterTag=filterTag,
-                geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
-          })
+  ## by default all filters are not active
+  defaultFR <- FilterRules(.defaultFilters)
+  active(defaultFR) <- FALSE
+
+  new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
+      sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
+      gSO=gSO, gSOdmat=gSOdmat, gSOamat=gSOamat,
+      spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
+      radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
+      codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
+      otherAnnotations=otherannotations, allTranscripts=allTranscripts,
+      filters=defaultFR, cutoffs=.defaultCutoffs,
+      geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
+}
+
+## functions with default parameters
+
+spliceSiteMatricesHsapiens <- function() {
+  c(file.path(system.file("extdata", package="VariantFiltering"), "hsap.donors.hcmc10_15_1.ibn"),
+    file.path(system.file("extdata", package="VariantFiltering"), "hsap.acceptors.hcmc10_15_1.ibn"))
+}
+
+## show method
 
 setMethod("show", signature(object="VariantFilteringParam"),
           function(object) {
@@ -219,7 +234,6 @@ setMethod("show", signature(object="VariantFilteringParam"),
                           paste(names(object$otherAnnotations),
                                 collapse=",\n                            ")))
             cat(sprintf("  All transcripts: %s\n", object$allTranscripts))
-            cat(sprintf("  Filter tag: %s\n\n", object$filterTag))
           })
 
 setMethod("names", signature(x="VariantFilteringParam"),
@@ -236,6 +250,32 @@ setMethod("$", signature(x="VariantFilteringParam"),
             slot(x, name)
           })
 
+## getters
+
+setMethod("filters", signature(x="VariantFilteringParam"),
+          function (x) {
+            x@filters
+          })
+
+setMethod("cutoffs", signature(x="VariantFilteringParam"),
+          function (x) {
+            x@cutoffs
+          })
+
+setMethod("sog", signature(x="VariantFilteringParam"),
+          function(x) {
+            x@gSO
+          })
+
+setMethod("sodmat", signature(x="VariantFilteringParam"),
+          function(x) {
+            x@gSOdmat
+          })
+
+setMethod("soamat", signature(x="VariantFilteringParam"),
+          function(x) {
+            x@gSOamat
+          })
 
 ## private functions
 
