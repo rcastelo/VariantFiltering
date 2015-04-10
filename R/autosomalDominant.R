@@ -21,6 +21,12 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   else if (length(vcfFiles) < 1)
     stop("A minimum of 1 vcf file has to be provided")
 
+  if (is.na(ped))
+    stop("Please specify a PED file name when building the parameter object.")
+
+  if (!file.exists(ped))
+    stop(sprintf("could not open the PED file %s.", ped))
+
   pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
   pedf <- pedf[, 1:6]
   colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")

@@ -122,13 +122,13 @@ An \code{VariantFilteringParam} object is returned by the method \code{VariantFi
 \author{D.M. Elurbe, P. Puigdevall and R. Castelo}
 
 \examples{
-p <- VariantFilteringParam(list.files(system.file("extdata", package="VariantFiltering"),
-                                      "CEUtrio.vcf.gz$", full.names=TRUE),
-                           list.files(system.file("extdata", package="VariantFiltering"),
-                                      "CEUtrio.ped", full.names=TRUE))
-p
-names(p)
-p$vcfFiles
+vfpar <- VariantFilteringParam(list.files(system.file("extdata", package="VariantFiltering"),
+                                          "CEUtrio.vcf.bgz$", full.names=TRUE),
+                               list.files(system.file("extdata", package="VariantFiltering"),
+                                          "CEUtrio.ped", full.names=TRUE))
+vfpar
+names(vfpar)
+vfpar$vcfFiles
 }
 
 \keyword{classes,methods}
