@@ -1,3 +1,42 @@
+CHANGES IN VERSION 1.4
+----------------------
+
+USER VISIBLE CHANGES
+
+    o Genome sequence is not fixed to a specific human genome anymore and can be parametrized via a BSgenome package
+
+    o The calculation of splice site strength on variants is now parametrized (the user can feed his/her own splice site matrices), optional and, by default, disabled because is quite computationally intensive and the user must be sure he/she wants to calculate it.
+
+    o PhastConsDb and MafDb support has been updated. Older PhastConsDb and MafDb annotation packages will likely don't work with this newer version of VariantFilering. The user must upgrade also those annotation packages.
+
+    o Analysis functions unrelatedIndividuals(), autosomalRecessiveHomozygous(), etc. now can stream over the input VCF file to reduce the memory footprint.
+
+    o Multiple single-sample VCF files are no longer supported. The user must provide always a single multi-sample VCF file.
+
+    o Internally, the package uses now the VRanges-class to store variants and they can be now also retrieved in this container.
+
+    o Indels are now annotated separtely as Insertions and Deletions. Added the annotation of Delins (deletion followed by insertion).
+
+    o Added support for annotating non-SNVs using XtraSNPlocs.* packages.
+
+    o Added support for associating BAM files to the resulting VariantFilteringResults object.
+
+    o Added some basic variant visualization capabilities via de Gviz package and the support for associated BAM files.
+
+    o Added HGVS annotations at genomic, coding and protein level.
+
+    o Added annotations to Sequence Ontology terms.
+
+    o Changed the display of VariantFilteringResults objects and added a summary() method that returns a data.frame tallying variants to feature annotations, which can be either BioC/VariantAnnotation features or Sequence Ontology features.
+
+    o Updated the example VCF files of the CEU trio to include a smaller subset of variants but called with the latest version of the GATK pipeline. Added a subset of the corresponding BAM files with aligned reads around the 1Kb region of some of the called variants.
+
+    o Integration of the IRanges/FilterRules mechanism into the filtering functionality, enabling the addition of user-specific filters.
+
+BUG FIXES
+
+    o Some bugfixes related to matching the sequence style between variants, annotations and genome sequence.
+
 CHANGES IN VERSION 1.2
 ----------------------
 
@@ -7,12 +46,11 @@ USER VISIBLE CHANGES
 
     o Showing the number of individuals in the 'VariantFilteringParam' object, taken from the input VCF file
 
-
 BUG FIXES
 
     o Some bugfixes in the shiny app
 
-    o Replaced a .gz file in the 'extdata'f older by the corresponding .bgz file
+    o Replaced a .gz file in the 'extdata' folder by the corresponding .bgz file
 
 CHANGES IN VERSION 1.0
 ----------------------

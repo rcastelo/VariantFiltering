@@ -33,9 +33,14 @@
                         }
                         )
 
-.defaultCutoffs <- list(dbSNP=NA,
-                        OMIM=NA,
-                        variantType=c(SNV=TRUE, Insertion=TRUE, Deletion=TRUE, MNV=TRUE, Delins=TRUE),
+.defaultFilterDescriptions <- DataFrame(Description=c("Presence in dbSNP",
+                                                      "Presence in OMIM",
+                                                      "Type of variant (SVN, Insertion, Deletion, MNV, Delins)",
+                                                      "Type of amino acid change (conservative, radical)",
+                                                      "Annotated to given Sequence Ontology terms"),
+                                        row.names=c("dbSNP", "OMIM", "variantType", "aaChangetype", "SOterms"))
+
+.defaultCutoffs <- list(variantType=c(SNV=TRUE, Insertion=TRUE, Deletion=TRUE, MNV=TRUE, Delins=TRUE),
                         aaChangeType="Any",
                         SOterms=NA
                         )

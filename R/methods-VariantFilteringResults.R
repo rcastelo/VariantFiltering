@@ -30,13 +30,12 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat(sprintf("  Variants segregate according to a(n) %s inheritance model\n", inheritanceModel(object)))
             else
               cat("  Variants are not filtered by inheritance model\n")
+            if (length(param(object)@qualityFilterNames) > 0) {
+              cat("  Quality filters\n")
+              print(active(filters(object)[param(object)@qualityFilterNames]))
+            }
             cat("  Functional annotation filters\n")
-            print(active(filters(object)))
-            ## if (!is.na(dbSNPpresent(object)))
-            ##   cat(sprintf("    Present in %s (%s): %s\n", sapply(param(object)$snpdb, provider),
-            ##               sapply(param(object)$snpdb, releaseName), dbSNPpresent(object)))
-            ## if (!all(variantType(object)))
-            ##   cat(sprintf("    Variant type restricted to: %s\n", paste(names(variantType(object))[variantType(object)], collapse=", ")))
+            print(active(filters(object))[setdiff(names(filters(object)), param(object)@qualityFilterNames)])
             if (minCUFC(object) > 0)
               cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
             ## cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
