@@ -171,9 +171,28 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   gSOdmat <- .buildDescendantsMatrix(gSO)
   gSOamat <- .buildAncestorsMatrix(gSO)
 
-  ## by default all filters are not active
+  ## build quality filters contained in the input VCF
+  ## somehow sometimes filters described in the VCF header
+  ## do not show up in the softFilterMatrix of the VRanges object
+  ## to deal with this we check whether the column exists and if not
+  ## just return a mask of truth logical values
+  qualityFilterDescriptions <- fixed(scanVcfHeader(tfl[[1]]))$FILTER
+  qualityFilterNames <- rownames(qualityFilterDescriptions)
+  qfilters <- sapply(qualityFilterNames,
+                     function(qfname) {
+                       f <- sprintf("function(x) { sfm <- softFilterMatrix(allVariants(x, groupBy=\"nothing\")) ; mask <- rep(TRUE, nrow(sfm)) ; if (!is.na(match(qfname, colnames(sfm)))) mask <- sfm[, \"%s\"] ; mask }", qfname)
+                       eval(parse(text=f))
+                     })
+  qualityFR <- FilterRules(qfilters)
+
+  ## add default functional annotation filters
   defaultFR <- FilterRules(.defaultFilters)
+
+  ## initially default functional annotation filters are not active
   active(defaultFR) <- FALSE
+
+  defaultFR <- c(qualityFR, defaultFR)
+  defaultFilterDesc <- rbind(qualityFilterDescriptions, .defaultFilterDescriptions)
 
   new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
       sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
@@ -182,8 +201,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
       radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
       codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
       otherAnnotations=otherannotations, allTranscripts=allTranscripts,
-      filters=defaultFR, cutoffs=.defaultCutoffs,
-      geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
+      filters=defaultFR, filterDescriptions=defaultFilterDesc, qualityFilterNames=qualityFilterNames,
+      cutoffs=.defaultCutoffs, geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
 }
 
 ## functions with default parameters
@@ -205,10 +224,11 @@ setMethod("show", signature(object="VariantFilteringParam"),
                                   paste(paste(head(object$sampleNames, n=4), collapse=", "), "...", sep=", "))
             cat(sprintf("\n  Genome version(s):"))
             for (i in seq(along=object$seqInfos))
-              if (length(object$seqInfos[[i]]) > 0)
-                cat(sprintf(" %s(%s)", paste(unique(genome(object$seqInfos[[i]])), collapse=","),
-                            seqlevelsStyle(object$seqInfos[[i]])))
-              else
+              if (length(object$seqInfos[[i]]) > 0) {
+                ## sometimes the 'genome' tag comes flanked by \" :-? let's strip that out for pure aesthetics
+                genomestr <- paste(gsub("\\\"", "", unique(genome(object$seqInfos[[i]]))), collapse=",")
+                cat(sprintf(" %s(%s)", genomestr, seqlevelsStyle(object$seqInfos[[i]])))
+              } else
                 cat(" NA")
 
             cat(sprintf("\n  Number of individuals: %d (%s)\n", length(object$sampleNames), sampleNames))

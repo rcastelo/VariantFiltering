@@ -22,6 +22,13 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   else if (length(vcfFiles) < 1)
     stop("A minimum of 1 VCF file has to be provided.")
   
+  if (is.na(ped))
+    stop("Please specify a PED file name when building the parameter object.")
+
+  if (!file.exists(ped))
+    stop(sprintf("could not open the PED file %s.", ped))
+
+  ## REVISE THIS !!
   ## if (allTranscripts == TRUE) {
   ##    message("Compound heterozygous analysis cannot handle more than one transcript per gene.\n")
   ##    message("Automatically setting allTranscripts to FALSE")

@@ -70,6 +70,8 @@ setClass("VariantFilteringParam",
                                        codonusageTable="numeric",
                                        geneKeytype="character",
                                        filters="FilterRules",
+                                       filterDescriptions="DataFrame",
+                                       qualityFilterNames="character",
                                        cutoffs="list",
                                        yieldSize="integer"))
 
