@@ -642,7 +642,6 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
           })
 
 ## get variants after applying all filters
-## CHECK WHETHER VARIANTS ARE CORRECTLY FILTERED !!!
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample", unusedColumns.rm=FALSE) {
             if (length(x@filters) > 0)

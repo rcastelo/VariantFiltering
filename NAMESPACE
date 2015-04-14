@@ -159,7 +159,6 @@ importFrom(Gviz, GenomeAxisTrack,
 
 exportClasses(MafDb, PhastConsDb, GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,
-              VariantFilteringResultsUI, VariantFilteringResultsAIM,
               WeightMatrix)
 
 exportMethods(summary,
@@ -192,7 +191,6 @@ exportMethods(summary,
               allVariants,
               filteredVariants,
               sog,
-              selectIndividual, "selectIndividual<-",
               dbSNPpresent, "dbSNPpresent<-",
               OMIMpresent, "OMIMpresent<-",
               variantType, "variantType<-",
