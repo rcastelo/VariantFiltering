@@ -903,7 +903,6 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
             REF=DNAStringSet(),
             ALT=DNAStringSetList(),
             TYPE=character(),
-            FILTER=character(),
             dbSNP=character(),
             cDNALOC=integer(),
             varAllele=DNAStringSet(),

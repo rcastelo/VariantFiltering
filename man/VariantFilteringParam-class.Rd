@@ -23,7 +23,9 @@
 \title{VariantFiltering parameter class}
 
 \description{
-The class \code{VariantFilteringParam} is defined to ease configuring the call to the functions that filter input genetic variants according to a desired segregating inheritance model (\code{xLinked()}, \code{autosomalRecessiveHomozygous()}, etc).
+The class \code{VariantFilteringParam} is defined to ease configuring the call
+to the functions that filter input genetic variants according to a desired
+segregating inheritance model (\code{xLinked()}, \code{autosomalRecessiveHomozygous()}, etc).
 }
 \usage{
 VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
