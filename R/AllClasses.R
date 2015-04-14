@@ -101,30 +101,5 @@ setClass("VariantFilteringResults",
                                        minCRYP3ss="numeric",
                                        minCUFC="numeric"))
 
-setClass("VariantFilteringResultsAIM",
-         representation=representation(inheritancepattern="character",
-                                       indselected="character",
-                                       selectindexcase="character",
-                                       selectcarrierrelative1="character",
-                                       selectcarrierrelative2="character",
-                                       selectaffectedrelative="character",
-                                       selectcarrierallele1ch="character",
-                                       selectcarrierallele2ch="character",
-                                       selectaffrelative1ch="character",
-                                       selectunaffectedrelative1ad="character",
-                                       selectunaffectedrelative2ad="character",
-                                       selectaffectedrelative1ad="character",
-                                       selectcarrierrelativefemale1xl="character",
-                                       selectaffectedrelativemale1xl="character",
-                                       selectunaffectedmale1xl="character",
-                                       selectparent1dn="character",
-                                       selectparent2dn="character"),
-         contains = "VariantFilteringResults")
-
-setClass("VariantFilteringResultsUI",
-         representation=representation(indselected="character",
-                                       selectgene="character"),
-         contains="VariantFilteringResults")
-
 setClass("WeightMatrix",
          representation(wm="externalptr"))
