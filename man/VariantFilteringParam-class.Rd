@@ -34,9 +34,11 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
                       txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                       snpdb="SNPlocs.Hsapiens.dbSNP.20120608",
                       spliceSiteMatricesFilenames=NA,
-                      radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
+                      radicalAAchangeFilename=file.path(system.file("extdata",
+                                                                    package="VariantFiltering"),
                                                         "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
-                      codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),
+                      codonusageFilename=file.path(system.file("extdata",
+                                                               package="VariantFiltering"),
                                                    "humanCodonUsage.txt"),
                       geneticCode=getGeneticCode("SGC0"),
                       allTranscripts=FALSE,
@@ -55,7 +57,7 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
 }
 \arguments{
   \item{vcfFilenames}{
-  Character strings of the input VCF file name.
+  Character string of the input VCF file name.
   }
   \item{pedFilename}{
   Character string of the pedigree file name in PED format.

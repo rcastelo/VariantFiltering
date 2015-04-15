@@ -15,16 +15,16 @@ variants presented by a group of unrelated individuals
 }
 \arguments{
   \item{param}{
-  An VariantFilteringParam object containing a VCF file.
+  A \code{\link{VariantFilteringParam}} object built from a multisample VCF file.
   }
   \item{BPPARAM}{
-  An object of class 'BiocParallelParam' specifiying parameters related to
+  An object of class \code{\link[BiocParallel]{BiocParallelParam}} specifiying parameters related to
   the parallel execution of some of the tasks and calculations within this function.
   See function \code{\link[BiocParallel]{bpparam}()} from the \code{BiocParallel} package.
   }
 }
 \details{
-This function requires as an input a VariantFilteringParam class object which contains the vcf file ready for the analysis.
+This function requires as an input a \code{\link{VariantFilteringParam}} class object built from an input multisample VCF file.
 }
 \value{
 An object of class \code{\link{VariantFilteringResults}} including functional annotations on all variants.
@@ -36,7 +36,11 @@ Elurbe D.M., Mila, M., Castelo, R. The VariantFiltering package, in preparation.
 Dei M. Elurbe and R. Castelo
 }
 \seealso{
-\code{\link{allInheritanceModels}}
+\code{\link{autosomalRecessiveHomozygous}}
+\code{\link{autosomalRecessiveHeterozygous}}
+\code{\link{autosomalDominant}}
+\code{\link{deNovo}}
+\code{\link{xLinked}}
 \code{\link{VariantFilteringResults}}
 }
 \examples{

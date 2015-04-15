@@ -69,7 +69,6 @@ setGeneric("autosomalDominant", function(param, ...) standardGeneric("autosomalD
 setGeneric("deNovo", function(param, ...) standardGeneric("deNovo"))
 setGeneric("autosomalRecessiveHeterozygous", function(param, ...) standardGeneric("autosomalRecessiveHeterozygous"))
 setGeneric("unrelatedIndividuals", function(param, ...) standardGeneric("unrelatedIndividuals"))
-setGeneric("allInheritanceModels", function(param, ...) standardGeneric("allInheritanceModels"))
 setGeneric("annotateVariants", function(annObj, ...) standardGeneric("annotateVariants"))
 setGeneric("wmScore", function(object, dnaseqs, ...) standardGeneric("wmScore"))
 setGeneric("conservedPositions", function(x, ...) standardGeneric("conservedPositions"))

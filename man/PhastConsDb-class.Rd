@@ -47,19 +47,28 @@ Class for annotation packages storing UCSC phastCons conservation scores.
                  multiple times.}
 }
 \details{
-The \code{PhastConsDb} class and associated methods serve the purpose of creating annotation packages that store
-phastCons nucleotide-level conservation scores from the UCSC Genome Browser. One such annotation package is:
+The \code{PhastConsDb} class and associated methods serve the purpose of creating
+annotation packages that store phastCons nucleotide-level conservation scores from
+the UCSC Genome Browser. Two such annotation packages are:
 
-\tabular{ll}{
-  \code{phastCons100way.UCSC.hg19} \tab Nucleotide-level phastCons conservation scores from the UCSC Genome Browser
-        downloaded in November 2013 from \url{http://genome.ucsc.edu} and calculated from 100 vertebrate species. \cr
+\describe{
+  \item{\code{phastCons100way.UCSC.hg19}}{
+    Nucleotide-level phastCons conservation scores from the UCSC Genome Browser
+    calculated from multiple genome alignments from the human genome version hg19
+    to 99 vertebrate species.
+  }
+  \item{\code{phastCons7way.UCSC.hg38}}{
+    Nucleotide-level phastCons conservation scores from the UCSC Genome Browser
+    calculated from multiple genome alignments from the human genome version hg38
+    to 6 vertebrate species.
+  }
+}
 }
 
-}
-\value{.}
 \author{R. Castelo}
 \seealso{
   \code{\link[phastCons100way.UCSC.hg19]{phastCons100way.UCSC.hg19}}
+  \code{\link[phastCons7way.UCSC.hg38]{phastCons7way.UCSC.hg38}}
 }
 \examples{
 if (require(phastCons100way.UCSC.hg19)) {
