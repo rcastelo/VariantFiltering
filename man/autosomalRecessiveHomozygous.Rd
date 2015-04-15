@@ -14,16 +14,14 @@ This function works analyzing the variants of the unaffected individuals storing
 }
 \arguments{
   \item{param}{
-  An VariantFilteringParam object containing VCF file(s). From 1 to 5 independent files for affected individuals and 0 to 5 more for unaffected ones (up to 10 individuals). If the VCF is a multi-sample, it can contain the same amount of individuals divided likewise.
+  A \code{\link{VariantFilteringParam}} object built from a multisample VCF file with at least one affected individual and zero or more unaffected ones, and from a PED file specyfing the family relationships among individuals as well as their gender and phenotype status (affected or unaffected).
   }
   \item{BPPARAM}{
-  An object of class 'BiocParallelParam' specifiying parameters related to
-  the parallel execution of some of the tasks and calculations within this function.
-  See function \code{\link[BiocParallel]{bpparam}()} from the \code{BiocParallel} package.
+  An VariantFilteringParam object containing VCF file(s). From 1 to 5 independent files for affected individuals and 0 to 5 more for unaffected ones (up to 10 individuals). If the VCF is a multi-sample, it can contain the same amount of individuals divided likewise.
   }
 }
 \details{
-This function requires as an input an \code{VariantFilteringParam} class object which contains the VCF files ready for the analysis, along with a ped file which specifies the characteristics of each individual present in the analysis.
+This function requires as an input a \code{\link{VariantFilteringParam}} class object built from an input multisample VCF file, along with a PED file.
 }
 \value{
 An object of class \code{\link{VariantFilteringResults}} including functional annotations on all selected variants.
@@ -39,7 +37,6 @@ Dei M. Elurbe and R. Castelo
 \code{\link{autosomalDominant}}
 \code{\link{xLinked}}
 \code{\link{deNovo}}
-\code{\link{allInheritanceModels}}
 \code{\link{unrelatedIndividuals}}
 \code{\link{VariantFilteringResults}}
 }

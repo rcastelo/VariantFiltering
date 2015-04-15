@@ -99,11 +99,11 @@ A further compression of these data is performed in the cases of variants with m
 alternative alleles. In those cases, instead of storing the AF of each alternate allele only
 the maximum AF value is stored.
 }
-\value{.}
 \author{R. Castelo}
 \seealso{
   \code{\link[MafDb.ALL.wgs.phase1.release.v3.20101123]{MafDb.ALL.wgs.phase1.release.v3.20101123}}
   \code{\link[MafDb.ESP6500SI.V2.SSA137]{MafDb.ESP6500SI.V2.SSA137}}
+  \code{\link[MafDb.ExAC.r0.3.sites]{MafDb.ExAC.r0.3.sites}}
 }
 \examples{
 
