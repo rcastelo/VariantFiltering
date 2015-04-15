@@ -14,17 +14,16 @@ This function has been created in order to search for \emph{de novo} variants in
 }
 \arguments{
   \item{param}{
-  An VariantFilteringParam object containing VCF file(s). 1 independent files for affected individuals and 2 more for unaffected ones (both parents). If the VCF is a multi-sample, it can contain the same amount of individuals divided likewise.  }
+  A \code{\link{VariantFilteringParam}} object built from a multisample VCF file with at least one affected individual and zero or more unaffected ones, and from a PED file specyfing the family relationships among individuals as well as their gender and phenotype status (affected or unaffected).
+  }
   \item{BPPARAM}{
-  An object of class 'BiocParallelParam' specifiying parameters related to
+  An object of class \code{\link[BiocParallel]{BiocParallelParam}} specifiying parameters related to
   the parallel execution of some of the tasks and calculations within this function.
   See function \code{\link[BiocParallel]{bpparam}()} from the \code{BiocParallel} package.
   }
 }
 \details{
-This function requires as an input a VariantFilteringParam class object which contains the vcf files ready for the analysis, along with a ped file which specifies the characteristics of each individual present in the analysis.
-
-Vcf from both parents are required and only one child at time can be analyzed.
+This function requires as an input a \code{\link{VariantFilteringParam}} class object built from an input multisample VCF file, along with a PED file.
 }
 \value{
 An object of class \code{\link{VariantFilteringResults}} including functional annotations on all selected variants.
