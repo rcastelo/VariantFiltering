@@ -53,12 +53,13 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
   if (length(whregions) > 0) { ## regions comprising more than one position are summarized by summaryFun()
     startbyseq <- split(start(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
     widthbyseq <- split(width(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
-    ans[whregions] <- unlist(mapply(function(r, p, w)
+    tmpans <- unlist(mapply(function(r, p, w)
                                       sapply(seq_along(p),
                                              function(i, r, p, w) summaryFun(coercionFun(r[p[i]:(p[i]+w[i]-1)])),
                                              r, p, w),
                                    rlelst[names(startbyseq)], startbyseq, widthbyseq, SIMPLIFY=FALSE),
                             use.names=FALSE)
+    ans[ord[whregions]] <- tmpans
   }
   ans
 }
