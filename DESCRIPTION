@@ -5,7 +5,7 @@ Description: Filter genetic variants using different criteria such as
              inheritance model, amino acid change consequence, minimum
              allele frequencies across human populations, splice site
              strength, conservation, etc.
-Version: 1.5.1
+Version: 1.5.2
 Authors@R: c(person("Robert", "Castelo", role=c("aut", "cre"), email="robert.castelo@upf.edu"),
              person("Dei", "Martinez Elurbe", role="ctb"),
              person("Pau", "Puigdevall", role="ctb"))
@@ -22,6 +22,7 @@ Suggests: BiocStyle, org.Hs.eg.db, BSgenome.Hsapiens.UCSC.hg19,
           phastCons100way.UCSC.hg19, PolyPhen.Hsapiens.dbSNP131, SIFT.Hsapiens.dbSNP137
 LinkingTo: S4Vectors, IRanges, XVector, Biostrings
 LazyData: yes
-URL: https://github.com/rcastelo/VariantFiltering/issues
+URL: https://github.com/rcastelo/VariantFiltering
+BugReports: https://github.com/rcastelo/VariantFiltering/issues
 biocViews: Genetics, Homo_sapiens, Annotation, SNP, Sequencing,
            HighThroughputSequencing
