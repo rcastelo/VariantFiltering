@@ -153,6 +153,8 @@ codeAF2RAW <- function(x) {
   z[maskLevel4] <- round(z[maskLevel4], digits=5)
   z[maskLevel5] <- round(z[maskLevel5], digits=6)
   
+  ## here should recompute again masks for the next release to deal with rounding 0.0095 to 0.01, etc.
+
   z[maskLevel1] <- z[maskLevel1] * 100
   z[maskLevel2] <- z[maskLevel2] * 1000    + 100
   z[maskLevel3] <- z[maskLevel3] * 10000   + 110
@@ -170,8 +172,8 @@ decodeRAW2AF <- function(x) {
   z <- x[!maskNAs]
 
   maskLevel1 <- z <= 100
-  maskLevel2 <- z > 100 & z < 110
-  maskLevel3 <- z > 110 & z < 120
+  maskLevel2 <- z > 100 & z <= 110 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
+  maskLevel3 <- z > 110 & z <= 120 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
   maskLevel4 <- z > 120 & z < 130
   maskLevel5 <- z >= 130
 
