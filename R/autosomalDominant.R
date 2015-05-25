@@ -35,7 +35,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   if (sum(pedf$Phenotype  == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
   
-  unaff <- pedf[ped$Phenotype == 1, ]
+  unaff <- pedf[pedf$Phenotype == 1, ]
   aff <- pedf[pedf$Phenotype == 2, ]
 
   annotated_variants <- VRanges()
@@ -54,8 +54,12 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     n.var <- n.var + nrow(vcf)
 
     ## restrict upfront variants to those in autosomal chromosomes
+    ## we subset to the first element of the value returned by seqlevelsStyle()
+    ## to deal with cases in which only a subset of chrosomes is contained in the
+    ## input VCF (typically for teaching/example/illustration purposes) which
+    ## matches more than one chromosome style
     autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                                seqlevelsStyle(vcf),
+                                                                seqlevelsStyle(vcf)[1],
                                                                 group="auto")
     vcf <- vcf[autosomalMask, ]
 
@@ -70,8 +74,9 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 
     affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "0/1" |
                     geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "1/1"
+    affectedMask <- rowSums(affectedMask) == nrow(aff)
 
-    ## filter out variants that do not segregate as a "de novo" trait
+    ## filter out variants that do not segregate as an autosomal dominant trait
     vcf <- vcf[unaffectedMask & affectedMask, ]
 
     ## coerce the VCF object to a VRanges object
