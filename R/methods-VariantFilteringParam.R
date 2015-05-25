@@ -227,7 +227,11 @@ setMethod("show", signature(object="VariantFilteringParam"),
               if (length(object$seqInfos[[i]]) > 0) {
                 ## sometimes the 'genome' tag comes flanked by \" :-? let's strip that out for pure aesthetics
                 genomestr <- paste(gsub("\\\"", "", unique(genome(object$seqInfos[[i]]))), collapse=",")
-                cat(sprintf(" %s(%s)", genomestr, seqlevelsStyle(object$seqInfos[[i]])))
+                ## we subset to the first element of the value returned by seqlevelsStyle()
+                ## to deal with cases in which only a subset of chrosomes is contained in the
+                ## input VCF (typically for teaching/example/illustration purposes) which
+                ## matches more than one chromosome style
+                cat(sprintf(" %s(%s)", genomestr, seqlevelsStyle(object$seqInfos[[i]])[1]))
               } else
                 cat(" NA")
 
