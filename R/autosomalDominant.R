@@ -38,6 +38,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   unaff <- pedf[pedf$Phenotype == 1, ]
   aff <- pedf[pedf$Phenotype == 2, ]
 
+  annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
@@ -89,7 +90,8 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
   
     ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                 BPPARAM=BPPARAM))
   }
   close(vcfFiles[[1]])
 

@@ -62,6 +62,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   
   mom_comphet <- dad_comphet <- NULL
 
+  annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
@@ -127,7 +128,8 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
     ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                 BPPARAM=BPPARAM))
 
     message(sprintf("%d variants processed", n.var))
   }
