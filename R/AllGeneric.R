@@ -1,3 +1,7 @@
+## for FiveSpliceSiteVariants and ThreeSpliceSiteVariants
+setGeneric("minIntronLength", function(x) standardGeneric("minIntronLength"))
+setGeneric("minIntronLength<-", function(x, value) standardGeneric("minIntronLength<-"))
+
 ## for MafDb class
 setGeneric("dbConn", function(x) standardGeneric("dbConn"))
 setGeneric("knownVariantsMAFcols", function(mafdb, ...) standardGeneric("knownVariantsMAFcols"))
