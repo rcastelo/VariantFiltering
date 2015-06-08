@@ -46,6 +46,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   if (aff$FatherID != unaff_dad || aff$MotherID != unaff_mom)
     stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
+  annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
@@ -83,7 +84,8 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
     ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                 BPPARAM=BPPARAM))
 
     message(sprintf("%d variants processed", n.var))
   }

@@ -20,7 +20,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   } else if (length(vcfFiles) < 1)
     stop("A minimum of 1 vcf file has to be provided")
 
-  
+  annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
@@ -46,7 +46,8 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
     ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                 BPPARAM=BPPARAM))
 
     message(sprintf("%d variants processed", n.var))
   }

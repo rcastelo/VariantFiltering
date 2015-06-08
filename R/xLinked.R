@@ -43,6 +43,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   if (nrow(aff_males) < 1)
     stop("Current 'X-linked' analysis requires at least one affected male.")
   
+  annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
@@ -96,7 +97,8 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
   
     ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, BPPARAM=BPPARAM))
+    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                 BPPARAM=BPPARAM))
 
     message(sprintf("%d variants processed", n.var))
   }

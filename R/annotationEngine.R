@@ -2,7 +2,8 @@
 ## input GRanges object. It uses different functions from this package and
 ## from the VariantAnnotation package
 
-annotationEngine <- function(variantsGR, param, BPPARAM=bpparam("SerialParam")) {
+annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv()),
+                             BPPARAM=bpparam("SerialParam")) {
   
   if (length(variantsGR) == 0) {
     variantsGR_annotated <- variantsGR
@@ -97,7 +98,8 @@ annotationEngine <- function(variantsGR, param, BPPARAM=bpparam("SerialParam")) 
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
   located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
-                                       region=AllVariants(intergenic=IntergenicVariants(0, 0)))
+                                       region=AllVariants(intergenic=IntergenicVariants(0, 0)),
+                                       cache=cache)
   variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID] ## REPLACE variantsGR_annotated by variantsGR ???
   variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
