@@ -9,8 +9,9 @@ importClassesFrom(Biobase, AssayData)
 importClassesFrom(AnnotationDbi, AnnotationDb)
 importClassesFrom(RSQLite, SQLiteConnection)
 importClassesFrom(graph, graphNEL)
-importClassesFrom(VariantAnnotation, SpliceSiteVariants, PromoterVariants,
-                  FiveUTRVariants, ThreeUTRVariants, PolyPhenDb)
+importClassesFrom(VariantAnnotation, VariantType, SpliceSiteVariants,
+                  PromoterVariants, FiveUTRVariants, ThreeUTRVariants,
+                  IntergenicVariants, PolyPhenDb)
 importClassesFrom(GenomeInfoDb, Seqinfo, GenomeDescription)
 importClassesFrom(GenomicRanges, GRanges, GRangesList)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
@@ -61,6 +62,10 @@ importMethodsFrom(VariantAnnotation, fixed,
                                      header,
                                      "header<-",
                                      geno,
+                                     upstream,
+                                     "upstream<-",
+                                     downstream,
+                                     "downstream<-",
                                      predictCoding,
                                      locateVariants,
                                      isSNV,
@@ -157,7 +162,8 @@ importFrom(Gviz, GenomeAxisTrack,
                  AlignmentsTrack,
                  plotTracks)
 
-exportClasses(MafDb, PhastConsDb, GenePhylostrataDb,
+exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
+              MafDb, PhastConsDb, GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,
               WeightMatrix)
 
@@ -178,7 +184,12 @@ exportMethods(summary,
               cutoffs,
               "cutoffs<-",
 
-              ## specific for the VariantFilteringResults
+              ## for FiveSpliceSiteVariants and ThreeSpliceSiteVariants
+              minIntronLength, "minIntronLength<-",
+              upstream, "upstream<-",
+              downstream, "downstream<-",
+
+              ## specific for VariantFilteringResults
               length,
               softFilterMatrix,
               "softFilterMatrix<-",
@@ -236,6 +247,9 @@ export(VariantFilteringParam,
        readAAradicalChangeMatrix,
        codeAF2RAW,
        decodeRAW2AF,
+
+       ## for the FiveSpliceSiteVariants and ThreeSpliceSiteVariants
+       FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
 
        ## for the PhastConsDb class
        PhastConsDb,

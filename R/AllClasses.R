@@ -45,6 +45,20 @@ setClass("GenePhylostrataDb",
 
                                        .data_cache="environment"))
 
+## define a class in the VariantAnnotation VariantType hierarchy to
+## annotate separately 5' and 3' splice sites and be able to set user-defined
+## boundaries beyond the default canonical di-nucleotides
+setClass("FiveSpliceSiteVariants", contains="SpliceSiteVariants",
+         representation(minIntronLength="integer",
+                        upstream="integer",
+                        downstream="integer"))
+
+setClass("ThreeSpliceSiteVariants", contains="SpliceSiteVariants",
+         representation(minIntronLength="integer",
+                        upstream="integer",
+                        downstream="integer"))
+
+
 setClass("VariantFilteringParam",
          representation=representation(callObj="call",
                                        callStr="character",
