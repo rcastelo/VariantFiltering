@@ -97,12 +97,15 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ## at the moment we are not interested in intergenic variants and we also leave promoter region
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
+  ## located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsGR, "GRanges"),
+  ##                                          subject=txdb, cache=cache)
   located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
                                        region=AllVariants(intergenic=IntergenicVariants(0, 0)),
                                        cache=cache)
   variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID] ## REPLACE variantsGR_annotated by variantsGR ???
   variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
+  variantsGR_annotated$LOCEND <- located_variantsGR$LOCEND
   variantsGR_annotated$QUERYID <- located_variantsGR$QUERYID
   variantsGR_annotated$TXID <- located_variantsGR$TXID
   variantsGR_annotated$CDSID <- located_variantsGR$CDSID
@@ -281,12 +284,12 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   
   ## add metadata columns in 'variantsGR_annotated' for cryptic ss annotations
   ## this should be optional once the shiny app is aware about present/absent annotations
-  dummyDF <- DataFrame(CRYP5ssREF=rep(NA_real_, length(variantsGR_annotated)),
-                       CRYP5ssALT=rep(NA_real_, length(variantsGR_annotated)),
-                       CRYP5ssPOS=rep(NA_real_, length(variantsGR_annotated)),
-                       CRYP3ssREF=rep(NA_real_, length(variantsGR_annotated)),
-                       CRYP3ssALT=rep(NA_real_, length(variantsGR_annotated)),
-                       CRYP3ssPOS=rep(NA_real_, length(variantsGR_annotated)))
+  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsGR_annotated)),
+                       SCORE5ssALT=rep(NA_real_, length(variantsGR_annotated)),
+                       SCORE5ssPOS=rep(NA_real_, length(variantsGR_annotated)),
+                       SCORE3ssREF=rep(NA_real_, length(variantsGR_annotated)),
+                       SCORE3ssALT=rep(NA_real_, length(variantsGR_annotated)),
+                       SCORE3ssPOS=rep(NA_real_, length(variantsGR_annotated)))
 
   if (length(spliceSiteMatrices) == 2)
     dummyDF <- .scoreSpliceSiteVariants(variantsGR_annotated, spliceSiteMatrices, bsgenome, BPPARAM)
@@ -899,6 +902,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 .emptyAnnotations <- function() {
   DataFrame(LOCATION=factor(),
             LOCSTART=integer(),
+            LOCEND=integer(),
             TXID=integer(),
             CDSID=integer(),
             GENEID=character(),
@@ -919,12 +923,12 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
             CUALT=numeric(),
             TXSTART=integer(),
             TXEND=integer(),
-            CRYP5ssREF=numeric(),
-            CRYP5ssALT=numeric(),
-            CRYP5ssPOS=numeric(),
-            CRYP3ssREF=numeric(),
-            CRYP3ssALT=numeric(),
-            CRYP3ssPOS=numeric(),
+            SCORE5ssREF=numeric(),
+            SCORE5ssALT=numeric(),
+            SCORE5ssPOS=numeric(),
+            SCORE3ssREF=numeric(),
+            SCORE3ssALT=numeric(),
+            SCORE3ssPOS=numeric(),
             GENE=character(),
             OMIM=character(),
             TXNAME=character(),
@@ -953,20 +957,79 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     genome(variantsGR) <- genome(bsgenome)
   }
 
-  ## add metadata columns in 'variantsGR' for cryptic ss annotations
-  dummyDF <- DataFrame(CRYP5ssREF=rep(NA_real_, length(variantsGR)),
-                       CRYP5ssALT=rep(NA_real_, length(variantsGR)),
-                       CRYP5ssPOS=rep(NA_real_, length(variantsGR)),
-                       CRYP3ssREF=rep(NA_real_, length(variantsGR)),
-                       CRYP3ssALT=rep(NA_real_, length(variantsGR)),
-                       CRYP3ssPOS=rep(NA_real_, length(variantsGR)))
+  ## add metadata columns in 'variantsGR' for splice site score annotations
+  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsGR)),
+                       SCORE5ssALT=rep(NA_real_, length(variantsGR)),
+                       SCORE5ssPOS=rep(NA_integer_, length(variantsGR)),
+                       SCORE3ssREF=rep(NA_real_, length(variantsGR)),
+                       SCORE3ssALT=rep(NA_real_, length(variantsGR)),
+                       SCORE3ssPOS=rep(NA_integer_, length(variantsGR)))
 
   wmDonorSites <- spliceSiteMatrices$wmDonorSites
   wmAcceptorSites <- spliceSiteMatrices$wmAcceptorSites
 
+  ## annotated splice sites
+
+  message("Scoring annotated 5' splice sites")
+
+  ssSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "fiveSpliceSite"
+  if (any(ssSNVmask)) {
+    GRanges_annotSS <- variantsGR[ssSNVmask]
+
+    wregion <- GRanges_annotSS$LOCEND[1] - GRanges_annotSS$LOCSTART[1] + 1
+    if (wregion == width(wmDonorSites)) {
+
+      # get alternative allele adjusted by strand
+      nstrand <- as.vector(strand(GRanges_annotSS) == "-")
+      altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_annotSS), split="", fixed=TRUE))
+      if (any(nstrand))
+        altAlleleStrandAdjusted[nstrand] <- relist(complement(unlist(altAlleleStrandAdjusted[nstrand])),
+                                                   altAlleleStrandAdjusted[nstrand])
+
+      ## ADJUST POS BY STRAND !!!
+      GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
+                                 ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
+                                 strand=strand(GRanges_annotSS),
+                                 POS=start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1)
+
+      # retrieve region of the splice site including the reference allele
+      GRanges_annotSS_REF_strings <- getSeq(bsgenome, GRanges_annotSS)
+
+      # replace the variant by the alternate allele
+      GRanges_annotSS_ALT_strings <- replaceAt(GRanges_annotSS_REF_strings,
+                                               IRanges(GRanges_annotSS$POS, GRanges_annotSS$POS),
+                                               altAlleleStrandAdjusted)
+
+      # score REF alleles for donor splice sites
+      GRanges_annotSS_REF_scores <- bpvec(X=GRanges_annotSS_REF_strings,
+                                          FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+
+      # score ALT alleles for donor splice sites
+      GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
+                                          FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+
+      SCOREss <- DataFrame(SCORE5ssREF=round(GRanges_annotSS_REF_scores, digits=2),
+                           SCORE5ssALT=round(GRanges_annotSS_ALT_scores, digits=2),
+                           SCORE5ssPOS=GRanges_annotSS$POS,
+                           SCORE3ssREF=rep(NA_real_, length(GRanges_annotSS)),
+                           SCORE3ssALT=rep(NA_real_, length(GRanges_annotSS)),
+                           SCORE3ssPOS=rep(NA_integer_, length(GRanges_annotSS)))
+
+      ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
+      dummyDF[ssSNVmask, ] <- SCOREss
+    } else
+      warning(sprintf("Width of the 5' splice site region (%d) is not equal to the width of the weight matrix for donor sites (%d).",
+                      wregion, width(wmDonorSites)))
+  }
+
+  ## message("Scoring annotated 3' splice sites")
+
+  ## if (any(variantsGR$LOCATION %in% "threeSpliceSites")) {
+  ## }
+
   ## coding synonymous variants
 
-  message("Annotating potential cryptic splice sites in coding synonymous variants")
+  message("Scoring potential cryptic splice sites in coding synonymous variants")
 
   if (any(variantsGR$CONSEQUENCE %in% "synonymous")) {
     ## %in% avoids NAs when comparing with them (THIS MASK IS ALSO USED BELOW !!)
@@ -979,7 +1042,8 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     GRanges_SY_window_donor <- resize(GRanges_SY, width=width(GRanges_SY)+wregion-1, fix="center") 
     GRanges_SY_donor_strings <- getSeq(bsgenome, GRanges_SY_window_donor)
     
-    # So here we do the same but creating a DNAStringSetList, from the varAllele column (DNAStringSet), which contains the ALT allele but strand adjusted
+    # replace the variant by the alternate allele. This requires creating a DNAStringSetList,
+    # from the varAllele column (DNAStringSet), which contains the ALT allele but strand adjusted
     GRanges_SY_donor_ALT_strings <- replaceAt(GRanges_SY_donor_strings,
                                               IRanges(width(wmDonorSites), width(wmDonorSites)),
                                               DNAStringSetList(strsplit(as.character(GRanges_SY_window_donor$varAllele), split="", fixed=TRUE)))
@@ -1038,17 +1102,17 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
     relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
 
-    CRYPss_syn <- DataFrame(CRYP5ssREF=rep(NA, nrow(GRanges_SY_donor_ALT_scores)),
-                            CRYP5ssALT=round(GRanges_SY_donor_ALT_scores[, 1], digits=2),
-                            CRYP5ssPOS=relposdonor[width(wmDonorSites)-GRanges_SY_donor_ALT_scores[, 2]+1],
-                            CRYP3ssREF=rep(NA, nrow(GRanges_SY_acceptor_ALT_scores)),
-                            CRYP3ssALT=round(GRanges_SY_acceptor_ALT_scores[, 1], digits=2),
-                            CRYP3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_SY_acceptor_ALT_scores[, 2]+1])
-    CRYPss_syn$CRYP5ssREF[!is.na(CRYPss_syn$CRYP5ssALT)] <- round(GRanges_SY_donor_REF_scores, digits=2)
-    CRYPss_syn$CRYP3ssREF[!is.na(CRYPss_syn$CRYP3ssALT)] <- round(GRanges_SY_acceptor_REF_scores, digits=2)
+    SCOREss_syn <- DataFrame(SCORE5ssREF=rep(NA, nrow(GRanges_SY_donor_ALT_scores)),
+                             SCORE5ssALT=round(GRanges_SY_donor_ALT_scores[, 1], digits=2),
+                             SCORE5ssPOS=relposdonor[width(wmDonorSites)-GRanges_SY_donor_ALT_scores[, 2]+1],
+                             SCORE3ssREF=rep(NA, nrow(GRanges_SY_acceptor_ALT_scores)),
+                             SCORE3ssALT=round(GRanges_SY_acceptor_ALT_scores[, 1], digits=2),
+                             SCORE3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_SY_acceptor_ALT_scores[, 2]+1])
+    SCOREss_syn$SCORE5ssREF[!is.na(SCOREss_syn$SCORE5ssALT)] <- round(GRanges_SY_donor_REF_scores, digits=2)
+    SCOREss_syn$SCORE3ssREF[!is.na(SCOREss_syn$SCORE3ssALT)] <- round(GRanges_SY_acceptor_REF_scores, digits=2)
 
     ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
-    dummyDF[synonymousSNVmask, ] <- CRYPss_syn
+    dummyDF[synonymousSNVmask, ] <- SCOREss_syn
   }
 
   ## intronic variants
@@ -1128,17 +1192,17 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
     relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
 
-    CRYPss_intron_SNV <- DataFrame(CRYP5ssREF=rep(NA, nrow(GRanges_intron_SNV_donor_ALT_scores)),
-                                   CRYP5ssALT=round(GRanges_intron_SNV_donor_ALT_scores[, 1], digits=2),
-                                   CRYP5ssPOS=relposdonor[width(wmDonorSites)-GRanges_intron_SNV_donor_ALT_scores[, 2]+1],
-                                   CRYP3ssREF=rep(NA, nrow(GRanges_intron_SNV_acceptor_ALT_scores)),
-                                   CRYP3ssALT=round(GRanges_intron_SNV_acceptor_ALT_scores[, 1], digits=2),
-                                   CRYP3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_intron_SNV_acceptor_ALT_scores[, 2]+1])
-    CRYPss_intron_SNV$CRYP5ssREF[!is.na(CRYPss_intron_SNV$CRYP5ssALT)] <- round(GRanges_intron_SNV_donor_REF_scores, digits=2)
-    CRYPss_intron_SNV$CRYP3ssREF[!is.na(CRYPss_intron_SNV$CRYP3ssALT)] <- round(GRanges_intron_SNV_acceptor_REF_scores, digits=2)
+    SCOREss_intron_SNV <- DataFrame(SCORE5ssREF=rep(NA, nrow(GRanges_intron_SNV_donor_ALT_scores)),
+                                    SCORE5ssALT=round(GRanges_intron_SNV_donor_ALT_scores[, 1], digits=2),
+                                    SCORE5ssPOS=relposdonor[width(wmDonorSites)-GRanges_intron_SNV_donor_ALT_scores[, 2]+1],
+                                    SCORE3ssREF=rep(NA, nrow(GRanges_intron_SNV_acceptor_ALT_scores)),
+                                    SCORE3ssALT=round(GRanges_intron_SNV_acceptor_ALT_scores[, 1], digits=2),
+                                    SCORE3ssPOS=relposacceptor[width(wmAcceptorSites)-GRanges_intron_SNV_acceptor_ALT_scores[, 2]+1])
+    SCOREss_intron_SNV$SCORE5ssREF[!is.na(SCOREss_intron_SNV$SCORE5ssALT)] <- round(GRanges_intron_SNV_donor_REF_scores, digits=2)
+    SCOREss_intron_SNV$SCORE3ssREF[!is.na(SCOREss_intron_SNV$SCORE3ssALT)] <- round(GRanges_intron_SNV_acceptor_REF_scores, digits=2)
   
     ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
-    dummyDF[intronicSNVmask, ] <- CRYPss_intron_SNV
+    dummyDF[intronicSNVmask, ] <- SCOREss_intron_SNV
   }
 
   dummyDF

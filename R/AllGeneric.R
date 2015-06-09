@@ -1,7 +1,6 @@
 ## for FiveSpliceSiteVariants and ThreeSpliceSiteVariants
 setGeneric("minIntronLength", function(x) standardGeneric("minIntronLength"))
 setGeneric("minIntronLength<-", function(x, value) standardGeneric("minIntronLength<-"))
-setGeneric("regions", function(x) standardGeneric("regions"))
 
 ## for MafDb class
 setGeneric("dbConn", function(x) standardGeneric("dbConn"))
@@ -57,10 +56,10 @@ setGeneric("minPhastCons", function(x) standardGeneric("minPhastCons"))
 setGeneric("minPhastCons<-", function(x, value) standardGeneric("minPhastCons<-"))
 setGeneric("minPhylostratum", function(x) standardGeneric("minPhylostratum"))
 setGeneric("minPhylostratum<-", function(x, value) standardGeneric("minPhylostratum<-"))
-setGeneric("minCRYP5ss", function(x) standardGeneric("minCRYP5ss"))
-setGeneric("minCRYP5ss<-", function(x, value) standardGeneric("minCRYP5ss<-"))
-setGeneric("minCRYP3ss", function(x) standardGeneric("minCRYP3ss"))
-setGeneric("minCRYP3ss<-", function(x, value) standardGeneric("minCRYP3ss<-"))
+setGeneric("minScore5ss", function(x) standardGeneric("minScore5ss"))
+setGeneric("minScore5ss<-", function(x, value) standardGeneric("minScore5ss<-"))
+setGeneric("minScore3ss", function(x) standardGeneric("minScore3ss"))
+setGeneric("minScore3ss<-", function(x, value) standardGeneric("minScore3ss<-"))
 setGeneric("minCUFC", function(x) standardGeneric("minCUFC"))
 setGeneric("minCUFC<-", function(x, value) standardGeneric("minCUFC<-"))
 setGeneric("reportVariants", function(vfResultsObj, ...) standardGeneric("reportVariants"))
