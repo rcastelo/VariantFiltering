@@ -188,6 +188,7 @@ exportMethods(summary,
               minIntronLength, "minIntronLength<-",
               upstream, "upstream<-",
               downstream, "downstream<-",
+              regions,
 
               ## specific for VariantFilteringResults
               length,

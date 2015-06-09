@@ -12,6 +12,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
             .threeSpliceSites(query, subject, region, ignore.strand=ignore.strand, asHits=asHits)
           })
 
+
 ## adapted from function VariantAnnotation:::.spliceSite
 .fiveSpliceSites <- function(query, subject, region, ignore.strand, asHits, ...) {
   ## Overlap any portion of first upstream and last dowstream nucleotides of the 5' end of introns
@@ -106,4 +107,19 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
                              FOLLOWID=CharacterList())
     res
   }
+}
+
+
+.locateAllVariants <- function(vfParam, query, subject, cache=new.env(parent=emptyenv()),
+                               ignore.strand=FALSE) {
+  if (!any(seqlevels(query) %in% seqlevels(subject)))
+    return(VariantAnnotation:::.returnEmpty())
+
+  annotations <- GRanges()
+  for (r in regions(vfParam))
+    annotations <- c(annotations, locateVariants(query, subject, r, cache=cache,
+                                                 ignore.strand=ignore.strand))
+
+  meta <- values(annotations)
+  annotations[order(meta$QUERYID, meta$TXID, meta$GENEID), ]
 }
