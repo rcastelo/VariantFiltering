@@ -1,6 +1,7 @@
 ## for FiveSpliceSiteVariants and ThreeSpliceSiteVariants
 setGeneric("minIntronLength", function(x) standardGeneric("minIntronLength"))
 setGeneric("minIntronLength<-", function(x, value) standardGeneric("minIntronLength<-"))
+setGeneric("regions", function(x) standardGeneric("regions"))
 
 ## for MafDb class
 setGeneric("dbConn", function(x) standardGeneric("dbConn"))
@@ -62,8 +63,6 @@ setGeneric("minCRYP3ss", function(x) standardGeneric("minCRYP3ss"))
 setGeneric("minCRYP3ss<-", function(x, value) standardGeneric("minCRYP3ss<-"))
 setGeneric("minCUFC", function(x) standardGeneric("minCUFC"))
 setGeneric("minCUFC<-", function(x, value) standardGeneric("minCUFC<-"))
-
-## for all three VariantFilteringResults
 setGeneric("reportVariants", function(vfResultsObj, ...) standardGeneric("reportVariants"))
 
 ## for the rest ..
