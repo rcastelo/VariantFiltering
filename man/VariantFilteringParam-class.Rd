@@ -42,6 +42,10 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
                                                    "humanCodonUsage.txt"),
                       geneticCode=getGeneticCode("SGC0"),
                       allTranscripts=FALSE,
+                      regionAnnotations=list(CodingVariants(), IntronVariants(),
+                                             FiveSpliceVariants(), ThreeSpliceVariants(),
+                                             PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants(),
+                                             IntergenicVariants()),
                       otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137",
                                          "MafDb.ALL.wgs.phase1.release.v3.20101123",
                                          "MafDb.ExAC.r0.3.sites",
@@ -91,6 +95,9 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
   }
   \item{allTranscripts}{
   Logical. This option allows the user to choose between working with all the transcripts affected by the variant (\code{allTranscripts=TRUE}) or with only one transcript per variant.
+  }
+  \item{regionAnnotations}{
+  List of \code{\link[VariantAnnotation]{VariantType-class}} objects defining what regions to annotate.
   }
   \item{otherAnnotations}{
   Character vector of names of annotation packages or annotation objects.

@@ -10,6 +10,10 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
                                                                "humanCodonUsage.txt"),
                                   geneticCode=getGeneticCode("SGC0"),
                                   allTranscripts=FALSE,
+                                  regionAnnotations=list(CodingVariants(), IntronVariants(),
+                                                         FiveSpliceSiteVariants(), ThreeSpliceSiteVariants(),
+                                                         PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants(),
+                                                         IntergenicVariants()),
                                   otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137",
                                                      "MafDb.ALL.wgs.phase1.release.v3.20101123",
                                                      "MafDb.ExAC.r0.3.sites",
@@ -200,7 +204,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
       spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
       radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
       codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
-      otherAnnotations=otherannotations, allTranscripts=allTranscripts,
+      regionAnnotations=regionAnnotations, otherAnnotations=otherannotations, allTranscripts=allTranscripts,
       filters=defaultFR, filterDescriptions=defaultFilterDesc, qualityFilterNames=qualityFilterNames,
       cutoffs=.defaultCutoffs, geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
 }
@@ -275,6 +279,11 @@ setMethod("$", signature(x="VariantFilteringParam"),
           })
 
 ## getters
+
+setMethod("regions", signature(x="VariantFilteringParam"),
+          function(x) {
+            x@regionAnnotations
+          })
 
 setMethod("filters", signature(x="VariantFilteringParam"),
           function (x) {
