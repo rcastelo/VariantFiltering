@@ -35,7 +35,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
                             subjectid=togroup(subject)[subjectHits(fo)]))
 
     ## restrict splice site annotations to those occurring in introns of a minimum length
-    df <- df[unlist(width(subject), use.names=FALSE)[df$subjectid] > minIntronLength(region), ]
+    df <- df[width(usub)[df$usubjectid] > minIntronLength(region), ]
 
     GRanges(seqnames=seqnames(query)[df$queryid],
             ranges=IRanges(ranges(query)[df$queryid]),
@@ -83,7 +83,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
                             subjectid=togroup(subject)[subjectHits(fo)]))
 
     ## restrict splice site annotations to those occurring in introns of a minimum length
-    df <- df[unlist(width(subject), use.names=FALSE)[df$subjectid] > minIntronLength(region), ]
+    df <- df[width(usub)[df$usubjectid] > minIntronLength(region), ]
 
     GRanges(seqnames=seqnames(query)[df$queryid],
             ranges=IRanges(ranges(query)[df$queryid]),
@@ -116,9 +116,14 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
     return(VariantAnnotation:::.returnEmpty())
 
   annotations <- GRanges()
-  for (r in regions(vfParam))
-    annotations <- c(annotations, locateVariants(query, subject, r, cache=cache,
-                                                 ignore.strand=ignore.strand))
+  if (length(vfParam$regionAnnotations) > 0) {
+    annotations <- lapply(vfParam$regionAnnotations,
+                          function(r)
+                            locateVariants(query, subject, r, cache=cache,
+                                           ignore.strand=ignore.strand))
+    names(annotations) <- NULL
+    annotations <- do.call("c", annotations)
+  }
 
   meta <- values(annotations)
   annotations[order(meta$QUERYID, meta$TXID, meta$GENEID), ]

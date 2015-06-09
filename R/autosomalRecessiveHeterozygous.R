@@ -187,5 +187,5 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
-      minCRYP5ss=NA_real_, minCRYP3ss=NA_real_, minCUFC=0)
+      minScore5ss=NA_real_, minScore3ss=NA_real_, minCUFC=0)
 })

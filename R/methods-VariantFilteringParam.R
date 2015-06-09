@@ -12,8 +12,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
                                   allTranscripts=FALSE,
                                   regionAnnotations=list(CodingVariants(), IntronVariants(),
                                                          FiveSpliceSiteVariants(), ThreeSpliceSiteVariants(),
-                                                         PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants(),
-                                                         IntergenicVariants()),
+                                                         PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants()),
                                   otherAnnotations=c("MafDb.ESP6500SI.V2.SSA137",
                                                      "MafDb.ALL.wgs.phase1.release.v3.20101123",
                                                      "MafDb.ExAC.r0.3.sites",
@@ -155,6 +154,17 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   if (!is.character(otherAnnotations))
     stop("argument 'otherAnnotations' should contain names of objects or installed packages that can be used by VariantFiltering to annotate genetic variants.")
 
+  ## check that object determining region annotations belong to the 'VariantType' class
+  if (!is.list(regionAnnotations))
+    regionAnnotations <- list(regionAnnotations)
+
+  mask <- sapply(regionAnnotations, function(x) !is(x, "VariantType"))
+  if (any(mask))
+    stop("The argument 'regionAnnotations' should contain a list of one or more 'VariantType' objects. See the help page of CodingVariants() from the 'VariantAnnotation' package.")
+  names(regionAnnotations) <- sapply(regionAnnotations, class)
+  regionAnnotations <- SimpleList(regionAnnotations)
+
+  ## fetch other annotation packages
   otherannotations <- list()
   for (name in otherAnnotations)  {
     if (!exists(name)) {
@@ -257,6 +267,7 @@ setMethod("show", signature(object="VariantFilteringParam"),
               cat(sprintf("  Splice site matrices: %s\n", paste(basename(object$spliceSiteMatricesFilenames), collapse=", ")))
             cat(sprintf("  Radical/Conservative AA changes: %s\n", basename(object$radicalAAchangeFilename)))
             cat(sprintf("  Codon usage table: %s\n", basename(object$codonusageFilename)))
+            cat(sprintf("  Regions to annotate: %s\n", paste(names(object$regionAnnotations), collapse=", ")))
             if (length(object$otherAnnotations) > 0)
               cat(sprintf("  Other annotation pkg/obj: %s\n",
                           paste(names(object$otherAnnotations),
@@ -279,11 +290,6 @@ setMethod("$", signature(x="VariantFilteringParam"),
           })
 
 ## getters
-
-setMethod("regions", signature(x="VariantFilteringParam"),
-          function(x) {
-            x@regionAnnotations
-          })
 
 setMethod("filters", signature(x="VariantFilteringParam"),
           function (x) {
