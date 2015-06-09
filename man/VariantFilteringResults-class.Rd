@@ -97,16 +97,16 @@
 \alias{minPhylostratum,VariantFilteringResults-method}
 \alias{minPhylostratum<-,VariantFilteringResults-method}
 \alias{minPhylostratum<-,VariantFilteringResults,ANY-method}
-\alias{minCRYP5ss}
-\alias{minCRYP5ss<-}
-\alias{minCRYP5ss,VariantFilteringResults-method}
-\alias{minCRYP5ss<-,VariantFilteringResults,ANY-method}
-\alias{minCRYP5ss<-,VariantFilteringResults-method}
-\alias{minCRYP3ss}
-\alias{minCRYP3ss<-}
-\alias{minCRYP3ss,VariantFilteringResults-method}
-\alias{minCRYP3ss<-,VariantFilteringResults,ANY-method}
-\alias{minCRYP3ss<-,VariantFilteringResults-method}
+\alias{minScore5ss}
+\alias{minScore5ss<-}
+\alias{minScore5ss,VariantFilteringResults-method}
+\alias{minScore5ss<-,VariantFilteringResults,ANY-method}
+\alias{minScore5ss<-,VariantFilteringResults-method}
+\alias{minScore3ss}
+\alias{minScore3ss<-}
+\alias{minScore3ss,VariantFilteringResults-method}
+\alias{minScore3ss<-,VariantFilteringResults,ANY-method}
+\alias{minScore3ss<-,VariantFilteringResults-method}
 \alias{minCUFC}
 \alias{minCUFC<-}
 \alias{minCUFC,VariantFilteringResults-method}
@@ -190,23 +190,23 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
   radical according to the matrix of amino acid biochemical properties given in the
   argument \code{radicalAAchangeFilename} of the \code{\link{VariantFilteringParam}()} function.
   }
-  \item{CRYP5ssREF}{
+  \item{SCORE5ssREF}{
   Score for the cryptic 5'ss for the REF allele respect to the ALT allele.
   }
-  \item{CRYP5ssALT}{
+  \item{SCORE5ssALT}{
   Maximum score for a potential cryptic 5'ss created by the ALT allele.
   }
-  \item{CRYP5ssPOS}{
+  \item{SCORE5ssPOS}{
   Position of the allele respect to the position of the dinucleotide \code{GT},
   considering those as positions 1 and 2.
   }
-  \item{CRYP3ssREF}{
+  \item{SCORE3ssREF}{
   Score for the cryptic 3'ss for the REF allele respect to the ALT allele.
   }
-  \item{CRYP3ssALT}{
+  \item{SCORE3ssALT}{
   Maximum score for a potential cryptic 3'ss created by the ALT allele.
   }
-  \item{CRYP3ssPOS}{
+  \item{SCORE3ssPOS}{
   Position of the allele respect to the position of the dinucleotide \code{AG},
   considering those as positions 1 and 2.
   }
@@ -326,10 +326,10 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
       \code{MAFpop(x)}: selection of populations to use when filtering by maximum MAF value.
     }
     \item{}{
-      \code{minCRYP5ss(x)}: minimum weight matrix score on a cryptic 5'ss. \code{NA} indicates this filter is not applied.
+      \code{minScore5ss(x)}: minimum weight matrix score on a cryptic 5'ss. \code{NA} indicates this filter is not applied.
     }
     \item{}{
-      \code{minCRYP3ss(x)}: minimum weight matrix score on a cryptic 3'ss. \code{NA} indicates this filter is not applied.
+      \code{minScore3ss(x)}: minimum weight matrix score on a cryptic 3'ss. \code{NA} indicates this filter is not applied.
     }
     \item{}{
       \code{minCUFC(x)}: minimum absolute codon-usage log2 fold-change.
