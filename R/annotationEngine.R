@@ -97,12 +97,13 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ## at the moment we are not interested in intergenic variants and we also leave promoter region
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
-  ## located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsGR, "GRanges"),
-  ##                                          subject=txdb, cache=cache)
-  located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
-                                       region=AllVariants(intergenic=IntergenicVariants(0, 0)),
-                                       cache=cache)
+  located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsGR, "GRanges"),
+                                           subject=txdb, cache=cache, BPPARAM=BPPARAM)
+  ## located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
+  ##                                      region=AllVariants(intergenic=IntergenicVariants(0, 0)),
+  ##                                      cache=cache)
   variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID] ## REPLACE variantsGR_annotated by variantsGR ???
+  strand(variantsGR_annotated) <- strand(located_variantsGR)
   variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
   variantsGR_annotated$LOCEND <- located_variantsGR$LOCEND
@@ -651,16 +652,15 @@ variantHGVS <- function(variantsGR) {
 
   maskCoding <- variantsGR$LOCATION == "coding"
 
-  ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-  refAllele[maskCoding] <- as.character(.adjustForStrandSense(variantsGR[maskCoding],
-                                                             ref(variantsGR)[maskCoding]))
-  ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
-  ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-  refAllele[!maskCoding] <- as.character(.adjustForStrandSense(variantsGR[!maskCoding],
-                                                              ref(variantsGR)[!maskCoding]))
+  if (any(maskCoding))
+    ## for coding variants we use the 'varAllele' column which is already adjusted for strand
+    refAllele[maskCoding] <- .adjustForStrandSense(variantsGR[maskCoding], ref(variantsGR)[maskCoding])
+
+    ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
+    ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
+  refAllele[!maskCoding] <- .adjustForStrandSense(variantsGR[!maskCoding], ref(variantsGR)[!maskCoding])
   altAllele <- as.character(variantsGR$varAllele)
-  altAllele[!maskCoding] <- .adjustForStrandSense(variantsGR[!maskCoding],
-                                                 alt(variantsGR)[!maskCoding])
+  altAllele[!maskCoding] <- .adjustForStrandSense(variantsGR[!maskCoding], alt(variantsGR)[!maskCoding])
 
   locStartAllele <- as.integer(start(variantsGR$CDSLOC))
   locEndAllele <- as.integer(end(variantsGR$CDSLOC))
@@ -690,10 +690,13 @@ variantHGVS <- function(variantsGR) {
   locStartAllele <- locEndAllele <- rep(NA_integer_, times=length(variantsGR))
 
   mask <- variantsGR$LOCATION != "intergenic"
-  locStartAllele[mask] <- ifelse(strand(variantsGR)[mask] == "+", as.integer(start(variantsGR)[mask]) - variantsGR$TXSTART[mask] + 1L,
-                                 variantsGR$TXEND[mask] - as.integer(end(variantsGR)[mask]) + 1L)
-  locEndAllele[mask] <- ifelse(strand(variantsGR)[mask] == "+", as.integer(end(variantsGR)[mask]) - variantsGR$TXSTART[mask] + 1L,
-                               variantsGR$TXEND[mask] - as.integer(start(variantsGR)[mask]) + 1L)
+  if (any(mask)) {
+    locStartAllele[mask] <- ifelse(strand(variantsGR)[mask] == "+", as.integer(start(variantsGR)[mask]) - variantsGR$TXSTART[mask] + 1L,
+                                   variantsGR$TXEND[mask] - as.integer(end(variantsGR)[mask]) + 1L)
+    locEndAllele[mask] <- ifelse(strand(variantsGR)[mask] == "+", as.integer(end(variantsGR)[mask]) - variantsGR$TXSTART[mask] + 1L,
+                                 variantsGR$TXEND[mask] - as.integer(start(variantsGR)[mask]) + 1L)
+  }
+
   if (any(!mask)) { ## for intergenic variants just use their position as given
     locStartAllele[!mask] <- as.integer(start(variantsGR)[!mask])
     locEndAllele[!mask] <- as.integer(end(variantsGR)[!mask])
@@ -939,7 +942,8 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
             AAchangeType=character())
 }
 
-## assumes variantsGR is a VRanges object
+## function to score splice sites including variants. it produces scores for the splice site with
+## the reference and alternative alleles. it assumes that the input variantsGR is a VRanges object
 .scoreSpliceSiteVariants <- function(variantsGR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam("SerialParam")) {
 
   ## adapt to sequence style and genome version from the input
@@ -979,14 +983,10 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     wregion <- GRanges_annotSS$LOCEND[1] - GRanges_annotSS$LOCSTART[1] + 1
     if (wregion == width(wmDonorSites)) {
 
-      # get alternative allele adjusted by strand
-      nstrand <- as.vector(strand(GRanges_annotSS) == "-")
+      # get alternative allele adjusted by strand, we need a DNAStringSetList to use replaceAt() below
       altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_annotSS), split="", fixed=TRUE))
-      if (any(nstrand))
-        altAlleleStrandAdjusted[nstrand] <- relist(complement(unlist(altAlleleStrandAdjusted[nstrand])),
-                                                   altAlleleStrandAdjusted[nstrand])
+      altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_annotSS, altAlleleStrandAdjusted)
 
-      ## ADJUST POS BY STRAND !!!
       GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
                                  ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
                                  strand=strand(GRanges_annotSS),
@@ -1009,9 +1009,13 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
       GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
                                           FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
 
+      # store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
+      relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
+      relposdonor <- c(relposdonor, seq(1, width(wmDonorSites)-length(relposdonor)))
+
       SCOREss <- DataFrame(SCORE5ssREF=round(GRanges_annotSS_REF_scores, digits=2),
                            SCORE5ssALT=round(GRanges_annotSS_ALT_scores, digits=2),
-                           SCORE5ssPOS=GRanges_annotSS$POS,
+                           SCORE5ssPOS=relposdonor[GRanges_annotSS$POS],
                            SCORE3ssREF=rep(NA_real_, length(GRanges_annotSS)),
                            SCORE3ssALT=rep(NA_real_, length(GRanges_annotSS)),
                            SCORE3ssPOS=rep(NA_integer_, length(GRanges_annotSS)))
@@ -1023,10 +1027,58 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
                       wregion, width(wmDonorSites)))
   }
 
-  ## message("Scoring annotated 3' splice sites")
+  message("Scoring annotated 3' splice sites")
 
-  ## if (any(variantsGR$LOCATION %in% "threeSpliceSites")) {
-  ## }
+  ssSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "threeSpliceSite"
+  if (any(ssSNVmask)) {
+    GRanges_annotSS <- variantsGR[ssSNVmask]
+
+    wregion <- GRanges_annotSS$LOCEND[1] - GRanges_annotSS$LOCSTART[1] + 1
+    if (wregion == width(wmAcceptorSites)) {
+
+      # get alternative allele adjusted by strand, we need a DNAStringSetList to use replaceAt() below
+      altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_annotSS), split="", fixed=TRUE))
+      altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_annotSS, altAlleleStrandAdjusted)
+
+      GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
+                                 ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
+                                 strand=strand(GRanges_annotSS),
+                                 POS=start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1)
+
+      # retrieve region of the splice site including the reference allele
+      GRanges_annotSS_REF_strings <- getSeq(bsgenome, GRanges_annotSS)
+
+      # replace the variant by the alternate allele
+      GRanges_annotSS_ALT_strings <- replaceAt(GRanges_annotSS_REF_strings,
+                                               IRangesList(start=as.list(GRanges_annotSS$POS),
+                                                           end=as.list(GRanges_annotSS$POS)),
+                                               altAlleleStrandAdjusted)
+
+      # score REF alleles for donor splice sites
+      GRanges_annotSS_REF_scores <- bpvec(X=GRanges_annotSS_REF_strings,
+                                          FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+
+      # score ALT alleles for donor splice sites
+      GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
+                                          FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+
+      # store the position of the allele respect to the position of the dinucleotide AG whose nucleotides occur at pos 1 and 2
+      relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
+      relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
+
+      SCOREss <- DataFrame(SCORE5ssREF=rep(NA_real_, length(GRanges_annotSS)),
+                           SCORE5ssALT=rep(NA_real_, length(GRanges_annotSS)),
+                           SCORE5ssPOS=rep(NA_integer_, length(GRanges_annotSS)),
+                           SCORE3ssREF=round(GRanges_annotSS_REF_scores, digits=2),
+                           SCORE3ssALT=round(GRanges_annotSS_ALT_scores, digits=2),
+                           SCORE3ssPOS=relposacceptor[GRanges_annotSS$POS])
+
+      ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
+      dummyDF[ssSNVmask, ] <- SCOREss
+    } else
+      warning(sprintf("Width of the 3' splice site region (%d) is not equal to the width of the weight matrix for acceptor sites (%d).",
+                      wregion, width(wmAcceptorSites)))
+  }
 
   ## coding synonymous variants
 
@@ -1100,6 +1152,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     # store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
     relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
     relposdonor <- c(relposdonor, seq(1, width(wmDonorSites)-length(relposdonor)))
+    # store the position of the allele respect to the position of the dinucleotide AG whose nucleotides occur at pos 1 and 2
     relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
     relposacceptor <- c(relposacceptor, seq(1, width(wmAcceptorSites)-length(relposacceptor)))
 

@@ -65,11 +65,12 @@
   if (any(nstrand)) {
     if (class(alleles) == "DNAStringSet")
       adjustedAlleles[nstrand] <- reverseComplement(alleles[nstrand])
-    else {
-      if (class(alleles) == "DNAStringSetList")
-        adjustedAlleles[nstrand] <- relist(reverseComplement(unlist(alleles[nstrand])),
-                                           alleles[nstrand])
-      else
+    else if (class(alleles) == "DNAStringSetList") {
+      adjustedAlleles[nstrand] <- relist(reverseComplement(unlist(alleles[nstrand])), alleles[nstrand])
+    } else if (class(alleles) == "character") {
+      nstrand <- as.vector(nstrand)
+      adjustedAlleles[nstrand] <- as.character(reverseComplement(DNAStringSet(alleles[nstrand])))
+    } else {
         stop(".adjustForStrandSense: argument 'alleles' should be either a 'DNAStringSet' or a 'DNAStringSetList' object.")
     }
   }
