@@ -110,8 +110,11 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
 }
 
 
+## uses the VariantAnnotation::locateVariants() infrastructure to annotate region
+## to variants. Regions to annotate are taken from the input VariantFilteringParam
+## object 'vfParam'
 .locateAllVariants <- function(vfParam, query, subject, cache=new.env(parent=emptyenv()),
-                               ignore.strand=FALSE) {
+                               ignore.strand=FALSE, BPPARAM=bpParam("SerialParam")) {
   if (!any(seqlevels(query) %in% seqlevels(subject)))
     return(VariantAnnotation:::.returnEmpty())
 
