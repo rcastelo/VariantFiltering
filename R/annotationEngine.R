@@ -997,7 +997,8 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 
       # replace the variant by the alternate allele
       GRanges_annotSS_ALT_strings <- replaceAt(GRanges_annotSS_REF_strings,
-                                               IRanges(GRanges_annotSS$POS, GRanges_annotSS$POS),
+                                               IRangesList(start=as.list(GRanges_annotSS$POS),
+                                                           end=as.list(GRanges_annotSS$POS)),
                                                altAlleleStrandAdjusted)
 
       # score REF alleles for donor splice sites
