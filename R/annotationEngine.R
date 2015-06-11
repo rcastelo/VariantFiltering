@@ -2,13 +2,13 @@
 ## input GRanges object. It uses different functions from this package and
 ## from the VariantAnnotation package
 
-annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv()),
+annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv()),
                              BPPARAM=bpparam("SerialParam")) {
   
-  if (length(variantsGR) == 0) {
-    variantsGR_annotated <- variantsGR
-    mcols(variantsGR_annotated) <- .emptyAnnotations()
-    return(variantsGR_annotated)
+  if (length(variantsVR) == 0) {
+    variantsVR_annotated <- variantsVR
+    mcols(variantsVR_annotated) <- .emptyAnnotations()
+    return(variantsVR_annotated)
   }
 
   bsgenome <- param$bsgenome
@@ -28,12 +28,12 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##                          ##
   ##############################
 
-  ## clean the variant information landed on the 'VARID' slot of the input variantsGR 'GenomicRanges'
+  ## clean the variant information landed on the 'VARID' slot of the input variantsVR 'GenomicRanges'
   ## object to leave either dbSNP ids given to the input VCF in this field or a maximum of 20
   ## characters. When the dbSNP annotation does not succeed in fetching information, this 'VARID'
   ## coming from the 'ID' column of the original VCF file will be used for that purpose
 
-  vnames <- variantsGR$VARID
+  vnames <- variantsVR$VARID
   if (!is.null(vnames)) {
     vnames2 <- vnames
     vnames2 <- rep(NA_character_, length(vnames))
@@ -58,7 +58,7 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
     wh <- nchar(vnames2) > 20
     vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
 
-    variantsGR$VARID <- vnames2
+    variantsVR$VARID <- vnames2
   }
 
   ##############################
@@ -68,7 +68,7 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##############################
   
   message("Annotating variant type (SNV, Insertion, Deletion, MNV, Delins)")
-  mcols(variantsGR) <- cbind(mcols(variantsGR), typeOfVariants(variantsGR))
+  mcols(variantsVR) <- cbind(mcols(variantsVR), typeOfVariants(variantsVR))
 
   ##############################
   ##                          ##
@@ -77,15 +77,15 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##############################
 
   ## do this before variants get replicated because of different functional annotations
-  variantsGR$dbSNP <- rep(NA_character_, times=length(variantsGR))
+  variantsVR$dbSNP <- rep(NA_character_, times=length(variantsVR))
   for (i in seq_len(length(snpdb))) {
     message(sprintf("Annotating dbSNP identifiers with %s", names(snpdb)[i]))
-    res <- annotateVariants(snpdb[[i]], variantsGR, param, BPPARAM=BPPARAM)
+    res <- annotateVariants(snpdb[[i]], variantsVR, param, BPPARAM=BPPARAM)
     maskNAdbsnp <- is.na(res$dbSNP)
-    maskNAannotdbsnp <- is.na(variantsGR$dbSNP)
-    variantsGR$dbSNP[maskNAannotdbsnp & !maskNAdbsnp] <- res$dbSNP[maskNAannotdbsnp & !maskNAdbsnp]
-    variantsGR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp] <-
-      paste(variantsGR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], res$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], sep=", ")
+    maskNAannotdbsnp <- is.na(variantsVR$dbSNP)
+    variantsVR$dbSNP[maskNAannotdbsnp & !maskNAdbsnp] <- res$dbSNP[maskNAannotdbsnp & !maskNAdbsnp]
+    variantsVR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp] <-
+      paste(variantsVR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], res$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], sep=", ")
   }
 
   #######################
@@ -97,38 +97,38 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ## at the moment we are not interested in intergenic variants and we also leave promoter region
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
-  located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsGR, "GRanges"),
+  located_variantsVR <- .locateAllVariants(vfParam=param, query=as(variantsVR, "GRanges"),
                                            subject=txdb, cache=cache, BPPARAM=BPPARAM)
-  ## located_variantsGR <- locateVariants(query=as(variantsGR, "GRanges"), subject=txdb,
+  ## located_variantsVR <- locateVariants(query=as(variantsVR, "GRanges"), subject=txdb,
   ##                                      region=AllVariants(intergenic=IntergenicVariants(0, 0)),
   ##                                      cache=cache)
-  variantsGR_annotated <- variantsGR[located_variantsGR$QUERYID] ## REPLACE variantsGR_annotated by variantsGR ???
-  strand(variantsGR_annotated) <- strand(located_variantsGR)
-  variantsGR_annotated$LOCATION <- located_variantsGR$LOCATION
-  variantsGR_annotated$LOCSTART <- located_variantsGR$LOCSTART
-  variantsGR_annotated$LOCEND <- located_variantsGR$LOCEND
-  variantsGR_annotated$QUERYID <- located_variantsGR$QUERYID
-  variantsGR_annotated$TXID <- located_variantsGR$TXID
-  variantsGR_annotated$CDSID <- located_variantsGR$CDSID
-  variantsGR_annotated$GENEID <- located_variantsGR$GENEID
-  rm(located_variantsGR)
+  variantsVR_annotated <- variantsVR[located_variantsVR$QUERYID] ## REPLACE variantsVR_annotated by variantsVR ???
+  variantsVR_annotated$LOCATION <- located_variantsVR$LOCATION
+  variantsVR_annotated$LOCSTART <- located_variantsVR$LOCSTART
+  variantsVR_annotated$LOCEND <- located_variantsVR$LOCEND
+  variantsVR_annotated$LOCSTRAND <- strand(located_variantsVR)
+  variantsVR_annotated$QUERYID <- located_variantsVR$QUERYID
+  variantsVR_annotated$TXID <- located_variantsVR$TXID
+  variantsVR_annotated$CDSID <- located_variantsVR$CDSID
+  variantsVR_annotated$GENEID <- located_variantsVR$GENEID
+  rm(located_variantsVR)
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
   if (!allTranscripts) {
     selmcols <- c("QUERYID", "LOCATION", "GENEID")
-    dupsmask <- duplicated(mcols(variantsGR_annotated)[, selmcols])
-    variantsGR_annotated <- variantsGR_annotated[!dupsmask]
+    dupsmask <- duplicated(mcols(variantsVR_annotated)[, selmcols])
+    variantsVR_annotated <- variantsVR_annotated[!dupsmask]
   }
 
-  rmcols <- match("QUERYID", colnames(mcols(variantsGR_annotated)))
-  mcols(variantsGR_annotated) <- mcols(variantsGR_annotated)[, -rmcols]
+  rmcols <- match("QUERYID", colnames(mcols(variantsVR_annotated)))
+  mcols(variantsVR_annotated) <- mcols(variantsVR_annotated)[, -rmcols]
 
   ## annotate cDNA position where applicable
-  maskexonic <- variantsGR_annotated$LOCATION %in% c("coding", "fiveUTR", "threeUTR")
-  cDNAloc <- .cDNAloc(variantsGR_annotated[maskexonic], txdb)
-  variantsGR_annotated$cDNALOC <- rep(NA_integer_, length(variantsGR_annotated))
-  variantsGR_annotated$cDNALOC[maskexonic] <- cDNAloc
+  maskexonic <- variantsVR_annotated$LOCATION %in% c("coding", "fiveUTR", "threeUTR")
+  cDNAloc <- .cDNAloc(variantsVR_annotated[maskexonic], txdb)
+  variantsVR_annotated$cDNALOC <- rep(NA_integer_, length(variantsVR_annotated))
+  variantsVR_annotated$cDNALOC[maskexonic] <- cDNAloc
 
   ##############################
   ##                          ##
@@ -138,37 +138,37 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   
   message("Annotating coding variants VariantAnnotation::predictCoding()")
   ## following the help page of 'predictCoding()', expand to have one row per alternate allele
-  variantsGR_annotated_coding <- VRanges()
-  if (any(variantsGR_annotated$LOCATION == "coding")) {
-    variantsGR_annotated_coding <- variantsGR_annotated[variantsGR_annotated$LOCATION == "coding"]
+  variantsVR_annotated_coding <- VRanges()
+  if (any(variantsVR_annotated$LOCATION == "coding")) {
+    variantsVR_annotated_coding <- variantsVR_annotated[variantsVR_annotated$LOCATION == "coding"]
 
     ## set temporarily the sequence style to the one of the genome package to
     ## access the genome sequence without chromosome nomenclature problems
-    origVarLevelsStyle <- seqlevelsStyle(variantsGR_annotated_coding)
-    seqlevelsStyle(variantsGR_annotated_coding) <- seqlevelsStyle(bsgenome)
+    origVarLevelsStyle <- seqlevelsStyle(variantsVR_annotated_coding)
+    seqlevelsStyle(variantsVR_annotated_coding) <- seqlevelsStyle(bsgenome)
     origTxDbLevelsStyle <- seqlevelsStyle(txdb)
     seqlevelsStyle(txdb) <- seqlevelsStyle(bsgenome)
 
-    commonChr <- intersect(seqlevels(variantsGR_annotated_coding), seqlevels(bsgenome))
-    if (any(genome(variantsGR_annotated_coding)[commonChr] != genome(bsgenome)[commonChr])) {
+    commonChr <- intersect(seqlevels(variantsVR_annotated_coding), seqlevels(bsgenome))
+    if (any(genome(variantsVR_annotated_coding)[commonChr] != genome(bsgenome)[commonChr])) {
       warning(sprintf("Assumming %s represent the same genome build.",
-                      paste(c(unique(genome(variantsGR_annotated_coding)[commonChr]), unique(genome(bsgenome)[commonChr])),
+                      paste(c(unique(genome(variantsVR_annotated_coding)[commonChr]), unique(genome(bsgenome)[commonChr])),
                             collapse=" and ")))
       ## this generates conflicts with genome(txdb) in predictCoding() but it works
       ## we do not do anything about it and we just provide the warning
-      ## genome(variantsGR_annotated_coding_exp) <- genome(bsgenome)
+      ## genome(variantsVR_annotated_coding_exp) <- genome(bsgenome)
     }
 
-    variantsGR_annotated_coding_exp <- as(variantsGR_annotated_coding, "GRanges")
-    rmcols <- match(c("TXID", "CDSID", "GENEID"), colnames(mcols(variantsGR_annotated_coding_exp)))
-    mcols(variantsGR_annotated_coding_exp) <- mcols(variantsGR_annotated_coding_exp)[, -rmcols]
+    variantsVR_annotated_coding_exp <- as(variantsVR_annotated_coding, "GRanges")
+    rmcols <- match(c("TXID", "CDSID", "GENEID"), colnames(mcols(variantsVR_annotated_coding_exp)))
+    mcols(variantsVR_annotated_coding_exp) <- mcols(variantsVR_annotated_coding_exp)[, -rmcols]
 
-    GRanges_coding_uq <- predictCoding(query=variantsGR_annotated_coding_exp,
+    GRanges_coding_uq <- predictCoding(query=variantsVR_annotated_coding_exp,
                                        subject=txdb, seqSource=bsgenome, genetic.code=geneticCode,
-                                       varAllele=DNAStringSet(alt(variantsGR_annotated_coding)))
+                                       varAllele=DNAStringSet(alt(variantsVR_annotated_coding)))
 
     ## set back the sequence style
-    seqlevelsStyle(variantsGR_annotated_coding) <- origVarLevelsStyle
+    seqlevelsStyle(variantsVR_annotated_coding) <- origVarLevelsStyle
     seqlevelsStyle(txdb) <- origTxDbLevelsStyle
   
     ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
@@ -176,69 +176,69 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
     if (!allTranscripts)
       GRanges_coding_uq <- GRanges_coding_uq[!duplicated(mcols(GRanges_coding_uq)[, c("QUERYID", "GENEID", "CONSEQUENCE")])]
 
-    variantsGR_annotated_coding <- variantsGR_annotated_coding[GRanges_coding_uq$QUERYID]
+    variantsVR_annotated_coding <- variantsVR_annotated_coding[GRanges_coding_uq$QUERYID]
 
     ## some TXID, CDSID and GENEID annotations are catched by
     ## VariantAnnotation::locateVariants() and not by VariantAnnotation::predictCoding()
     ## and the other way araound. In these cases we take the union of both annotations.
     ## when locateVariants() and predictCoding() disagree in the GENEID annotation then
     ## we take the one given by predictCoding() -SHOULD ASK ABOUT THIS IN THE DEVEL LIST-
-    mask <- !is.na(variantsGR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID) &
-            variantsGR_annotated_coding$GENEID != GRanges_coding_uq$GENEID
+    mask <- !is.na(variantsVR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID) &
+            variantsVR_annotated_coding$GENEID != GRanges_coding_uq$GENEID
 
-    variantsGR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    variantsGR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
-    variantsGR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
+    variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
+    variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
+    variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
 
-    mask <- is.na(variantsGR_annotated_coding$TXID)
-    variantsGR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    mask <- elementLengths(variantsGR_annotated_coding$CDSID) == 0
-    variantsGR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
-    mask <- is.na(variantsGR_annotated_coding$GENEID)
-    variantsGR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
+    mask <- is.na(variantsVR_annotated_coding$TXID)
+    variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
+    mask <- elementLengths(variantsVR_annotated_coding$CDSID) == 0
+    variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
+    mask <- is.na(variantsVR_annotated_coding$GENEID)
+    variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
 
     ## add coding annotations from VariantAnnotation::predictCoding()
-    variantsGR_annotated_coding$CDSLOC <- GRanges_coding_uq$CDSLOC
-    variantsGR_annotated_coding$PROTEINLOC <- GRanges_coding_uq$PROTEINLOC
-    variantsGR_annotated_coding$REFCODON <- GRanges_coding_uq$REFCODON
-    variantsGR_annotated_coding$VARCODON <- GRanges_coding_uq$VARCODON
-    variantsGR_annotated_coding$REFAA <- GRanges_coding_uq$REFAA
-    variantsGR_annotated_coding$VARAA <- GRanges_coding_uq$VARAA
-    variantsGR_annotated_coding$varAllele <- GRanges_coding_uq$varAllele
-    variantsGR_annotated_coding$CONSEQUENCE <- GRanges_coding_uq$CONSEQUENCE
+    variantsVR_annotated_coding$CDSLOC <- GRanges_coding_uq$CDSLOC
+    variantsVR_annotated_coding$PROTEINLOC <- GRanges_coding_uq$PROTEINLOC
+    variantsVR_annotated_coding$REFCODON <- GRanges_coding_uq$REFCODON
+    variantsVR_annotated_coding$VARCODON <- GRanges_coding_uq$VARCODON
+    variantsVR_annotated_coding$REFAA <- GRanges_coding_uq$REFAA
+    variantsVR_annotated_coding$VARAA <- GRanges_coding_uq$VARAA
+    variantsVR_annotated_coding$varAllele <- GRanges_coding_uq$varAllele
+    variantsVR_annotated_coding$CONSEQUENCE <- GRanges_coding_uq$CONSEQUENCE
   
     ## annotate start and end positions of CDS (to determine start and stop gains and losses)
-    cdsinfo <- select(txdb, keys=unique(as.character(unlist(variantsGR_annotated_coding$CDSID, use.names=FALSE))),
+    cdsinfo <- select(txdb, keys=unique(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE))),
                       columns=c("CDSSTART", "CDSEND"), keytype="CDSID")
-    mt <- match(as.character(unlist(variantsGR_annotated_coding$CDSID, use.names=FALSE)), cdsinfo$CDSID)
-    variantsGR_annotated_coding$CDSSTART <- relist(cdsinfo$CDSSTART[mt], variantsGR_annotated_coding$CDSID)
-    variantsGR_annotated_coding$CDSEND <- relist(cdsinfo$CDSEND[mt], variantsGR_annotated_coding$CDSID)
+    mt <- match(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE)), cdsinfo$CDSID)
+    variantsVR_annotated_coding$CDSSTART <- relist(cdsinfo$CDSSTART[mt], variantsVR_annotated_coding$CDSID)
+    variantsVR_annotated_coding$CDSEND <- relist(cdsinfo$CDSEND[mt], variantsVR_annotated_coding$CDSID)
 
     ## annotate codon usage difference in synonymous mutations
 
-    variantsGR_annotated_coding$CUREF <- NA_real_
-    variantsGR_annotated_coding$CUALT <- NA_real_
+    variantsVR_annotated_coding$CUREF <- NA_real_
+    variantsVR_annotated_coding$CUALT <- NA_real_
 
-    if (any(variantsGR_annotated_coding$CONSEQUENCE == "synonymous")){
+    if (any(variantsVR_annotated_coding$CONSEQUENCE == "synonymous")){
     
       message("Annotating codon usage frequencies in coding synonymous variants")
     
       ## create a mask for those variants that are codying and synonymous
 
-      mask <- variantsGR_annotated_coding$CONSEQUENCE %in% "synonymous"
+      mask <- variantsVR_annotated_coding$CONSEQUENCE %in% "synonymous"
     
       ## extract the reference codons and alt codons from the DNStringSet
    
-      ref_codons <- unname(as.character(variantsGR_annotated_coding$REFCODON[mask]))
-      alt_codons <- unname(as.character(variantsGR_annotated_coding$VARCODON[mask]))
+      ref_codons <- unname(as.character(variantsVR_annotated_coding$REFCODON[mask]))
+      alt_codons <- unname(as.character(variantsVR_annotated_coding$VARCODON[mask]))
 
       ## obtain the vector with the frequencies for the reference and alternative codons   
       ref_codons_numeric <- codonusageTable[ref_codons]
       alt_codons_numeric <- codonusageTable[alt_codons]
     
       ## push the numerical vector to its corresponding variant to compare on CUREF and CUALT columns
-      variantsGR_annotated_coding$CUREF[mask] <- unname(ref_codons_numeric)
-      variantsGR_annotated_coding$CUALT[mask] <- unname(alt_codons_numeric)
+      variantsVR_annotated_coding$CUREF[mask] <- unname(ref_codons_numeric)
+      variantsVR_annotated_coding$CUALT[mask] <- unname(alt_codons_numeric)
         
     }
   
@@ -246,9 +246,9 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
 
   ## consolidate the annotations on coding variants, obatined with 'VariantAnnotation::predictCoding()',
   ##  with the rest of non-coding variants in a single VRanges object, replacing the one named
-  ## 'variantsGR_annotated'
-  variantsGR_annotated_noncoding <- variantsGR_annotated[variantsGR_annotated$LOCATION != "coding"]
-  n.noncoding <- length(variantsGR_annotated_noncoding)
+  ## 'variantsVR_annotated'
+  variantsVR_annotated_noncoding <- variantsVR_annotated[variantsVR_annotated$LOCATION != "coding"]
+  n.noncoding <- length(variantsVR_annotated_noncoding)
   dummyDF <- DataFrame(CDSLOC=IRanges(start=rep(-1, n.noncoding), end=rep(-1, n.noncoding)),
                        PROTEINLOC=IntegerList(as.list(rep(NA, n.noncoding))),
                        REFCODON=DNAStringSet(rep("", n.noncoding)),
@@ -262,20 +262,20 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
                        CUREF=rep(NA_real_,n.noncoding),
                        CUALT=rep(NA_real_,n.noncoding))
   
-  mcols(variantsGR_annotated_noncoding) <- cbind(mcols(variantsGR_annotated_noncoding), dummyDF)
+  mcols(variantsVR_annotated_noncoding) <- cbind(mcols(variantsVR_annotated_noncoding), dummyDF)
 
-  if (length(variantsGR_annotated_coding) > 0) {
-    variantsGR_annotated <- sort(c(variantsGR_annotated_coding, variantsGR_annotated_noncoding))
+  if (length(variantsVR_annotated_coding) > 0) {
+    variantsVR_annotated <- sort(c(variantsVR_annotated_coding, variantsVR_annotated_noncoding))
   } else
-    variantsGR_annotated <- sort(variantsGR_annotated_noncoding)
+    variantsVR_annotated <- sort(variantsVR_annotated_noncoding)
 
   ## annotate start and end positions of TX (to determine pre-mRNA positions)
   ## FIXME: with intergenic variants
-  txinfo <- select(txdb, keys=unique(as.character(unlist(variantsGR_annotated$TXID, use.names=FALSE))),
+  txinfo <- select(txdb, keys=unique(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE))),
                    columns=c("TXSTART", "TXEND"), keytype="TXID")
-  mt <- match(as.character(unlist(variantsGR_annotated$TXID, use.names=FALSE)), txinfo$TXID)
-  variantsGR_annotated$TXSTART <- txinfo$TXSTART[mt]
-  variantsGR_annotated$TXEND <- txinfo$TXEND[mt]
+  mt <- match(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE)), txinfo$TXID)
+  variantsVR_annotated$TXSTART <- txinfo$TXSTART[mt]
+  variantsVR_annotated$TXEND <- txinfo$TXEND[mt]
   
   #############################################################
   ##                                                         ##
@@ -283,18 +283,18 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##                                                         ##
   #############################################################
   
-  ## add metadata columns in 'variantsGR_annotated' for cryptic ss annotations
+  ## add metadata columns in 'variantsVR_annotated' for cryptic ss annotations
   ## this should be optional once the shiny app is aware about present/absent annotations
-  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsGR_annotated)),
-                       SCORE5ssALT=rep(NA_real_, length(variantsGR_annotated)),
-                       SCORE5ssPOS=rep(NA_real_, length(variantsGR_annotated)),
-                       SCORE3ssREF=rep(NA_real_, length(variantsGR_annotated)),
-                       SCORE3ssALT=rep(NA_real_, length(variantsGR_annotated)),
-                       SCORE3ssPOS=rep(NA_real_, length(variantsGR_annotated)))
+  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsVR_annotated)),
+                       SCORE5ssALT=rep(NA_real_, length(variantsVR_annotated)),
+                       SCORE5ssPOS=rep(NA_real_, length(variantsVR_annotated)),
+                       SCORE3ssREF=rep(NA_real_, length(variantsVR_annotated)),
+                       SCORE3ssALT=rep(NA_real_, length(variantsVR_annotated)),
+                       SCORE3ssPOS=rep(NA_real_, length(variantsVR_annotated)))
 
   if (length(spliceSiteMatrices) == 2)
-    dummyDF <- .scoreSpliceSiteVariants(variantsGR_annotated, spliceSiteMatrices, bsgenome, BPPARAM)
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), dummyDF)
+    dummyDF <- .scoreSpliceSiteVariants(variantsVR_annotated, spliceSiteMatrices, bsgenome, BPPARAM)
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dummyDF)
 
   ###############################
   ##                           ##
@@ -302,8 +302,8 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##                           ##
   ###############################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-                                       annotateVariants(orgdb, variantsGR_annotated, param))
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
+                                       annotateVariants(orgdb, variantsVR_annotated, param))
 
   #####################################
   ##                                 ##
@@ -311,8 +311,8 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##                                 ##
   #####################################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-                                       annotateVariants(txdb, variantsGR_annotated, param))
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
+                                       annotateVariants(txdb, variantsVR_annotated, param))
 
   ########################
   ##                    ##
@@ -320,7 +320,7 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##                    ##
   ########################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated), variantHGVS(variantsGR_annotated))
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), variantHGVS(variantsVR_annotated))
                                       
   ########################
   ##                    ##
@@ -328,8 +328,8 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   ##                    ##
   ########################
 
-  mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
-                                       aminoAcidChanges(variantsGR_annotated, radicalAAchangeMatrix))
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
+                                       aminoAcidChanges(variantsVR_annotated, radicalAAchangeMatrix))
 
   ########################
   ##                    ##
@@ -339,18 +339,18 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
   
   for (i in seq(along=otherAnnotations)) {
     message(sprintf("Annotating with %s", names(otherAnnotations)[i]))
-    mcols(variantsGR_annotated) <- cbind(mcols(variantsGR_annotated),
+    mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
                                          annotateVariants(otherAnnotations[[i]],
-                                                          variantsGR_annotated,
+                                                          variantsVR_annotated,
                                                           param,
                                                           BPPARAM=BPPARAM))
   }
 
   ## this seems to be nicely transferred during the coercion to VRanges
   ## restore the seqinfo data
-  ## seqinfo(variantsGR_annotated) <- seqinfo(variantsGR)
+  ## seqinfo(variantsVR_annotated) <- seqinfo(variantsVR)
 
-  return(variantsGR_annotated)
+  return(variantsVR_annotated)
 }
 
 
@@ -360,15 +360,15 @@ annotationEngine <- function(variantsGR, param, cache=new.env(parent=emptyenv())
 ####
 
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
-            if (!"TYPE" %in% colnames(mcols(variantsGR))) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
+            if (!"TYPE" %in% colnames(mcols(variantsVR))) {
               stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
-            seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
-            masksnp <- variantsGR$TYPE == "SNV"
-            rsids <- rep(NA_character_, times=length(variantsGR))
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            masksnp <- variantsVR$TYPE == "SNV"
+            rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(masksnp)) {
-              rsids_list <- .loc2SNPid(annObj, variantsGR[masksnp], BPPARAM=BPPARAM)
+              rsids_list <- .loc2SNPid(annObj, variantsVR[masksnp], BPPARAM=BPPARAM)
               elen <- elementLengths(rsids_list)
               rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
@@ -381,15 +381,15 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
           })
 
 setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
-            if (!"TYPE" %in% colnames(mcols(variantsGR))) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
+            if (!"TYPE" %in% colnames(mcols(variantsVR))) {
               stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
-            seqlevelsStyle(variantsGR) <- seqlevelsStyle(annObj)
-            maskxtrasnp <- variantsGR$TYPE != "SNV"
-            rsids <- rep(NA_character_, times=length(variantsGR))
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            maskxtrasnp <- variantsVR$TYPE != "SNV"
+            rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(maskxtrasnp)) {
-              rsids_list <- .loc2XtraSNPid(annObj, variantsGR[maskxtrasnp], BPPARAM=BPPARAM)
+              rsids_list <- .loc2XtraSNPid(annObj, variantsVR[maskxtrasnp], BPPARAM=BPPARAM)
               elen <- elementLengths(rsids_list)
               rsids[maskxtrasnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
@@ -406,19 +406,19 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
 ####
 
 setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
-          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
-            PolyPhen2 <- rep(NA_character_, length(variantsGR))
+          function(annObj, variantsVR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
+            PolyPhen2 <- rep(NA_character_, length(variantsVR))
             if (!coding)
               return(DataFrame(PolyPhen2=PolyPhen2))
 
-            rsids <- unique(variantsGR$dbSNP)
+            rsids <- unique(variantsVR$dbSNP)
             rsids <- rsids[!is.na(rsids)]
             if (length(rsids) > 0) {
               pp <- select(annObj, keys=rsids,
                            cols=c("TRAININGSET", "PREDICTION", "PPH2PROB"))
               mask <- pp$TRAININGSET == "humvar"
               pphumvar <- pp[mask, ]
-              mt <- match(variantsGR$dbSNP, pphumvar$RSID)
+              mt <- match(variantsVR$dbSNP, pphumvar$RSID)
               PolyPhen2[!is.na(mt)] <- pphumvar$PREDICTION[mt[!is.na(mt)]]
             }
             DataFrame(PolyPhen2=PolyPhen2)
@@ -430,17 +430,17 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
 
 ## USE VARID WHERE dbSNP IS MISSING !!!
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
-          function(annObj, variantsGR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
-            PROVEAN <- rep(NA_character_, length(variantsGR))
+          function(annObj, variantsVR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
+            PROVEAN <- rep(NA_character_, length(variantsVR))
             if (!coding)
               return(DataFrame(PROVEAN=PROVEAN))
 
-            rsids <- unique(variantsGR$dbSNP)
+            rsids <- unique(variantsVR$dbSNP)
             rsids <- rsids[!is.na(rsids)]
             if (length(rsids) > 0) {
               rsids <- gsub("rs", "", rsids)
               pv <- select(annObj, keys=rsids, columns="PROVEANPRED")
-              mt <- match(gsub("rs", "", variantsGR$dbSNP), pv$DBSNPID)
+              mt <- match(gsub("rs", "", variantsVR$dbSNP), pv$DBSNPID)
               PROVEAN[!is.na(mt)] <- pv$PROVEANPRED[mt[!is.na(mt)]]
             }
             DataFrame(PROVEAN=PROVEAN)
@@ -451,14 +451,14 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="MafDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
             ## get the MAF columns
             mafCols <- knownVariantsMAFcols(annObj) ## assumes all MAF column names contain 'AF'
 
-            mafValues <- matrix(NA, nrow=length(variantsGR), ncol=length(mafCols),
+            mafValues <- matrix(NA, nrow=length(variantsVR), ncol=length(mafCols),
                                 dimnames=list(NULL, mafCols))
-            varIDs <- variantsGR$dbSNP     ## fetch first by the annotated dbSNP identifier
+            varIDs <- variantsVR$dbSNP     ## fetch first by the annotated dbSNP identifier
             uniqVarIDs <- unique(varIDs)
             uniqVarIDs <- uniqVarIDs[!is.na(uniqVarIDs)]
             if (length(varIDs) > 0) {
@@ -467,12 +467,12 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
               mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
 
               ## for missing entries then fetch by given identifier
-              varIDs <- variantsGR$VARID
+              varIDs <- variantsVR$VARID
               if (!is.null(varIDs) && any(!is.na(varIDs))) {
                 maskNotFound <- apply(uniqMAFvalues[, mafCols], 1, function(x) all(is.na(x)))
-                missingdbsnpIDs <- unique(c(varIDs[is.na(variantsGR$dbSNP)],
-                                            varIDs[!is.na(variantsGR$dbSNP) &
-                                                   variantsGR$dbSNP %in% uniqMAFvalues$varID[maskNotFound]]))
+                missingdbsnpIDs <- unique(c(varIDs[is.na(variantsVR$dbSNP)],
+                                            varIDs[!is.na(variantsVR$dbSNP) &
+                                                   variantsVR$dbSNP %in% uniqMAFvalues$varID[maskNotFound]]))
                 missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
                 if (length(missingdbsnpIDs) > 0) {
                   uniqMAFvalues <- snpid2maf(annObj, missingdbsnpIDs)
@@ -496,10 +496,10 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 ####
 
 setMethod("annotateVariants", signature(annObj="OrgDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
             genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
-            geneIDs <- variantsGR$GENEID
+            geneIDs <- variantsVR$GENEID
             geneKeytype <- param$geneKeytype
             maskNAs <- is.na(geneIDs)
             if (length(geneIDs) > 0) {
@@ -530,10 +530,10 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
           })
 
 setMethod("annotateVariants", signature(annObj="TxDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
             txlevel_annot <- DataFrame(TXNAME=character())
-            txIDs <- variantsGR$TXID
+            txIDs <- variantsVR$TXID
             maskNAs <- is.na(txIDs)
             if (length(txIDs) > 0) {
               ## if input IDs are NAs output should also be NAs and avoid querying malformed keys
@@ -554,9 +554,9 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="PhastConsDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
-            sco <- scores(annObj, variantsGR)
+            sco <- scores(annObj, variantsVR)
 
             DataFrame(phastCons=sco)
           })
@@ -566,9 +566,9 @@ setMethod("annotateVariants", signature(annObj="PhastConsDb"),
 #####
 
 setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
-          function(annObj, variantsGR, param, BPPARAM=bpparam("SerialParam")) {
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
-            gps <- genePhylostratum(annObj, variantsGR$GENEID)
+            gps <- genePhylostratum(annObj, variantsVR$GENEID)
 
             DataFrame(GenePhylostratumTaxID=gps$TaxID,
                       GenePhylostratumIndex=gps$OldestPhylostratum,
@@ -618,16 +618,16 @@ readAAradicalChangeMatrix <- function(file) {
 ### PRIVATE FUNCTIONS
 ###
 
-typeOfVariants <- function(variantsGR) {
+typeOfVariants <- function(variantsVR) {
 
   type <- factor(levels=c("SNV", "Insertion", "Deletion", "MNV", "Delins"))
-  if (length(variantsGR) > 0) {
-    type <- factor(rep("SNV", times=length(variantsGR)),
+  if (length(variantsVR) > 0) {
+    type <- factor(rep("SNV", times=length(variantsVR)),
                    levels=c("SNV", "Insertion", "Deletion", "MNV", "Delins"))
-    type[isInsertion(variantsGR)] <- "Insertion"
-    type[isDeletion(variantsGR)] <- "Deletion"
-    type[isSubstitution(variantsGR) & !isSNV(variantsGR)] <- "MNV"
-    type[isDelins(variantsGR)] <- "Delins"
+    type[isInsertion(variantsVR)] <- "Insertion"
+    type[isDeletion(variantsVR)] <- "Deletion"
+    type[isSubstitution(variantsVR) & !isSNV(variantsVR)] <- "MNV"
+    type[isDelins(variantsVR)] <- "Delins"
   }
 
   DataFrame(TYPE=type)
@@ -637,116 +637,116 @@ typeOfVariants <- function(variantsGR) {
 ## HGVS nomenclature at http://www.hgvs.org/mutnomen
 ## this is a very first version covering only coding descriptions
 ## hopefully it will become more comprehensive in the near future
-variantHGVS <- function(variantsGR) {
+variantHGVS <- function(variantsVR) {
 
-  if (length(variantsGR) == 0)
+  if (length(variantsVR) == 0)
     return(DataFrame(HGVSg=character(), HGVSc=character(), HGVSp=character()))
 
-  if (!all(c("LOCATION", "TYPE", "cDNALOC") %in% colnames(mcols(variantsGR))))
+  if (!all(c("LOCATION", "TYPE", "cDNALOC") %in% colnames(mcols(variantsVR))))
     stop("Metadata columns LOCATION, TYPE and cDNALOC should be annotated before calling variantDescription().")
 
-  pDesc <- gDesc <- cDesc <- refAllele <- altAllele <- rep(NA_character_, length(variantsGR))
-  locAllele <- rep(NA_integer_, length(variantsGR))
+  pDesc <- gDesc <- cDesc <- refAllele <- altAllele <- rep(NA_character_, length(variantsVR))
+  locAllele <- rep(NA_integer_, length(variantsVR))
 
   ## HGVS coding annotations
 
-  maskCoding <- variantsGR$LOCATION == "coding"
+  maskCoding <- variantsVR$LOCATION == "coding"
 
   if (any(maskCoding))
     ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-    refAllele[maskCoding] <- .adjustForStrandSense(variantsGR[maskCoding], ref(variantsGR)[maskCoding])
+    refAllele[maskCoding] <- .adjustForStrandSense(variantsVR[maskCoding], ref(variantsVR)[maskCoding])
 
     ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
     ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-  refAllele[!maskCoding] <- .adjustForStrandSense(variantsGR[!maskCoding], ref(variantsGR)[!maskCoding])
-  altAllele <- as.character(variantsGR$varAllele)
-  altAllele[!maskCoding] <- .adjustForStrandSense(variantsGR[!maskCoding], alt(variantsGR)[!maskCoding])
+  refAllele[!maskCoding] <- .adjustForStrandSense(variantsVR[!maskCoding], ref(variantsVR)[!maskCoding])
+  altAllele <- as.character(variantsVR$varAllele)
+  altAllele[!maskCoding] <- .adjustForStrandSense(variantsVR[!maskCoding], alt(variantsVR)[!maskCoding])
 
-  locStartAllele <- as.integer(start(variantsGR$CDSLOC))
-  locEndAllele <- as.integer(end(variantsGR$CDSLOC))
-  widthAllele <- as.integer(width(variantsGR$CDSLOC))
+  locStartAllele <- as.integer(start(variantsVR$CDSLOC))
+  locEndAllele <- as.integer(end(variantsVR$CDSLOC))
+  widthAllele <- as.integer(width(variantsVR$CDSLOC))
 
   ## SNVs
-  mask <- maskCoding & variantsGR$TYPE == "SNV"
+  mask <- maskCoding & variantsVR$TYPE == "SNV"
   cDesc[mask] <- sprintf("c.%d%s>%s", locStartAllele[mask], refAllele[mask], altAllele[mask])
 
   ## Insertions
-  mask <- maskCoding & variantsGR$TYPE == "Insertion"
+  mask <- maskCoding & variantsVR$TYPE == "Insertion"
   cDesc[mask] <- sprintf("c.%d_%dins%s", locStartAllele[mask], locStartAllele[mask]+1, altAllele[mask])
 
   ## Deletions
-  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele == 1
+  mask <- maskCoding & variantsVR$TYPE == "Deletion" & widthAllele == 1
   cDesc[mask] <- sprintf("c.%ddel%s", locStartAllele[mask], altAllele[mask])
 
-  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele > 1
+  mask <- maskCoding & variantsVR$TYPE == "Deletion" & widthAllele > 1
   cDesc[mask] <- sprintf("c.%d_%ddel%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
 
   ## Deletions-insertions
-  mask <- maskCoding & variantsGR$TYPE == "Delins"
+  mask <- maskCoding & variantsVR$TYPE == "Delins"
   cDesc[mask] <- sprintf("c.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
 
   ## HGVS genomic annotations
 
-  locStartAllele <- locEndAllele <- rep(NA_integer_, times=length(variantsGR))
+  locStartAllele <- locEndAllele <- rep(NA_integer_, times=length(variantsVR))
 
-  mask <- variantsGR$LOCATION != "intergenic"
+  mask <- variantsVR$LOCATION != "intergenic"
   if (any(mask)) {
-    locStartAllele[mask] <- ifelse(strand(variantsGR)[mask] == "+", as.integer(start(variantsGR)[mask]) - variantsGR$TXSTART[mask] + 1L,
-                                   variantsGR$TXEND[mask] - as.integer(end(variantsGR)[mask]) + 1L)
-    locEndAllele[mask] <- ifelse(strand(variantsGR)[mask] == "+", as.integer(end(variantsGR)[mask]) - variantsGR$TXSTART[mask] + 1L,
-                                 variantsGR$TXEND[mask] - as.integer(start(variantsGR)[mask]) + 1L)
+    locStartAllele[mask] <- ifelse(strand(variantsVR)[mask] == "+", as.integer(start(variantsVR)[mask]) - variantsVR$TXSTART[mask] + 1L,
+                                   variantsVR$TXEND[mask] - as.integer(end(variantsVR)[mask]) + 1L)
+    locEndAllele[mask] <- ifelse(strand(variantsVR)[mask] == "+", as.integer(end(variantsVR)[mask]) - variantsVR$TXSTART[mask] + 1L,
+                                 variantsVR$TXEND[mask] - as.integer(start(variantsVR)[mask]) + 1L)
   }
 
   if (any(!mask)) { ## for intergenic variants just use their position as given
-    locStartAllele[!mask] <- as.integer(start(variantsGR)[!mask])
-    locEndAllele[!mask] <- as.integer(end(variantsGR)[!mask])
+    locStartAllele[!mask] <- as.integer(start(variantsVR)[!mask])
+    locEndAllele[!mask] <- as.integer(end(variantsVR)[!mask])
   }
-  widthAllele <- as.integer(width(variantsGR))
+  widthAllele <- as.integer(width(variantsVR))
   
   ## SNVs
-  mask <- variantsGR$TYPE == "SNV"
+  mask <- variantsVR$TYPE == "SNV"
   gDesc[mask] <- sprintf("g.%d%s>%s", locStartAllele[mask], refAllele[mask], altAllele[mask])
 
   ## Insertions
-  mask <- variantsGR$TYPE == "Insertion"
+  mask <- variantsVR$TYPE == "Insertion"
   gDesc[mask] <- sprintf("g.%d_%dins%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
 
   ## Deletions
-  mask <- variantsGR$TYPE == "Deletion" & widthAllele == 1
+  mask <- variantsVR$TYPE == "Deletion" & widthAllele == 1
   gDesc[mask] <- sprintf("g.%ddel%s", locStartAllele[mask], altAllele[mask])
-  mask <- variantsGR$TYPE == "Deletion" & widthAllele > 1
+  mask <- variantsVR$TYPE == "Deletion" & widthAllele > 1
   gDesc[mask] <- sprintf("g.%d_%ddel%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
 
   ## Deletions-insertions
-  mask <- variantsGR$TYPE == "Delins"
+  mask <- variantsVR$TYPE == "Delins"
   gDesc[mask] <- sprintf("g.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], altAllele[mask])
 
   ## HGVS protein annotations
 
-  locStartAllele <- as.integer(sapply(variantsGR$PROTEINLOC, "[", 1))
-  locEndAllele <- as.integer(sapply(variantsGR$PROTEINLOC, "[", 2))
+  locStartAllele <- as.integer(sapply(variantsVR$PROTEINLOC, "[", 1))
+  locEndAllele <- as.integer(sapply(variantsVR$PROTEINLOC, "[", 2))
   mask <- !is.na(locStartAllele) & is.na(locEndAllele)
   locEndAllele[mask] <- locStartAllele[mask]
   widthAllele <- locEndAllele - locStartAllele + 1L
 
   ## SNVs
-  mask <- maskCoding & variantsGR$TYPE == "SNV"
-  pDesc[mask] <- sprintf("p.%d%s>%s", locStartAllele[mask], variantsGR$REFAA[mask], variantsGR$VARAA[mask])
+  mask <- maskCoding & variantsVR$TYPE == "SNV"
+  pDesc[mask] <- sprintf("p.%d%s>%s", locStartAllele[mask], variantsVR$REFAA[mask], variantsVR$VARAA[mask])
 
   ## Insertions
-  mask <- maskCoding & variantsGR$TYPE == "Insertion"
-  pDesc[mask] <- sprintf("p.%d_%dins%s", locStartAllele[mask], locStartAllele[mask] + 1L, variantsGR$VARAA[mask])
+  mask <- maskCoding & variantsVR$TYPE == "Insertion"
+  pDesc[mask] <- sprintf("p.%d_%dins%s", locStartAllele[mask], locStartAllele[mask] + 1L, variantsVR$VARAA[mask])
 
   ## Deletions
-  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele == 1
-  pDesc[mask] <- sprintf("p.%ddel%s", locStartAllele[mask], variantsGR$VARAA[mask])
+  mask <- maskCoding & variantsVR$TYPE == "Deletion" & widthAllele == 1
+  pDesc[mask] <- sprintf("p.%ddel%s", locStartAllele[mask], variantsVR$VARAA[mask])
 
-  mask <- maskCoding & variantsGR$TYPE == "Deletion" & widthAllele > 1
-  pDesc[mask] <- sprintf("p.%d_%ddel%s", locStartAllele[mask], locEndAllele[mask], variantsGR$VARAA[mask])
+  mask <- maskCoding & variantsVR$TYPE == "Deletion" & widthAllele > 1
+  pDesc[mask] <- sprintf("p.%d_%ddel%s", locStartAllele[mask], locEndAllele[mask], variantsVR$VARAA[mask])
 
   ## Deletions-insertions
-  mask <- maskCoding & variantsGR$TYPE == "Delins"
-  pDesc[mask] <- sprintf("p.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], variantsGR$VARAA[mask])
+  mask <- maskCoding & variantsVR$TYPE == "Delins"
+  pDesc[mask] <- sprintf("p.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], variantsVR$VARAA[mask])
   
   DataFrame(HGVSg=gDesc, HGVSc=cDesc, HGVSp=pDesc)
 }
@@ -840,20 +840,20 @@ variantHGVS <- function(variantsGR) {
 ## IUPAC amino acid code and pos the position along the protein, and whether
 ## the change in amino acid can be considered chemically radical or conservative
 ## frameshifts and nonsense changes are considered directly radical
-aminoAcidChanges <- function(variantsGR, rAAch) {
-  aachange <- aachangetype <- rep(NA_character_, length(variantsGR))
+aminoAcidChanges <- function(variantsVR, rAAch) {
+  aachange <- aachangetype <- rep(NA_character_, length(variantsVR))
 
   ## annotate non-synonymous coding changes
-  whnonsyn <- which(variantsGR$CONSEQUENCE == "nonsynonymous")
+  whnonsyn <- which(variantsVR$CONSEQUENCE == "nonsynonymous")
   locaa <- rep(NA_character_, length(length(whnonsyn)))
-  refaa <- as.character(variantsGR[whnonsyn]$REFAA)
-  altaa <- as.character(variantsGR[whnonsyn]$VARAA)
-  elen <- elementLengths(variantsGR[whnonsyn]$PROTEINLOC)
+  refaa <- as.character(variantsVR[whnonsyn]$REFAA)
+  altaa <- as.character(variantsVR[whnonsyn]$VARAA)
+  elen <- elementLengths(variantsVR[whnonsyn]$PROTEINLOC)
   
-  locaa[elen == 1] <- as.character(unlist(variantsGR[whnonsyn]$PROTEINLOC[elen == 1], use.names=FALSE))
+  locaa[elen == 1] <- as.character(unlist(variantsVR[whnonsyn]$PROTEINLOC[elen == 1], use.names=FALSE))
 
   ## location of a multiple amino acid replacement is denoted by its position range
-  locaa[elen > 1] <- sapply(variantsGR[whnonsyn]$PROTEINLOC[elen > 1],
+  locaa[elen > 1] <- sapply(variantsVR[whnonsyn]$PROTEINLOC[elen > 1],
                                       function(x) paste(range(x), collapse="-"))
 
   ## denote amino acid changes by concatenating reference amino acid, position
@@ -869,33 +869,33 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 
   ## annotate synonymous coding no-changes as "Conservative" and
   ## to indicate their change position along the protein sequence
-  whsyn <- which(variantsGR$CONSEQUENCE == "synonymous")
+  whsyn <- which(variantsVR$CONSEQUENCE == "synonymous")
   locaa <- rep(NA_character_, length(length(whsyn)))
-  refaa <- as.character(variantsGR[whsyn]$REFAA)
-  altaa <- as.character(variantsGR[whsyn]$VARAA)
-  locaa <- as.character(unlist(variantsGR[whsyn]$PROTEINLOC, use.names=FALSE))
+  refaa <- as.character(variantsVR[whsyn]$REFAA)
+  altaa <- as.character(variantsVR[whsyn]$VARAA)
+  locaa <- as.character(unlist(variantsVR[whsyn]$PROTEINLOC, use.names=FALSE))
   aachange[whsyn] <- paste0(refaa, locaa, altaa)
   aachangetype[whsyn] <- "Conservative"
 
   ## annotate frameshift changes as "Radical"
-  whframeshift <- which(variantsGR$CONSEQUENCE == "frameshift")
+  whframeshift <- which(variantsVR$CONSEQUENCE == "frameshift")
   locaa <- rep(NA_character_, length(length(whframeshift)))
-  refaa <- as.character(variantsGR[whframeshift]$REFAA)
-  altaa <- as.character(variantsGR[whframeshift]$VARAA)
-  elen <- elementLengths(variantsGR[whframeshift]$PROTEINLOC)
-  locaa[elen == 1] <- as.character(unlist(variantsGR[whframeshift]$PROTEINLOC[elen == 1], use.names=FALSE))
+  refaa <- as.character(variantsVR[whframeshift]$REFAA)
+  altaa <- as.character(variantsVR[whframeshift]$VARAA)
+  elen <- elementLengths(variantsVR[whframeshift]$PROTEINLOC)
+  locaa[elen == 1] <- as.character(unlist(variantsVR[whframeshift]$PROTEINLOC[elen == 1], use.names=FALSE))
   ## location of a multiple amino acid replacement is denoted by its position range
-  locaa[elen > 1] <- sapply(variantsGR[whframeshift]$PROTEINLOC[elen > 1],
+  locaa[elen > 1] <- sapply(variantsVR[whframeshift]$PROTEINLOC[elen > 1],
                                       function(x) paste(range(x), collapse="-"))
   aachange[whframeshift] <- paste0(refaa, locaa, altaa)
   aachangetype[whframeshift] <- "Radical"
 
   ## annotate nonsense changes as "Radical"
-  whnonsense <- which(variantsGR$CONSEQUENCE == "nonsense")
+  whnonsense <- which(variantsVR$CONSEQUENCE == "nonsense")
   locaa <- rep(NA_character_, length(length(whnonsense)))
-  refaa <- as.character(variantsGR[whnonsense]$REFAA)
-  altaa <- as.character(variantsGR[whnonsense]$VARAA)
-  locaa <- as.character(unlist(variantsGR[whnonsense]$PROTEINLOC, use.names=FALSE))
+  refaa <- as.character(variantsVR[whnonsense]$REFAA)
+  altaa <- as.character(variantsVR[whnonsense]$VARAA)
+  locaa <- as.character(unlist(variantsVR[whnonsense]$PROTEINLOC, use.names=FALSE))
   aachange[whnonsense] <- paste0(refaa, locaa, altaa)
   aachangetype[whnonsense] <- "Radical"
 
@@ -943,31 +943,31 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 }
 
 ## function to score splice sites including variants. it produces scores for the splice site with
-## the reference and alternative alleles. it assumes that the input variantsGR is a VRanges object
-.scoreSpliceSiteVariants <- function(variantsGR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam("SerialParam")) {
+## the reference and alternative alleles. it assumes that the input variantsVR is a VRanges object
+.scoreSpliceSiteVariants <- function(variantsVR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam("SerialParam")) {
 
   ## adapt to sequence style and genome version from the input
   ## BSgenome object, thus assuming positions are based on the same
   ## genome even though might be differently specified (i.e., hg38 vs GRCh38)
-  seqlevelsStyle(variantsGR) <- seqlevelsStyle(bsgenome)
-  commonChr <- intersect(seqlevels(variantsGR), seqlevels(bsgenome))
-  if (any(is.na(genome(variantsGR)))) {
+  seqlevelsStyle(variantsVR) <- seqlevelsStyle(bsgenome)
+  commonChr <- intersect(seqlevels(variantsVR), seqlevels(bsgenome))
+  if (any(is.na(genome(variantsVR)))) {
     warning(sprintf("Assuming the genome build of the input variants is %s.", unique(genome(bsgenome)[commonChr])))
-    genome(variantsGR) <- genome(bsgenome)
-  } else if (any(genome(variantsGR)[commonChr] != genome(bsgenome)[commonChr])) {
+    genome(variantsVR) <- genome(bsgenome)
+  } else if (any(genome(variantsVR)[commonChr] != genome(bsgenome)[commonChr])) {
     warning(sprintf("Assumming %s represent the same genome build.",
-                    paste(c(unique(genome(variantsGR)[commonChr]), unique(genome(bsgenome)[commonChr])),
+                    paste(c(unique(genome(variantsVR)[commonChr]), unique(genome(bsgenome)[commonChr])),
                           collapse=" and ")))
-    genome(variantsGR) <- genome(bsgenome)
+    genome(variantsVR) <- genome(bsgenome)
   }
 
-  ## add metadata columns in 'variantsGR' for splice site score annotations
-  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsGR)),
-                       SCORE5ssALT=rep(NA_real_, length(variantsGR)),
-                       SCORE5ssPOS=rep(NA_integer_, length(variantsGR)),
-                       SCORE3ssREF=rep(NA_real_, length(variantsGR)),
-                       SCORE3ssALT=rep(NA_real_, length(variantsGR)),
-                       SCORE3ssPOS=rep(NA_integer_, length(variantsGR)))
+  ## add metadata columns in 'variantsVR' for splice site score annotations
+  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsVR)),
+                       SCORE5ssALT=rep(NA_real_, length(variantsVR)),
+                       SCORE5ssPOS=rep(NA_integer_, length(variantsVR)),
+                       SCORE3ssREF=rep(NA_real_, length(variantsVR)),
+                       SCORE3ssALT=rep(NA_real_, length(variantsVR)),
+                       SCORE3ssPOS=rep(NA_integer_, length(variantsVR)))
 
   wmDonorSites <- spliceSiteMatrices$wmDonorSites
   wmAcceptorSites <- spliceSiteMatrices$wmAcceptorSites
@@ -976,9 +976,9 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 
   message("Scoring annotated 5' splice sites")
 
-  ssSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "fiveSpliceSite"
+  ssSNVmask <- variantsVR$TYPE == "SNV" & variantsVR$LOCATION == "fiveSpliceSite"
   if (any(ssSNVmask)) {
-    GRanges_annotSS <- variantsGR[ssSNVmask]
+    GRanges_annotSS <- variantsVR[ssSNVmask]
 
     wregion <- GRanges_annotSS$LOCEND[1] - GRanges_annotSS$LOCSTART[1] + 1
     if (wregion == width(wmDonorSites)) {
@@ -1020,7 +1020,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
                            SCORE3ssALT=rep(NA_real_, length(GRanges_annotSS)),
                            SCORE3ssPOS=rep(NA_integer_, length(GRanges_annotSS)))
 
-      ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
+      ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsVR'
       dummyDF[ssSNVmask, ] <- SCOREss
     } else
       warning(sprintf("Width of the 5' splice site region (%d) is not equal to the width of the weight matrix for donor sites (%d).",
@@ -1029,9 +1029,9 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 
   message("Scoring annotated 3' splice sites")
 
-  ssSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "threeSpliceSite"
+  ssSNVmask <- variantsVR$TYPE == "SNV" & variantsVR$LOCATION == "threeSpliceSite"
   if (any(ssSNVmask)) {
-    GRanges_annotSS <- variantsGR[ssSNVmask]
+    GRanges_annotSS <- variantsVR[ssSNVmask]
 
     wregion <- GRanges_annotSS$LOCEND[1] - GRanges_annotSS$LOCSTART[1] + 1
     if (wregion == width(wmAcceptorSites)) {
@@ -1073,7 +1073,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
                            SCORE3ssALT=round(GRanges_annotSS_ALT_scores, digits=2),
                            SCORE3ssPOS=relposacceptor[GRanges_annotSS$POS])
 
-      ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
+      ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsVR'
       dummyDF[ssSNVmask, ] <- SCOREss
     } else
       warning(sprintf("Width of the 3' splice site region (%d) is not equal to the width of the weight matrix for acceptor sites (%d).",
@@ -1084,11 +1084,11 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 
   message("Scoring potential cryptic splice sites in coding synonymous variants")
 
-  if (any(variantsGR$CONSEQUENCE %in% "synonymous")) {
+  if (any(variantsVR$CONSEQUENCE %in% "synonymous")) {
     ## %in% avoids NAs when comparing with them (THIS MASK IS ALSO USED BELOW !!)
-    synonymousSNVmask <- variantsGR$CONSEQUENCE %in% "synonymous"
+    synonymousSNVmask <- variantsVR$CONSEQUENCE %in% "synonymous"
 
-    GRanges_SY <- variantsGR[synonymousSNVmask]
+    GRanges_SY <- variantsVR[synonymousSNVmask]
 
     # retrieve regions around the allele potentially involving cryptic donor sites
     wregion <- width(wmDonorSites)*2-1
@@ -1165,7 +1165,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     SCOREss_syn$SCORE5ssREF[!is.na(SCOREss_syn$SCORE5ssALT)] <- round(GRanges_SY_donor_REF_scores, digits=2)
     SCOREss_syn$SCORE3ssREF[!is.na(SCOREss_syn$SCORE3ssALT)] <- round(GRanges_SY_acceptor_REF_scores, digits=2)
 
-    ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
+    ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsVR'
     dummyDF[synonymousSNVmask, ] <- SCOREss_syn
   }
 
@@ -1173,9 +1173,9 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
 
   message("Annotating potential cryptic splice sites in intronic variants")
 
-  intronicSNVmask <- variantsGR$TYPE == "SNV" & variantsGR$LOCATION == "intron"
+  intronicSNVmask <- variantsVR$TYPE == "SNV" & variantsVR$LOCATION == "intron"
   if (any(intronicSNVmask)) {
-    GRanges_intron_SNV <- variantsGR[intronicSNVmask] ## THIS MASK IS ALSO USED BELOW !!!
+    GRanges_intron_SNV <- variantsVR[intronicSNVmask] ## THIS MASK IS ALSO USED BELOW !!!
 
     ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
     ## and the column ALT is not adjusted - adapted from VariantAnnotation/R/methods-predictCoding.R
@@ -1255,7 +1255,7 @@ aminoAcidChanges <- function(variantsGR, rAAch) {
     SCOREss_intron_SNV$SCORE5ssREF[!is.na(SCOREss_intron_SNV$SCORE5ssALT)] <- round(GRanges_intron_SNV_donor_REF_scores, digits=2)
     SCOREss_intron_SNV$SCORE3ssREF[!is.na(SCOREss_intron_SNV$SCORE3ssALT)] <- round(GRanges_intron_SNV_acceptor_REF_scores, digits=2)
   
-    ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsGR'
+    ## incorporate the cryptic splice site annotations on synonymous variants into 'variantsVR'
     dummyDF[intronicSNVmask, ] <- SCOREss_intron_SNV
   }
 
