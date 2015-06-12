@@ -97,21 +97,21 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   ## at the moment we are not interested in intergenic variants and we also leave promoter region
   ## boundaries at their default value. This could be parametrized if needed by the 'VariantFilteringParam' input object
   message("Annotating location with VariantAnnotation::locateVariants()")
-  located_variantsVR <- .locateAllVariants(vfParam=param, query=as(variantsVR, "GRanges"),
+  located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsVR, "GRanges"),
                                            subject=txdb, cache=cache, BPPARAM=BPPARAM)
-  ## located_variantsVR <- locateVariants(query=as(variantsVR, "GRanges"), subject=txdb,
+  ## located_variantsGR <- locateVariants(query=as(variantsVR, "GRanges"), subject=txdb,
   ##                                      region=AllVariants(intergenic=IntergenicVariants(0, 0)),
   ##                                      cache=cache)
-  variantsVR_annotated <- variantsVR[located_variantsVR$QUERYID] ## REPLACE variantsVR_annotated by variantsVR ???
-  variantsVR_annotated$LOCATION <- located_variantsVR$LOCATION
-  variantsVR_annotated$LOCSTART <- located_variantsVR$LOCSTART
-  variantsVR_annotated$LOCEND <- located_variantsVR$LOCEND
-  variantsVR_annotated$LOCSTRAND <- strand(located_variantsVR)
-  variantsVR_annotated$QUERYID <- located_variantsVR$QUERYID
-  variantsVR_annotated$TXID <- located_variantsVR$TXID
-  variantsVR_annotated$CDSID <- located_variantsVR$CDSID
-  variantsVR_annotated$GENEID <- located_variantsVR$GENEID
-  rm(located_variantsVR)
+  variantsVR_annotated <- variantsVR[located_variantsGR$QUERYID] ## REPLACE variantsVR_annotated by variantsVR ??
+  variantsVR_annotated$LOCATION <- located_variantsGR$LOCATION
+  variantsVR_annotated$LOCSTART <- located_variantsGR$LOCSTART
+  variantsVR_annotated$LOCEND <- located_variantsGR$LOCEND
+  variantsVR_annotated$LOCSTRAND <- strand(located_variantsGR)
+  variantsVR_annotated$QUERYID <- located_variantsGR$QUERYID
+  variantsVR_annotated$TXID <- located_variantsGR$TXID
+  variantsVR_annotated$CDSID <- located_variantsGR$CDSID
+  variantsVR_annotated$GENEID <- located_variantsGR$GENEID
+  rm(located_variantsGR) ## allow R to free some memory
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
@@ -650,16 +650,10 @@ variantHGVS <- function(variantsVR) {
 
   ## HGVS coding annotations
 
-  maskCoding <- variantsVR$LOCATION == "coding"
-
-  if (any(maskCoding))
-    ## for coding variants we use the 'varAllele' column which is already adjusted for strand
-    refAllele[maskCoding] <- .adjustForStrandSense(variantsVR[maskCoding], ref(variantsVR)[maskCoding])
-
-    ## for non-coding variants we have to adjust for strand both, reference and alternative alleles
-    ## THIS IS PROBABLY REDUNDANT AS THE VRanges CONSTRUCTOR ALREADY ADJUSTS FOR THIS (???)
-  refAllele[!maskCoding] <- .adjustForStrandSense(variantsVR[!maskCoding], ref(variantsVR)[!maskCoding])
+  refAllele <- .adjustForStrandSense(variantsVR, ref(variantsVR))
   altAllele <- as.character(variantsVR$varAllele)
+
+  maskCoding <- variantsVR$LOCATION == "coding"
   altAllele[!maskCoding] <- .adjustForStrandSense(variantsVR[!maskCoding], alt(variantsVR)[!maskCoding])
 
   locStartAllele <- as.integer(start(variantsVR$CDSLOC))
@@ -691,9 +685,12 @@ variantHGVS <- function(variantsVR) {
 
   mask <- variantsVR$LOCATION != "intergenic"
   if (any(mask)) {
-    locStartAllele[mask] <- ifelse(strand(variantsVR)[mask] == "+", as.integer(start(variantsVR)[mask]) - variantsVR$TXSTART[mask] + 1L,
+    stopifnot(!is.null(variantsVR$LOCSTRAND)) ## QC 
+    locStartAllele[mask] <- ifelse(variantsVR$LOCSTRAND[mask] == "+",
+                                   as.integer(start(variantsVR)[mask]) - variantsVR$TXSTART[mask] + 1L,
                                    variantsVR$TXEND[mask] - as.integer(end(variantsVR)[mask]) + 1L)
-    locEndAllele[mask] <- ifelse(strand(variantsVR)[mask] == "+", as.integer(end(variantsVR)[mask]) - variantsVR$TXSTART[mask] + 1L,
+    locEndAllele[mask] <- ifelse(variantsVR$LOCSTRAND[mask] == "+",
+                                 as.integer(end(variantsVR)[mask]) - variantsVR$TXSTART[mask] + 1L,
                                  variantsVR$TXEND[mask] - as.integer(start(variantsVR)[mask]) + 1L)
   }
 
@@ -946,6 +943,8 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
 ## the reference and alternative alleles. it assumes that the input variantsVR is a VRanges object
 .scoreSpliceSiteVariants <- function(variantsVR, spliceSiteMatrices, bsgenome, BPPARAM=bpparam("SerialParam")) {
 
+  stopifnot(!is.null(variantsVR$LOCSTART) & !is.null(variantsVR$LOCEND) & !is.null(variantsVR$LOCSTRAND)) ## QC
+
   ## adapt to sequence style and genome version from the input
   ## BSgenome object, thus assuming positions are based on the same
   ## genome even though might be differently specified (i.e., hg38 vs GRCh38)
@@ -987,9 +986,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
       altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_annotSS), split="", fixed=TRUE))
       altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_annotSS, altAlleleStrandAdjusted)
 
+      stopifnot(all(!is.na(GRanges_annotSS$LOCSTRAND))) ## QC
       GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
                                  ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
-                                 strand=strand(GRanges_annotSS),
+                                 strand=GRanges_annotSS$LOCSTRAND,
                                  POS=start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1)
 
       # retrieve region of the splice site including the reference allele
@@ -1040,9 +1040,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
       altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_annotSS), split="", fixed=TRUE))
       altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_annotSS, altAlleleStrandAdjusted)
 
+      stopifnot(all(!is.na(GRanges_annotSS$LOCSTRAND))) ## QC
       GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
                                  ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
-                                 strand=strand(GRanges_annotSS),
+                                 strand=GRanges_annotSS$LOCSTRAND,
                                  POS=start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1)
 
       # retrieve region of the splice site including the reference allele
@@ -1089,6 +1090,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     synonymousSNVmask <- variantsVR$CONSEQUENCE %in% "synonymous"
 
     GRanges_SY <- variantsVR[synonymousSNVmask]
+    stopifnot(all(!is.na(GRanges_SY$LOCSTRAND))) ## QC
+    GRanges_SY <- GRanges(seqnames=seqnames(GRanges_SY),
+                          ranges=ranges(GRanges_SY),
+                          strand=GRanges_SY$LOCSTRAND)
 
     # retrieve regions around the allele potentially involving cryptic donor sites
     wregion <- width(wmDonorSites)*2-1
@@ -1178,12 +1183,12 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     GRanges_intron_SNV <- variantsVR[intronicSNVmask] ## THIS MASK IS ALSO USED BELOW !!!
 
     ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
-    ## and the column ALT is not adjusted - adapted from VariantAnnotation/R/methods-predictCoding.R
-    nstrand <- as.vector(strand(GRanges_intron_SNV) == "-")
-    altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_intron_SNV), split="", fixed=TRUE))
-    if (any(nstrand))
-      altAlleleStrandAdjusted[nstrand] <- relist(complement(unlist(altAlleleStrandAdjusted[nstrand])),
-                                                 altAlleleStrandAdjusted[nstrand])
+    altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_intron_SNV, alt(GRanges_intron_SNV))
+
+    ## need GRanges to fetch genome sequence through getSeq()
+    GRanges_intron_SNV <- GRanges(seqnames=seqnames(GRanges_intron_SNV),
+                                  ranges=ranges(GRanges_intron_SNV),
+                                  strand=GRanges_intron_SNV$LOCSTRAND)
 
     ## retrieve regions around the allele potentially involving cryptic donor sites
     wregion <- width(wmDonorSites)*2-1
