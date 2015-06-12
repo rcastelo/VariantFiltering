@@ -56,12 +56,15 @@
   variantsGR
 }
 
-## return the 5'->3' strand of sequences
-## stored in DNAStringSet or DNAStringSetList objects 
-## the returned object is of the same class as the input object
-.adjustForStrandSense <- function(variantsGR, alleles){
+## return the 5'->3' strand of 'alleles' according to
+## the 'LOCSTRAND' column in the input 'VRanges' object 'variantsVR'
+## the returned object is of the same class as the input 'alleles' object
+.adjustForStrandSense <- function(variantsVR, alleles){
+  stopifnot(is(variantsVR, "VRanges")) ## QC
+  stopifnot(!is.null(variantsVR$LOCSTRAND)) ## QC
+
   adjustedAlleles <- alleles
-  nstrand <- strand(variantsGR) == "-"
+  nstrand <- variantsVR$LOCSTRAND == "-"
   if (any(nstrand)) {
     if (class(alleles) == "DNAStringSet")
       adjustedAlleles[nstrand] <- reverseComplement(alleles[nstrand])
