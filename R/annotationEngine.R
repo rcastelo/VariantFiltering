@@ -1093,7 +1093,11 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     stopifnot(all(!is.na(GRanges_SY$LOCSTRAND))) ## QC
     GRanges_SY <- GRanges(seqnames=seqnames(GRanges_SY),
                           ranges=ranges(GRanges_SY),
-                          strand=GRanges_SY$LOCSTRAND)
+                          strand=GRanges_SY$LOCSTRAND,
+                          varAllele=GRanges_SY$varAllele)
+
+    ## replaceAt needs a DNAStringSetList
+    GRanges_SY$varAllele <- DNAStringSetList(strsplit(as.character(GRanges_SY$varAllele), split="", fixed=TRUE))
 
     # retrieve regions around the allele potentially involving cryptic donor sites
     wregion <- width(wmDonorSites)*2-1
@@ -1104,7 +1108,7 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     # from the varAllele column (DNAStringSet), which contains the ALT allele but strand adjusted
     GRanges_SY_donor_ALT_strings <- replaceAt(GRanges_SY_donor_strings,
                                               IRanges(width(wmDonorSites), width(wmDonorSites)),
-                                              DNAStringSetList(strsplit(as.character(GRanges_SY_window_donor$varAllele), split="", fixed=TRUE)))
+                                              GRanges_SY_window_donor$varAllele)
   
     # retrieve regions around the allele potentially involving cryptic acceptor sites
     wregion <- width(wmAcceptorSites)*2-1
@@ -1113,7 +1117,7 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
 
     GRanges_SY_acceptor_ALT_strings <- replaceAt(GRanges_SY_acceptor_strings,
                                                  IRanges(width(wmAcceptorSites), width(wmAcceptorSites)),
-                                                 DNAStringSetList(strsplit(as.character(GRanges_SY_window_acceptor$varAllele), split="", fixed=TRUE)))
+                                                 GRanges_SY_window_acceptor$varAllele)
   
     # score synonymous ALT alleles for donor splice sites
     GRanges_SY_donor_ALT_scores <- bpvec(X=GRanges_SY_donor_ALT_strings,
@@ -1183,7 +1187,9 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     GRanges_intron_SNV <- variantsVR[intronicSNVmask] ## THIS MASK IS ALSO USED BELOW !!!
 
     ## adjust alternate allele for strand since the adjusted varAllele only exists for coding variants
-    altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_intron_SNV, alt(GRanges_intron_SNV))
+    ## we need a DNAStringSetList to use replaceAt() below
+    altAlleleStrandAdjusted <- DNAStringSetList(strsplit(alt(GRanges_intron_SNV), split="", fixed=TRUE))
+    altAlleleStrandAdjusted <- .adjustForStrandSense(GRanges_intron_SNV, altAlleleStrandAdjusted)
 
     ## need GRanges to fetch genome sequence through getSeq()
     GRanges_intron_SNV <- GRanges(seqnames=seqnames(GRanges_intron_SNV),
