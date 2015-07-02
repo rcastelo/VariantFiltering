@@ -272,14 +272,14 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
 \section{Filters and cutoffs}{
 
   The variants contained in a \code{VariantFilteringResults} object can be filtered using
-  the \code{\link[IRanges]{FilterRules}} mechanism, defined in the \code{IRanges} package,
+  the \code{\link[S4Vectors]{FilterRules}} mechanism, defined in the \code{S4Vectors} package,
   by using the functions \code{filters()} and \code{cutoffs()} described below. There are
   additional functions, also described in this section, to facilitate this task on the set
   of core annotations provided by \code{VariantFiltering}.
 
   \describe{
     \item{}{
-      \code{filters(x)}: get the current \code{\link[IRanges]{FilterRules}} object that defines
+      \code{filters(x)}: get the current \code{\link[S4Vectors]{FilterRules}} object that defines
       the available set of filter criteria that one can use to filter the variants contained in
       \code{x}. This can also be used as a replacement function \code{filters(x)<-} to update
       this set of filters. The actual filtering is done when calling the function
