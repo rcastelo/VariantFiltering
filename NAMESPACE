@@ -96,9 +96,7 @@ importMethodsFrom(IRanges, elementLengths,
                            values,
                            findOverlaps,
                            as.vector,
-                           coverage,
-                           active,
-                           "active<-")
+                           coverage)
 importMethodsFrom(GenomicFeatures, exonsBy,
                                    mapToTranscripts)
 importMethodsFrom(GenomicRanges, resize,
@@ -147,8 +145,7 @@ importFrom(IRanges, IRanges,
                     IRangesList,
                     RleList,
                     IntegerList,
-                    CharacterList,
-                    FilterRules)
+                    CharacterList)
 importFrom(Biostrings, DNAStringSet,
                        AAStringSet, 
                        DNAStringSetList,
