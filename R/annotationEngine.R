@@ -990,7 +990,9 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
       GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
                                  ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
                                  strand=GRanges_annotSS$LOCSTRAND,
-                                 POS=start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1)
+                                 POS=ifelse(GRanges_annotSS$LOCSTRAND == "+",
+                                            start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1,
+                                            GRanges_annotSS$LOCEND - start(GRanges_annotSS) +  1))
 
       # retrieve region of the splice site including the reference allele
       GRanges_annotSS_REF_strings <- getSeq(bsgenome, GRanges_annotSS)
@@ -1044,7 +1046,9 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
       GRanges_annotSS <- GRanges(seqnames=seqnames(GRanges_annotSS),
                                  ranges=IRanges(GRanges_annotSS$LOCSTART, GRanges_annotSS$LOCEND),
                                  strand=GRanges_annotSS$LOCSTRAND,
-                                 POS=start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1)
+                                 POS=ifelse(GRanges_annotSS$LOCSTRAND == "+",
+                                            start(GRanges_annotSS) - GRanges_annotSS$LOCSTART + 1,
+                                            GRanges_annotSS$LOCEND - start(GRanges_annotSS) +  1))
 
       # retrieve region of the splice site including the reference allele
       GRanges_annotSS_REF_strings <- getSeq(bsgenome, GRanges_annotSS)
