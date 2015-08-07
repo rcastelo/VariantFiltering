@@ -10,7 +10,7 @@ setMethod("show", signature(object="CompressedVRangesList"),
             cat(classNameForDisplay(object), " of length ", lo, "\n",
                 sep = "")
             if (!is.null(names(object)))
-              cat(BiocGenerics:::labeledLine("names", names(object)))
+              cat(S4Vectors:::labeledLine("names", names(object)))
           })
 
 setMethod("show", signature(object="VariantFilteringResults"),
