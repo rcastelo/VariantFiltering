@@ -1,3 +1,13 @@
+[![Bioconductor Time](http://bioconductor.org/shields/years-in-bioc/VariantFiltering.svg)](http://bioconductor.org/packages/release/bioc/html/VariantFiltering.html "Bioconductor status")
+
+[![Bioconductor Availability](http://bioconductor.org/shields/availability/release/VariantFiltering.svg)](http://bioconductor.org/packages/release/bioc/html/VariantFiltering.html#archives "Platform availability") 
+[![Bioconductor Downloads](http://bioconductor.org/shields/downloads/VariantFiltering.svg)](http://bioconductor.org/packages/stats/bioc/VariantFiltering.html "Percentile downloads")
+[![Bioconductor Commits](http://bioconductor.org/shields/commits/bioc/VariantFiltering.svg)](http://bioconductor.org/packages/release/bioc/html/VariantFiltering.html#svn_source "svn commits")
+[![Support posts](http://bioconductor.org/shields/posts/VariantFiltering.svg)](https://support.bioconductor.org/t/VariantFiltering/ "Bioconductor support posts")
+
+[![Bioconductor Release Build](http://bioconductor.org/shields/build/release/bioc/VariantFiltering.svg)](http://bioconductor.org/checkResults/release/bioc-LATEST/VariantFiltering/ "Bioconductor release build")
+[![Bioconductor Devel Build](http://bioconductor.org/shields/build/devel/bioc/VariantFiltering.svg)](http://bioconductor.org/checkResults/devel/bioc-LATEST/VariantFiltering/ "Bioconductor devel build")
+
 # VariantFiltering: Filtering of coding and non-coding genetic variants
 
 ## Installation
@@ -13,3 +23,20 @@ library(BiocInstaller)
 useDevel()
 biocLite("VariantFiltering")
 ```
+
+Alternatively, you can install it from GitHub using
+the [devtools](https://github.com/hadley/devtools "devtools") package.
+
+```r
+install.packages("devtools")
+library(devtools)
+install_github("VariantFiltering", "rcastelo")
+```
+
+## Questions, bug reports and issues
+
+For questions and bug reports regarding the __release__ version of **VariantFiltering**
+please use the [Bioconductor support site][http://support.bioconductor.org "Bioconductor support site"].
+For bug reports and issues regarding this __development__ version of **VariantFiltering**
+please use the GitHub issues link at the top-right of this page
+([https://github.com/rcastelo/VariantFiltering/issues](https://github.com/rcastelo/VariantFiltering/issues)).
