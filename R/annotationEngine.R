@@ -1004,12 +1004,16 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
                                                altAlleleStrandAdjusted)
 
       # score REF alleles for donor splice sites
-      GRanges_annotSS_REF_scores <- bpvec(X=GRanges_annotSS_REF_strings,
-                                          FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+      GRanges_annotSS_REF_scores <- numeric(0)
+      if (length(GRanges_annotSS_REF_strings) > 0) ## bpvec() returns an empty list() when input is empty
+        GRanges_annotSS_REF_scores <- bpvec(X=GRanges_annotSS_REF_strings,
+                                            FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
 
       # score ALT alleles for donor splice sites
-      GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
-                                          FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+      GRanges_annotSS_ALT_scores <- numeric(0)
+      if (length(GRanges_annotSS_ALT_strings) > 0) ## bpvec() returns an empty list() when input is empty
+        GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
+                                            FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
 
       # store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
       relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
@@ -1060,12 +1064,16 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
                                                altAlleleStrandAdjusted)
 
       # score REF alleles for donor splice sites
-      GRanges_annotSS_REF_scores <- bpvec(X=GRanges_annotSS_REF_strings,
-                                          FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+      GRanges_annotSS_REF_scores <- numeric(0)
+      if (length(GRanges_annotSS_REF_strings) > 0) ## bpvec() returns an empty list() when input is empty
+        GRanges_annotSS_REF_scores <- bpvec(X=GRanges_annotSS_REF_strings,
+                                            FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
 
       # score ALT alleles for donor splice sites
-      GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
-                                          FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+      GRanges_annotSS_ALT_scores <- numeric(0)
+      if (length(GRanges_annotSS_ALT_strings) > 0) ## bpvec() returns an empty list() when input is empty
+        GRanges_annotSS_ALT_scores <- bpvec(X=GRanges_annotSS_ALT_strings,
+                                            FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
 
       # store the position of the allele respect to the position of the dinucleotide AG whose nucleotides occur at pos 1 and 2
       relposacceptor <- seq(-conservedPositions(wmAcceptorSites)[1]+1, -1, by=1)
@@ -1124,8 +1132,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
                                                  GRanges_SY_window_acceptor$varAllele)
   
     # score synonymous ALT alleles for donor splice sites
-    GRanges_SY_donor_ALT_scores <- bpvec(X=GRanges_SY_donor_ALT_strings,
-                                         FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    GRanges_SY_donor_ALT_scores <- numeric(0)
+    if (length(GRanges_SY_donor_ALT_strings) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_SY_donor_ALT_scores <- bpvec(X=GRanges_SY_donor_ALT_strings,
+                                           FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
     GRanges_SY_donor_ALT_scores <- matrix(GRanges_SY_donor_ALT_scores, ncol=width(wmDonorSites), byrow=TRUE)
     GRanges_SY_donor_ALT_scores <- t(apply(GRanges_SY_donor_ALT_scores, 1, function(x) {
                                         maxsco <- maxpos <- NA_real_
@@ -1137,8 +1147,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
                                       }))
 
     # score synonymous ALT alleles for acceptor splice sites
-    GRanges_SY_acceptor_ALT_scores <- bpvec(X=GRanges_SY_acceptor_ALT_strings,
-                                            FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    GRanges_SY_acceptor_ALT_scores <- numeric(0)
+    if (length(GRanges_SY_acceptor_ALT_strings) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_SY_acceptor_ALT_scores <- bpvec(X=GRanges_SY_acceptor_ALT_strings,
+                                              FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
     GRanges_SY_acceptor_ALT_scores <- matrix(GRanges_SY_acceptor_ALT_scores, ncol=width(wmAcceptorSites), byrow=TRUE)
     GRanges_SY_acceptor_ALT_scores <- t(apply(GRanges_SY_acceptor_ALT_scores, 1, function(x) {
                                         maxsco <- maxpos <- NA_real_
@@ -1153,14 +1165,18 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     posHighestSitesALT <- GRanges_SY_donor_ALT_scores[!is.na(GRanges_SY_donor_ALT_scores[, 2]), 2]
     GRanges_SY_donor_strings_at_ALT <- subseq(GRanges_SY_donor_strings[!is.na(GRanges_SY_donor_ALT_scores[, 2])],
                                                 start=posHighestSitesALT, width=width(wmDonorSites))
-    GRanges_SY_donor_REF_scores <- bpvec(X=GRanges_SY_donor_strings_at_ALT,
-                                         FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    GRanges_SY_donor_REF_scores <- numeric(0)
+    if (length(GRanges_SY_donor_strings_at_ALT) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_SY_donor_REF_scores <- bpvec(X=GRanges_SY_donor_strings_at_ALT,
+                                           FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
   
     posHighestSitesALT <- GRanges_SY_acceptor_ALT_scores[!is.na(GRanges_SY_acceptor_ALT_scores[, 2]), 2]
     GRanges_SY_acceptor_strings_at_ALT <- subseq(GRanges_SY_acceptor_strings[!is.na(GRanges_SY_acceptor_ALT_scores[, 2])],
                                                    start=posHighestSitesALT, width=width(wmAcceptorSites))
-    GRanges_SY_acceptor_REF_scores <- bpvec(X=GRanges_SY_acceptor_strings_at_ALT,
-                                            FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    GRanges_SY_acceptor_REF_scores <- numeric(0)
+    if (length(GRanges_SY_acceptor_strings_at_ALT) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_SY_acceptor_REF_scores <- bpvec(X=GRanges_SY_acceptor_strings_at_ALT,
+                                              FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
 
     # store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
     relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
@@ -1217,8 +1233,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
                                                          altAlleleStrandAdjusted)
 
     ## score intronic ALT alleles for donor splice sites
-    GRanges_intron_SNV_donor_ALT_scores <- bpvec(X=GRanges_intron_SNV_donor_ALT_strings,
-                                                 FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    GRanges_intron_SNV_donor_ALT_scores <- numeric(0)
+    if (length(GRanges_intron_SNV_donor_ALT_strings) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_intron_SNV_donor_ALT_scores <- bpvec(X=GRanges_intron_SNV_donor_ALT_strings,
+                                                   FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
     GRanges_intron_SNV_donor_ALT_scores <- matrix(GRanges_intron_SNV_donor_ALT_scores, ncol=width(wmDonorSites), byrow=TRUE)
     GRanges_intron_SNV_donor_ALT_scores <- t(apply(GRanges_intron_SNV_donor_ALT_scores, 1, function(x) {
                                                      maxsco <- maxpos <- NA_real_
@@ -1230,8 +1248,10 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
                                                    }))
 
     ## score intronic ALT alleles for acceptor splice sites
-    GRanges_intron_SNV_acceptor_ALT_scores <- bpvec(X=GRanges_intron_SNV_acceptor_ALT_strings,
-                                                    FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    GRanges_intron_SNV_acceptor_ALT_scores <- numeric(0)
+    if (length(GRanges_intron_SNV_acceptor_ALT_strings) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_intron_SNV_acceptor_ALT_scores <- bpvec(X=GRanges_intron_SNV_acceptor_ALT_strings,
+                                                      FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
     GRanges_intron_SNV_acceptor_ALT_scores <- matrix(GRanges_intron_SNV_acceptor_ALT_scores, ncol=width(wmAcceptorSites), byrow=TRUE)
     GRanges_intron_SNV_acceptor_ALT_scores <- t(apply(GRanges_intron_SNV_acceptor_ALT_scores, 1, function(x) {
                                                      maxsco <- maxpos <- NA_real_
@@ -1246,14 +1266,18 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
     posHighestSitesALT <- GRanges_intron_SNV_donor_ALT_scores[!is.na(GRanges_intron_SNV_donor_ALT_scores[, 2]), 2]
     GRanges_intron_SNV_donor_strings_at_ALT <- subseq(GRanges_intron_SNV_donor_strings[!is.na(GRanges_intron_SNV_donor_ALT_scores[, 2])],
                                                         start=posHighestSitesALT, width=width(wmDonorSites))
-    GRanges_intron_SNV_donor_REF_scores <- bpvec(X=GRanges_intron_SNV_donor_strings_at_ALT,
-                                                 FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
+    GRanges_intron_SNV_donor_REF_scores <- numeric(0)
+    if (length(GRanges_intron_SNV_donor_strings_at_ALT) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_intron_SNV_donor_REF_scores <- bpvec(X=GRanges_intron_SNV_donor_strings_at_ALT,
+                                                   FUN=wmScore, object=wmDonorSites, BPPARAM=BPPARAM)
 
     posHighestSitesALT <- GRanges_intron_SNV_acceptor_ALT_scores[!is.na(GRanges_intron_SNV_acceptor_ALT_scores[, 2]), 2]
     GRanges_intron_SNV_acceptor_strings_at_ALT <- subseq(GRanges_intron_SNV_acceptor_strings[!is.na(GRanges_intron_SNV_acceptor_ALT_scores[, 2])],
                                                            start=posHighestSitesALT, width=width(wmAcceptorSites))
-    GRanges_intron_SNV_acceptor_REF_scores <- bpvec(X=GRanges_intron_SNV_acceptor_strings_at_ALT,
-                                                    FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
+    GRanges_intron_SNV_acceptor_REF_scores <- numeric(0)
+    if (length(GRanges_intron_SNV_acceptor_strings_at_ALT) > 0) ## bpvec() returns an empty list() when input is empty
+      GRanges_intron_SNV_acceptor_REF_scores <- bpvec(X=GRanges_intron_SNV_acceptor_strings_at_ALT,
+                                                      FUN=wmScore, object=wmAcceptorSites, BPPARAM=BPPARAM)
 
     ## store the position of the allele respect to the position of the dinucleotide GT whose nucleotides occur at pos 1 and 2
     relposdonor <- seq(-conservedPositions(wmDonorSites)[1]+1, -1, by=1)
