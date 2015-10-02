@@ -67,7 +67,7 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
 setMethod("scores", c("PhastConsDb", "GRanges"),
           function(object, gpos, summaryFun="mean", coercionFun="as.numeric", caching=TRUE) {
             if (seqlevelsStyle(gpos) != seqlevelsStyle(object))
-              seqleveslStyle(gpos) <- seqlevelsStyle(object)
+              seqlevelsStyle(gpos) <- seqlevelsStyle(object)
 
             snames <- unique(as.character(runValue(seqnames(gpos))))
             if (any(!snames %in% seqnames(object)))
