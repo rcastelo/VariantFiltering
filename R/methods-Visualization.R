@@ -29,7 +29,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
                 stop(sprintf("%s does not form part of the samples in the input object.", sampleName))
 
               if (!sampleName %in% rownames(bamSamples(bamFiles(x))))
-                stop(sprintF("There is no BAM file associated to the sample %s. Use 'bamFiles()' to add it.", sampleName))
+                stop(sprintf("There is no BAM file associated to the sample %s. Use 'bamFiles()' to add it.", sampleName))
 
               whbam <- which(rownames(bamSamples(bamFiles(x))) %in% sampleName)
               hdr <- scanBamHeader(bamPaths(bamFiles(x))[whbam])
