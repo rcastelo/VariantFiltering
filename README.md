@@ -36,7 +36,7 @@ install_github("VariantFiltering", "rcastelo")
 ## Questions, bug reports and issues
 
 For questions and bug reports regarding the __release__ version of **VariantFiltering**
-please use the [Bioconductor support site][http://support.bioconductor.org "Bioconductor support site"].
+please use the [Bioconductor support site](http://support.bioconductor.org "Bioconductor support site").
 For bug reports and issues regarding this __development__ version of **VariantFiltering**
 please use the GitHub issues link at the top-right of this page
 ([https://github.com/rcastelo/VariantFiltering/issues](https://github.com/rcastelo/VariantFiltering/issues)).
