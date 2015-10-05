@@ -179,8 +179,8 @@ decodeRAW2AF <- function(x) {
   z <- x[!maskNAs]
 
   maskLevel1 <- z <= 100
-  maskLevel2 <- z > 100 & z < 110 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
-  maskLevel3 <- z > 110 & z < 120 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
+  maskLevel2 <- z > 100 & z <= 110 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
+  maskLevel3 <- z > 110 & z <= 120 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
   maskLevel4 <- z > 120 & z < 130
   maskLevel5 <- z >= 130
 
