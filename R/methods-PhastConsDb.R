@@ -39,9 +39,13 @@ setMethod("seqlengths", "PhastConsDb", function(x) seqlengths(referenceGenome(x)
 
 setMethod("seqlevelsStyle", "PhastConsDb", function(x) seqlevelsStyle(referenceGenome(x)))
 
-## this can be improved using RleViews as discussed in
+## this has been improved using RleViews as discussed in
 ## https://stat.ethz.ch/pipermail/bioconductor/2013-December/056409.html
 rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric") {
+  numericmean <- TRUE
+  if (summaryFun != "mean" || coercionFun != "as.numeric")
+    numericmean <- FALSE
+
   summaryFun <- match.fun(summaryFun)
   coercionFun <- match.fun(coercionFun)
   seqlevels(gr) <- names(rlelst)
@@ -50,15 +54,30 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
   startbyseq <- split(start(gr), seqnames(gr), drop=TRUE)
   ans[ord] <- unlist(lapply(rlelst[startbyseq], coercionFun), use.names=FALSE)
   whregions <- which(width(gr) > 1)
-  if (length(whregions) > 0) { ## regions comprising more than one position are summarized by summaryFun()
-    startbyseq <- split(start(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
-    widthbyseq <- split(width(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
-    tmpans <- unlist(mapply(function(r, p, w)
-                                      sapply(seq_along(p),
-                                             function(i, r, p, w) summaryFun(coercionFun(r[p[i]:(p[i]+w[i]-1)])),
-                                             r, p, w),
-                                   rlelst[names(startbyseq)], startbyseq, widthbyseq, SIMPLIFY=FALSE),
-                            use.names=FALSE)
+  if (length(whregions) > 0) { ## regions comprising more than one position need to be summarized
+    tmpans <- NA_real_
+    if (numericmean) {
+      rngbyseq <- split(gr[whregions], seqnames(gr)[whregions])
+      tmpans <- lapply(names(rngbyseq), function(sname) {
+                                          coercedrle <- rlelst[[sname]]
+                                          ## this coercion can take up to one second for chromosome 1
+                                          ## should consider storing coerced version if memory consumption is not an issue
+                                          runValue(coercedrle) <- as.numeric(runValue(coercedrle))
+                                          viewMeans(Views(coercedrle,
+                                                          start=start(rngbyseq[[sname]]),
+                                                          end=end(rngbyseq[[sname]])))
+                                        })
+      tmpans <- unsplit(tmpans, as.factor(seqnames(gr)[whregions]))
+    } else { ## this allows for other summary and coercion functions but it runs about 10-fold slower
+      startbyseq <- split(start(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
+      widthbyseq <- split(width(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
+      tmpans <- unlist(mapply(function(r, p, w)
+                                        sapply(seq_along(p),
+                                               function(i, r, p, w) summaryFun(coercionFun(r[p[i]:(p[i]+w[i]-1)])),
+                                               r, p, w),
+                                     rlelst[names(startbyseq)], startbyseq, widthbyseq, SIMPLIFY=FALSE),
+                              use.names=FALSE)
+    }
     ans[ord[whregions]] <- tmpans
   }
   ans
