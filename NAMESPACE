@@ -98,7 +98,9 @@ importMethodsFrom(IRanges, elementLengths,
                            values,
                            findOverlaps,
                            as.vector,
-                           coverage)
+                           coverage,
+                           Views,
+                           viewMeans)
 importMethodsFrom(GenomicFeatures, exonsBy,
                                    mapToTranscripts)
 importMethodsFrom(GenomicRanges, resize,
