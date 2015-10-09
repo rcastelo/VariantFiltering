@@ -110,16 +110,25 @@ annotateSO <- function(variantsVR, gSO) {
     annotatedVARIDX <- c(annotatedVARIDX, varidx)
   }
 
-  ## SO:0001574 splice_acceptor_variant
   ## SO:0001575 splice_donor_variant
-  ## SO:0001629 splice_site_variant
-  mask <- variantsVR$LOCATION %in% "spliceSite"
+  mask <- variantsVR$LOCATION %in% "fiveSpliceSite"
   if (any(mask)) {
     vcfidx <- unique(variantsVR$VCFIDX[mask])
-    nodeData(gSO, "SO:0001629", "vcfIdx") <- list("SO:0001629"=vcfidx)
+    nodeData(gSO, "SO:0001575", "vcfIdx") <- list("SO:0001575"=vcfidx)
     annotatedVCFIDX <- c(annotatedVCFIDX, vcfidx)
     varidx <- VRangesIdx[mask]
-    nodeData(gSO, "SO:0001629", "varIdx") <- list("SO:0001629"=varidx)
+    nodeData(gSO, "SO:0001575", "varIdx") <- list("SO:0001575"=varidx)
+    annotatedVARIDX <- c(annotatedVARIDX, varidx)
+  }
+
+  ## SO:0001574 splice_acceptor_variant
+  mask <- variantsVR$LOCATION %in% "threeSpliceSite"
+  if (any(mask)) {
+    vcfidx <- unique(variantsVR$VCFIDX[mask])
+    nodeData(gSO, "SO:0001574", "vcfIdx") <- list("SO:0001574"=vcfidx)
+    annotatedVCFIDX <- c(annotatedVCFIDX, vcfidx)
+    varidx <- VRangesIdx[mask]
+    nodeData(gSO, "SO:0001574", "varIdx") <- list("SO:0001574"=varidx)
     annotatedVARIDX <- c(annotatedVARIDX, varidx)
   }
 
