@@ -1,3 +1,18 @@
+CHANGES IN VERSION 1.6
+----------------------
+
+USER VISIBLE CHANGES
+
+    o Update on the scores() method for PhastConsDb objects that enables a 10-fold faster retrieval of mean phastCons scores over genomic intervals.
+
+    o Added two new annotated regions coded as fiveSpliceSite and threeSpliceSite and the scoring of their binding affyinity, if scoring matrices are provided.
+
+BUG FIXES
+
+    o Fix on the scores() method for PhastConsDb objects, that was affecting multiple-nucleotide ranges from an input GRanges object with unordered sequence names.
+
+    o Fix on snpid2maf() method when decoding MafDb variants with AF values whose significant digits start with 95.
+
 CHANGES IN VERSION 1.4
 ----------------------
 
