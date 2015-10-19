@@ -6,15 +6,21 @@
 De Novo variants analysis
 }
 \description{
-This function has been created in order to search for \emph{de novo} variants in one individual, discarding the ones shared with his/her parents.
+This function has been created in order to search and annotate \emph{de novo} variants in one individual, discarding the ones shared with his/her parents.
 }
 \usage{
 \S4method{deNovo}{VariantFilteringParam}(param,
+                                         svparam=ScanVcfParam(),
                                          BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{
   A \code{\link{VariantFilteringParam}} object built from a multisample VCF file with at least one affected individual and zero or more unaffected ones, and from a PED file specyfing the family relationships among individuals as well as their gender and phenotype status (affected or unaffected).
+  }
+  \item{svparam}{
+  An instance of a \code{ScanVcfParam} object to enable analyzing a subset of variants and samples. This object
+  is passed internally to a call to the \code{\link[VariantAnnotation]{readVcf}()} function in the
+  \code{VariantAnnotation} package, see its help page for a complete description of this functionality.
   }
   \item{BPPARAM}{
   An object of class \code{\link[BiocParallel]{BiocParallelParam}} specifiying parameters related to
