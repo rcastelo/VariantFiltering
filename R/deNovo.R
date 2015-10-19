@@ -1,5 +1,5 @@
 setMethod("deNovo", signature(param="VariantFilteringParam"),
-          function(param, BPPARAM=bpparam("SerialParam")) {
+          function(param, svparam=ScanVcfParam(), BPPARAM=bpparam("SerialParam")) {
 
   ## store call for reproducing it later
   callobj <- match.call()
@@ -50,7 +50,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
-  while (nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
+  while (nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]], param=svparam))) {
 
     ## insert an index for each variant in the VCF file
     info(header(vcf)) <- rbind(info(header(vcf)),
