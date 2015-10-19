@@ -633,9 +633,12 @@ setMethod("filters", signature(x="VariantFilteringResults"),
 setMethod("allVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample") {
             vars <- x@variants
-            if (groupBy[1] %in% "sample")
-              vars <- split(x@variants, sampleNames(x@variants))
-            else if (groupBy[1] %in% colnames(mcols(x@variants)))
+            if (groupBy[1] %in% "sample") {
+              f <- sampleNames(x@variants)
+              if (all(is.na(f)))
+                f <- rep("nosample")
+              vars <- split(x@variants, f)
+            } else if (groupBy[1] %in% colnames(mcols(x@variants)))
               vars <- split(x@variants, mcols(x@variants)[, groupBy])
 
             vars
@@ -650,7 +653,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             vars <- varsxsam[[1]]
             selcols <- names(active(filters(x)))[active(filters(x))] ## default VCF filters may or may not show up
             rowsMask <- apply(softFilterMatrix(vars)[, selcols, drop=FALSE], 1, all, na.rm=TRUE)
-            if (!all(param(x)$sampleNames %in% samples(x))) { ## not all samples are active
+            if (!all(param(x)$sampleNames %in% samples(x)) && all(samples(x) %in% names(varsxsam))) { ## not all samples are active
               varsxsam <- varsxsam[samples(x)]
 
               ## discard variants that are not present in active samples

@@ -11,11 +11,17 @@ variants presented by a group of unrelated individuals
 }
 \usage{
 \S4method{unrelatedIndividuals}{VariantFilteringParam}(param,
+                                                       svparam=ScanVcfParam(),
                                                        BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{
   A \code{\link{VariantFilteringParam}} object built from a multisample VCF file.
+  }
+  \item{svparam}{
+  An instance of a \code{ScanVcfParam} object to enable analyzing a subset of variants and samples. This object
+  is passed internally to a call to the \code{\link[VariantAnnotation]{readVcf}()} function in the
+  \code{VariantAnnotation} package, see its help page for a complete description of this functionality.
   }
   \item{BPPARAM}{
   An object of class \code{\link[BiocParallel]{BiocParallelParam}} specifiying parameters related to

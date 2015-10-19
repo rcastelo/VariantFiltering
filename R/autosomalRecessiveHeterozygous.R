@@ -1,6 +1,6 @@
 
 setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringParam"),
-          function(param, BPPARAM=bpparam("SerialParam")) {
+          function(param, svparam=ScanVcfParam(), BPPARAM=bpparam("SerialParam")) {
 
   ## store call for reproducing it later
   callobj <- match.call()
@@ -66,7 +66,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   annotated_variants <- VRanges()
   open(vcfFiles[[1]])
   n.var <- 0
-  while(nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]]))) {
+  while(nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]], param=svparam))) {
 
     ## insert an index for each variant in the VCF file, and indicator
     ## values for heterozygous variants in affected and one of the parents only

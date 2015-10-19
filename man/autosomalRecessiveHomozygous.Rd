@@ -10,11 +10,17 @@ This function works analyzing the variants of the unaffected individuals storing
 }
 \usage{
 \S4method{autosomalRecessiveHomozygous}{VariantFilteringParam}(param,
+                                                               svparam=ScanVcfParam(),
                                                                BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
   \item{param}{
   A \code{\link{VariantFilteringParam}} object built from a multisample VCF file with at least one affected individual and zero or more unaffected ones, and from a PED file specyfing the family relationships among individuals as well as their gender and phenotype status (affected or unaffected).
+  }
+  \item{svparam}{
+  An instance of a \code{ScanVcfParam} object to enable analyzing a subset of variants and samples. This object
+  is passed internally to a call to the \code{\link[VariantAnnotation]{readVcf}()} function in the
+  \code{VariantAnnotation} package, see its help page for a complete description of this functionality.
   }
   \item{BPPARAM}{
   An VariantFilteringParam object containing VCF file(s). From 1 to 5 independent files for affected individuals and 0 to 5 more for unaffected ones (up to 10 individuals). If the VCF is a multi-sample, it can contain the same amount of individuals divided likewise.
