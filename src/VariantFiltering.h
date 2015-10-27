@@ -18,6 +18,9 @@ scoss_width_wm(SEXP wmR);
 SEXP
 scoss_conserved_positions_wm(SEXP wmR);
 
+SEXP
+scoss_name_wm(SEXP wmR);
+
 void
 scoss_show_wm(SEXP wmR);
 

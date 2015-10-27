@@ -74,3 +74,4 @@ setGeneric("unrelatedIndividuals", function(param, ...) standardGeneric("unrelat
 setGeneric("annotateVariants", function(annObj, ...) standardGeneric("annotateVariants"))
 setGeneric("wmScore", function(object, dnaseqs, ...) standardGeneric("wmScore"))
 setGeneric("conservedPositions", function(x, ...) standardGeneric("conservedPositions"))
+setGeneric("wmName", function(x, ...) standardGeneric("wmName"))
