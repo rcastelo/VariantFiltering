@@ -10,6 +10,7 @@ static R_CallMethodDef callMethods[] = {
   {"scoss_width_wm", (DL_FUNC) &scoss_width_wm, 1},
   {"scoss_conserved_positions_wm", (DL_FUNC) &scoss_conserved_positions_wm, 1},
   {"scoss_show_wm", (DL_FUNC) &scoss_show_wm, 1},
+  {"scoss_name_wm", (DL_FUNC) &scoss_name_wm, 1},
   {NULL, NULL, 0}
 };
 

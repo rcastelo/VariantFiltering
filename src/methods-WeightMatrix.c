@@ -2,7 +2,7 @@
  *        C-methods for the WeightMatrix class      *
  *                Author: Robert Castelo            *
  *                robert.castelo@upf.edu            *
- *        Copyright (c) 2013, Robert Castelo        *
+ *        Copyright (c) 2013-2015, Robert Castelo   *
  *      Artistic License 2.0. See following URL     *
  *  http://www.r-project.org/Licenses/Artistic-2.0  *
  ****************************************************/
@@ -14,7 +14,7 @@
 /* constants */
  
 #define MAXVARS 50              /* maximum number of variables */
-#define MAXVALS 10              /* maximum size of the domain of a variable */
+#define MAXVALS 25              /* maximum size of the domain of a variable */
 #define MAXWIDZ 256             /* maximum width of a value of a domain */
 #define MAXSTAK MAXVARS*MAXVARS*MAXVALS /* maximum size of the stack used to explore the prefix tree */
 
@@ -30,6 +30,7 @@ typedef struct node {
 } Tree;
 
 typedef struct {
+  char name[MAXWIDZ];
   int  nvars;
   int  nvals[MAXVARS];
   char vars[MAXVARS][MAXWIDZ];
@@ -46,7 +47,10 @@ typedef struct {
 
 int wm_ivar(WeightMatrix*, char*);
 int wm_ival(WeightMatrix*, int, char*);
-Rboolean read_wm(FILE*, WeightMatrix* wm, char* errormsg);
+Rboolean is_dwm_format(char*);
+Rboolean is_meme_format(char*);
+Rboolean read_dwm(char*, WeightMatrix* wm, char* errormsg);
+Rboolean read_meme(char*, WeightMatrix* wm, char* errormsg);
 void show_wm(WeightMatrix*);
 static void destroy_wm(SEXP);
 double wm_score(WeightMatrix*, const char*);
@@ -56,26 +60,27 @@ double wm_score(WeightMatrix*, const char*);
  * by Martin Morgan here http://stackoverflow.com/questions/7032617/storing-c-objects-in-r
 */
 
-/* entry point to read_wm */
+/* entry point to read_dwm */
 SEXP
 scoss_read_wm(SEXP fnameR) {
-  const char* fname = CHAR(STRING_ELT(fnameR, 0));
+  char* fname = (char *) CHAR(STRING_ELT(fnameR, 0));
   SEXP wmR;
-  FILE* fdwm;
   WeightMatrix* wm = Calloc(1, WeightMatrix);
   char errormsg[4096];
   Rboolean errorflag;
 
-  if (!(fdwm=fopen(fname, "rt"))) {
-    error("impossible to open %s\n", fname);
-  }
-
   PROTECT(wmR = R_MakeExternalPtr(wm, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(wmR, destroy_wm, TRUE);
-  errorflag = read_wm(fdwm, (WeightMatrix *) R_ExternalPtrAddr(wmR), errormsg);
-  UNPROTECT(1); /* wmR */
+  if (is_dwm_format(fname))
+    errorflag = read_dwm(fname, (WeightMatrix *) R_ExternalPtrAddr(wmR), errormsg);
+  else if (is_meme_format(fname))
+    errorflag = read_meme(fname, (WeightMatrix *) R_ExternalPtrAddr(wmR), errormsg);
+  else {
+    errorflag = TRUE;
+    sprintf(errormsg, "weight matrix file %s should be either in DWM or MEME format.\n", fname);
+  }
 
-  fclose(fdwm);
+  UNPROTECT(1); /* wmR */
 
   if (errorflag) {
     destroy_wm(wmR);
@@ -199,29 +204,153 @@ scoss_conserved_positions_wm(SEXP wmR) {
     if (wm->nvals[i] == 1)
       INTEGER(cpR)[j++] = i+1;
 
-  UNPROTECT(1); /* wR */
+  UNPROTECT(1); /* cpR */
 
   return cpR;
 }
 
+/* entry point to wm_name_wm */
+SEXP
+scoss_name_wm(SEXP wmR) {
+  WeightMatrix* wm = (WeightMatrix *) R_ExternalPtrAddr(wmR);
+  SEXP nameR;
+
+  PROTECT(nameR = allocVector(STRSXP, 1));
+  SET_STRING_ELT(nameR, 0, mkChar(wm->name));
+  UNPROTECT(1); /* nameR */
+
+  return nameR;
+}
+
+
+
 /*
-  FUNCTION: read_wm
-  PURPOSE: read a weight matrix from a file and store it into the corresponding data structure
-  PARAMETERS: fd - file descriptor of the file containing the weight matrix
+  FUNCTION: is_dwm_format
+  PURPOSE: check whether a give text file is in dependent-weights matrix (DWM) format
+           currently it only checks that there is some line starting with the keyword 'DWM'
+  PARAMETERS: filename - file name
+  RETURN: TRUE if the text file is in DWM format; FALSE otherwise
+*/
+
+Rboolean
+is_dwm_format(char* fname) {
+  FILE* fd;
+  Rboolean dwmf=FALSE;
+  Rboolean deflineread=FALSE;
+
+  if (!(fd=fopen(fname, "rt"))) {
+    error("impossible to open %s\n", fname);
+  }
+
+  while (!feof(fd) && !dwmf) {
+    char buf[4096];
+
+    if (fgets(buf,4096,fd)) {
+      char  token[256];
+      char* p = buf;
+      int   n;
+      int   ntokens;
+
+      ntokens = sscanf(p," %[a-zA-Z0-9_]%n",token,&n);
+      p += n;
+
+      if (!deflineread && ntokens == 1) {  /* definition line */
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token, "dwm")) {
+          dwmf=TRUE;
+          deflineread=TRUE;
+        }
+
+      }
+
+    }
+
+  }
+  fclose(fd);
+
+  return(dwmf);
+}
+
+
+
+/*
+  FUNCTION: is_meme_format
+  PURPOSE: check whether a give text file is MEME format; see http://meme.ebi.edu.au/meme/doc/meme-format.html
+           currently it only checks that there is some line starting with the keyword 'MEME'
+  PARAMETERS: filename - file name
+  RETURN: TRUE if the text file is in DWM format; FALSE otherwise
+*/
+
+Rboolean
+is_meme_format(char* fname) {
+  FILE* fd;
+  Rboolean dwmf=FALSE;
+  Rboolean deflineread=FALSE;
+
+  if (!(fd=fopen(fname, "rt"))) {
+    error("impossible to open %s\n", fname);
+  }
+
+  while (!feof(fd) && !dwmf) {
+    char buf[4096];
+
+    if (fgets(buf,4096,fd)) {
+      char  token[256];
+      char* p = buf;
+      int   n;
+      int   ntokens;
+
+      ntokens = sscanf(p," %[a-zA-Z0-9_]%n",token,&n);
+      p += n;
+
+      if (!deflineread && ntokens == 1) {  /* definition line */
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token, "meme")) {
+          dwmf=TRUE;
+          deflineread=TRUE;
+        }
+
+      }
+
+    }
+
+  }
+  fclose(fd);
+
+  return(dwmf);
+}
+
+
+
+/*
+  FUNCTION: read_dwm
+  PURPOSE: read a weight matrix from a file and store it into the corresponding data structure.
+           it currently uses a specific format that enables the inclusion of dependencies between positions
+  PARAMETERS: fname - name of the file containing the weight matrix
               wm - pointer to a WeightMatrix data structure where the matrix should be stored
               errormsg - text of the error message, if any
   RETURN: TRUE if there was an error; FALSE otherwise
 */
   
 Rboolean
-read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
-  char ptoken[256];
-  int  line=1;
-  int  deflineread=0;
-  int  i;
-  long wmbegin=0;
+read_dwm(char* fname, WeightMatrix* wm, char* errormsg) {
+  FILE* fd;
+  char  ptoken[256];
+  int   line=1;
+  int   deflineread=0;
+  int   i;
+  long  wmbegin=0;
 
-  /* read definition line with all variables present in the WM and their domains */
+  if (!(fd=fopen(fname, "rt")))
+    error("impossible to open %s\n", fname);
 
   wm->nvars=999;
   for (i=0; i < MAXVARS; i++) {
@@ -232,9 +361,11 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
     for (j=0; j < MAXVALS; j++)
       wm->w[i].next[j] = NULL;
   }
+  wm->name[0] = 0;
+
+  /* read definition line with all variables present in the WM and their domains */
 
   i = 0;
-
   ptoken[0]=0;
   while (!feof(fd) && i < wm->nvars) {
     char buf[4096];
@@ -252,10 +383,10 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
         char* q;
 
         q=token;
-        while ((*q=tolower(*q))) q++;      /* change keyword 'WM' to lowercase */
+        while ((*q=tolower(*q))) q++;      /* change keyword 'DWM' to lowercase */
 
         wm->nvars=0;
-        if (!strcmp(token,"wm")) {
+        if (!strcmp(token,"dwm")) {
           int nv;
 
           while (sscanf(p," %[a-zA-Z0-9_] %d%n",token,&nv,&n) == 2) {
@@ -266,10 +397,14 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
             p += n;
           }
 
+          if (sscanf(p, " %[a-zA-Z0-9-:.]", token) == 1) /* if there's an extra token, then its the name of the weight matrix */
+            strcpy(wm->name, token);
+
           wmbegin=ftell(fd);
           deflineread = 1;
         } else {
-          strcpy(errormsg, "definition line in the weight matrix file should start with the word WM\n");
+          fclose(fd);
+          strcpy(errormsg, "definition line in the weight matrix file should start with the word DWM\n");
           return(TRUE);
         }
 
@@ -314,6 +449,7 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
   }
 
   if (!deflineread) {
+    fclose(fd);
     strcpy(errormsg, "no definition line found in the weight matrix file\n");
     return(TRUE);
   }
@@ -392,6 +528,278 @@ read_wm(FILE* fd, WeightMatrix* wm, char* errormsg) {
     }
   }
 
+  fclose(fd);
+
+  return(FALSE);
+}
+
+
+
+/*
+  FUNCTION: read_meme
+  PURPOSE: read a weight matrix from a file in MEME format and store it into the corresponding data structure.
+  PARAMETERS: fname - name of the file containing the weight matrix
+              wm - pointer to a WeightMatrix data structure where the matrix should be stored
+              errormsg - text of the error message, if any
+  RETURN: TRUE if there was an error; FALSE otherwise
+*/
+  
+Rboolean
+read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
+  FILE*   fd;
+  char    alphabet[MAXVALS];
+  char    ptoken[256];
+  int     line=1;
+  int     deflineread=0;
+  int     logodds=0;
+  int     alen=-1;
+  int     i;
+  long    wmbegin=0;
+  double* bfreq;
+
+  if (!(fd=fopen(fname, "rt"))) {
+    error("impossible to open %s\n", fname);
+  }
+
+  wm->nvars=0;
+  for (i=0; i < MAXVARS; i++) {
+    int j;
+
+    wm->ndeps[i] = 0;
+    wm->w[i].weights = NULL;
+    for (j=0; j < MAXVALS; j++)
+      wm->w[i].next[j] = NULL;
+  }
+  wm->name[0] = 0;
+
+  /* read MEME header lines */
+
+  ptoken[0]=0;
+  while (!feof(fd)) {
+    char buf[4096];
+
+    if (fgets(buf,4096,fd)) {
+      char  token[256];
+      char* p = buf;
+      int   n;
+      int   ntokens;
+
+      ntokens = sscanf(p," %[a-zA-Z0-9_-:]%n",token,&n);
+      p += n;
+
+      if (!deflineread && ntokens == 1) {  /* definition line */
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token,"meme")) {
+          deflineread = 1;
+        } else {
+          fclose(fd);
+          strcpy(errormsg, "MEME version line should start with the word MEME in the MEME file\n");
+          return(TRUE);
+        }
+
+      } else if (deflineread && deflineread == 1 && ntokens == 1) {
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token,"alphabet")) {
+          
+          if (sscanf(p, "= %[a-zA-Z]%n", &alphabet, &n) != 1) {
+            fclose(fd);
+            strcpy(errormsg, "alphabet line is not correctly specified in the MEME file\n");
+            return(TRUE);
+          }
+          p += n;
+
+          /* put alphabet in lowercase */
+          q=alphabet;
+          while ((*q=tolower(*q))) q++;
+
+          alen = strlen(alphabet);
+          bfreq = Calloc(alen, double);
+          for (i=0; i < alen; i++)
+            bfreq[i] = 1.0 / ((double) alen);
+          
+          deflineread = 2;
+        }
+
+      }
+     
+     if (deflineread && deflineread == 2 && ntokens == 1) {
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token,"background")) {
+
+          if (!fgets(buf,4096,fd)) {
+            fclose(fd);
+            Free(bfreq);
+            strcpy(errormsg, "the background frequency line is incomplete in the MEME file\n");
+            return(TRUE);
+          }
+
+          /* read background frequencies */
+          p = buf;
+          i = 0;
+          while (sscanf(p," %[a-zA-Z] %lf%n", token, &bfreq[i], &n) == 2 && i < alen) {
+            if (tolower(token[0]) != alphabet[i]) {
+              fclose(fd);
+              Free(bfreq);
+              strcpy(errormsg, "background frequencies should be specified in the same order as the alphabet\n");
+              return(TRUE);
+            }
+
+            i++;
+            p += n;
+          }
+
+          if (i != alen) {
+            fclose(fd);
+            Free(bfreq);
+            strcpy(errormsg, "the background frequency line and alphabet line have different lengths in the MEME file\n");
+            return(TRUE);
+          }
+
+          deflineread = 3;
+        }
+
+      }
+    
+     if (deflineread && (deflineread == 2 || deflineread == 3) && ntokens == 1) {
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token,"motif")) {
+
+          if (sscanf(p, " %[a-zA-Z0-9-:.]", token) != 1) {
+            fclose(fd);
+            Free(bfreq);
+            strcpy(errormsg, "the motif name line should include a motif identifier in the MEME file\n");
+            return(TRUE);
+          }
+
+          strcpy(wm->name, token);
+
+          deflineread = 4;
+        }
+
+      } else if (deflineread && deflineread == 4 && ntokens == 1) {
+        char* q;
+
+        q=token;
+        while ((*q=tolower(*q))) q++;      /* change keyword to lowercase */
+
+        if (!strcmp(token, "letter-probability") || !strcmp(token, "log-odds")) {
+          int nv;
+
+          if (sscanf(p, " matrix: alength= %d%n", &nv, &n) != 1) {
+            fclose(fd);
+            Free(bfreq);
+            strcpy(errormsg, "alphabet length not found in the letter probability matrix line of the MEME file\n");
+            return(TRUE);
+          }
+          p += n;
+
+          if (alen != nv) {
+            fclose(fd);
+            Free(bfreq);
+            sprintf(errormsg, "number of letters in the ALPHABET line (%d) differs from alphabet length (%d) in the letter probability matrix line of the MEME file\n", alen, nv);
+            return(TRUE);
+          }
+
+          if (sscanf(p, " w= %d%n", &(wm->nvars), &n) != 1) {
+            fclose(fd);
+            Free(bfreq);
+            strcpy(errormsg, "motif length not found in the letter probability matrix line of the a MEME file\n");
+            return(TRUE);
+          }
+          p += n;
+
+          for (i=0; i < wm->nvars; i++) {
+            int j;
+
+            wm->nvals[i] = nv;
+            wm->ndeps[i] = 0;
+            wm->w[i].idep = -1;
+
+            for (j=0; j < alen; j++)
+              sprintf(wm->vals[i][j], "%c", alphabet[j]);
+          }
+          
+          wmbegin=ftell(fd);
+
+          if (!strcmp(token, "log-odds")) /* the log-odds keyword implies that values are already 'weights' */
+            logodds = 1;
+
+          deflineread = 5;
+        }
+
+      }
+
+      strcpy(ptoken,token);
+
+      line++;
+    }
+
+  }
+
+  if (deflineread < 5) {
+    fclose(fd);
+    strcpy(errormsg, "malformed MEME file\n");
+    return(TRUE);
+  }
+
+  fseek(fd,wmbegin,SEEK_SET);
+  line = 1;
+
+  /* read now the weight matrix */
+
+  i = 0;
+  ptoken[0] = 0;
+  while (!feof(fd)) {
+    char buf[4096];
+
+    if (fgets(buf,4096,fd)) {
+      char  token[MAXWIDZ];
+      char* p = buf;
+      int   n;
+      char   val[MAXWIDZ];
+      double w[MAXVALS];
+      int    nv = 0;
+      Tree*  ptreep;
+
+      /* read weights */
+      while (sscanf(p," %lf%n",&w[nv],&n) == 1 && nv < wm->nvals[i]) {
+        nv++;
+        p += n;
+      }
+
+      ptreep = &wm->w[i];
+
+      /* set weights in the right leaf of the tree */
+
+      ptreep->weights = Calloc(wm->nvals[i], double);
+      for (nv=0;nv<wm->nvals[i];nv++)
+        ptreep->weights[nv] = logodds ? w[nv] : log(w[nv]) - log(bfreq[nv]);
+
+      line++;
+      i++;
+    }
+
+  }
+
+  Free(bfreq);
+  fclose(fd);
+
   return(FALSE);
 }
 
@@ -408,7 +816,10 @@ void
 show_wm(WeightMatrix* wm) {
   int i;
 
-  Rprintf("Weight matrix on %d positions\n\n", wm->nvars);
+  if (strlen(wm->name) > 0)
+    Rprintf("Weight matrix (%s) on %d positions\n\n", wm->name, wm->nvars);
+  else
+    Rprintf("Weight matrix on %d positions\n\n", wm->nvars);
 
   for (i=0;i<wm->nvars;i++) {
     int   j;
@@ -571,11 +982,11 @@ destroy_wm(SEXP wmR) {
           if (p)
             Free(p);
 
-       } else if (p->weights)
+       } else if (p->weights != NULL)
           Free(p->weights);
       }
 
-    } else if (wm->w[i].weights)
+    } else if (wm->w[i].weights != NULL)
       Free(wm->w[i].weights);
 
   }
