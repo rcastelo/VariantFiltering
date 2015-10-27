@@ -5,15 +5,15 @@
 
 \alias{width,WeightMatrix-method}
 \alias{conservedPositions,WeightMatrix-method}
+\alias{wmName,WeightMatrix-method}
 \alias{show,WeightMatrix-method}
 \alias{wmScore,WeightMatrix,DNAStringSet-method}
 \alias{wmScore,WeightMatrix,character-method}
 
 \alias{conservedPositions}
 \alias{readWm}
-\alias{wmAcceptorSites}
-\alias{wmDonorSites}
 \alias{wmScore}
+\alias{wmName}
 
 \title{Weight matrix class}
 
@@ -23,6 +23,7 @@ Class for storing weight matrices that VariantFiltering uses to score potential 
 \usage{
 \S4method{width}{WeightMatrix}(x)
 \S4method{conservedPositions}{WeightMatrix}(x)
+\S4method{wmName}{WeightMatrix}(x)
 \S4method{show}{WeightMatrix}(object)
 \S4method{wmScore}{WeightMatrix,DNAStringSet}(object, dnaseqs)
 \S4method{wmScore}{WeightMatrix,character}(object, dnaseqs)
@@ -45,7 +46,14 @@ networks and further details can be found in the paper of Castelo and Guigo (200
 
 The function \code{readWm()} reads a weight matrix stored in a text file in a particular format and returns
 a \code{WeightMatrix} object. See the \code{.ibn} files located in the \code{extdata} folder of the \code{VariantFiltering}
-package, as an example of this format.
+package, as an example of this format that is specifically designed to enable the storage of weights that may
+depend on the occurrence of nucleotides at other positions on the matrix.
+
+Next to this specific weight matrix format, the function \code{readWm()} can also read the MEME motif format specified at
+\url{http://meme-suite.org/doc/meme-format.html}. Under this format, this function reads only currently one matrix per file
+and when values correspond to probabilities (specified under the motif \code{letter-probability matrix} line) they are
+automatically converted to weights by either using the background frequencies specified in the \code{background letter frequencies}
+line or using an uniform distribution otherwise.
 
 The method \code{wmScore()} scores one or more sequences of nucleotides using the input \code{WeightMatrix} object.
 If the sequences are longer than the width of the weight matrix, this function will score every possible site
@@ -67,6 +75,7 @@ Castelo, R and Guigo, R. Splice site identification by idlBNs. Bioinformatics, 2
 \examples{
 wm <- readWm(file.path(system.file("extdata", package="VariantFiltering"), "hsap.donors.hcmc10_15_1.ibn"))
 width(wm)
+wmName(wm)
 conservedPositions(wm)
 wmScore(wm, "CAGGTAGGA")
 wmScore(wm, "CAGGAAGGA")

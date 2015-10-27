@@ -12,6 +12,11 @@ setMethod("conservedPositions", signature(x="WeightMatrix"),
             .Call("scoss_conserved_positions_wm", x@wm)
           })
 
+setMethod("wmName", signature(x="WeightMatrix"),
+          function(x) {
+            .Call("scoss_name_wm", x@wm)
+          })
+
 setMethod("show", signature(object = "WeightMatrix"),
           function(object) {
             .Call("scoss_show_wm", object@wm)
