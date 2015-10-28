@@ -208,11 +208,20 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     variantsVR_annotated_coding$CONSEQUENCE <- GRanges_coding_uq$CONSEQUENCE
   
     ## annotate start and end positions of CDS (to determine start and stop gains and losses)
-    cdsinfo <- select(txdb, keys=unique(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE))),
-                      columns=c("CDSSTART", "CDSEND"), keytype="CDSID")
-    mt <- match(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE)), cdsinfo$CDSID)
-    variantsVR_annotated_coding$CDSSTART <- relist(cdsinfo$CDSSTART[mt], variantsVR_annotated_coding$CDSID)
-    variantsVR_annotated_coding$CDSEND <- relist(cdsinfo$CDSEND[mt], variantsVR_annotated_coding$CDSID)
+    variantsVR_annotated_coding$CDSSTART <- IntegerList(as.list(rep(NA, length(variantsVR_annotated_coding))))
+    variantsVR_annotated_coding$CDSEND <- IntegerList(as.list(rep(NA, length(variantsVR_annotated_coding))))
+    uniqCdsIDs <- unique(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE)))
+    tryCatch({
+      cdsinfo <- select(txdb, keys=uniqCdsIDs, columns=c("CDSSTART", "CDSEND"), keytype="CDSID")
+      mt <- match(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE)), cdsinfo$CDSID)
+      variantsVR_annotated_coding$CDSSTART <- relist(cdsinfo$CDSSTART[mt], variantsVR_annotated_coding$CDSID)
+      variantsVR_annotated_coding$CDSEND <- relist(cdsinfo$CDSEND[mt], variantsVR_annotated_coding$CDSID)
+    }, error=function(err) {
+      misk <- ifelse(length(uniqCdsIDs) > 3, sprintf("%s, ...", paste(head(uniqCdsIDs, n=3), collapse=", ")),
+                     paste(uniqCdsIDs, collapse=", "))
+      warning(sprintf("Could not find any CDSIDs (%s) in the transcript-centric annotation package %s\n",
+                      misk, txdb$packageName))
+    })
 
     ## annotate codon usage difference in synonymous mutations
 
@@ -271,11 +280,20 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
 
   ## annotate start and end positions of TX (to determine pre-mRNA positions)
   ## FIXME: with intergenic variants
-  txinfo <- select(txdb, keys=unique(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE))),
-                   columns=c("TXSTART", "TXEND"), keytype="TXID")
-  mt <- match(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE)), txinfo$TXID)
-  variantsVR_annotated$TXSTART <- txinfo$TXSTART[mt]
-  variantsVR_annotated$TXEND <- txinfo$TXEND[mt]
+  variantsVR_annotated$TXSTART <- rep(NA, length(variantsVR_annotated))
+  variantsVR_annotated$TXEND <- rep(NA, length(variantsVR_annotated))
+  uniqTxIDs <- unique(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE)))
+  tryCatch({
+    txinfo <- select(txdb, keys=uniqTxIDs, columns=c("TXSTART", "TXEND"), keytype="TXID")
+    mt <- match(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE)), txinfo$TXID)
+    variantsVR_annotated$TXSTART <- txinfo$TXSTART[mt]
+    variantsVR_annotated$TXEND <- txinfo$TXEND[mt]
+  }, error=function(err) {
+      misk <- ifelse(length(uniqTxIDs) > 3, sprintf("%s, ...", paste(head(uniqTxIDs, n=3), collapse=", ")),
+                     paste(uniqTxIDs, collapse=", "))
+      warning(sprintf("Could not find any TXIDs (%s) in the transcript-centric annotation package %s\n",
+                      misk, txdb$packageName))
+  })
   
   #############################################################
   ##                                                         ##
@@ -414,8 +432,14 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
             rsids <- unique(variantsVR$dbSNP)
             rsids <- rsids[!is.na(rsids)]
             if (length(rsids) > 0) {
-              pp <- select(annObj, keys=rsids,
-                           cols=c("TRAININGSET", "PREDICTION", "PPH2PROB"))
+              tryCatch({
+                pp <- select(annObj, keys=rsids,
+                             cols=c("TRAININGSET", "PREDICTION", "PPH2PROB"))
+              }, error=function(err) {
+                misk <- ifelse(length(rsids) > 3, sprintf("%s, ...", paste(head(rsids, n=3), collapse=", ")),
+                               paste(rsids, collapse=", "))
+                warning(sprintf("Could not find any rsIDs (%s) in the PolyPhenDb package.\n", misk))
+              })
               mask <- pp$TRAININGSET == "humvar"
               pphumvar <- pp[mask, ]
               mt <- match(variantsVR$dbSNP, pphumvar$RSID)
@@ -439,7 +463,13 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
             rsids <- rsids[!is.na(rsids)]
             if (length(rsids) > 0) {
               rsids <- gsub("rs", "", rsids)
-              pv <- select(annObj, keys=rsids, columns="PROVEANPRED")
+              tryCatch({
+                pv <- select(annObj, keys=rsids, columns="PROVEANPRED")
+              }, error=function(err) {
+                misk <- ifelse(length(rsids) > 3, sprintf("%s, ...", paste(head(rsids, n=3), collapse=", ")),
+                               paste(rsids, collapse=", "))
+                warning(sprintf("Could not find any rsIDs (%s) in the PROVEANDb package.\n", misk))
+              })
               mt <- match(gsub("rs", "", variantsVR$dbSNP), pv$DBSNPID)
               PROVEAN[!is.na(mt)] <- pv$PROVEANPRED[mt[!is.na(mt)]]
             }
@@ -514,16 +544,24 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
                   else if (substr(geneIDs[!maskNAs][1], 1, 3) %in% c("NM_", "NP_", "NR_", "XM_", "XP", "XR_", "YP_"))
                     geneKeytype <- "REFSEQ"
                 }
-                uniqEntrezIDs <- unique(geneIDs[!maskNAs])
-                res <- select(annObj, keys=as.character(uniqEntrezIDs), columns=c("SYMBOL", "OMIM"), keytype=geneKeytype)
-                symxgeneID <- sapply(split(res$SYMBOL, res[[geneKeytype]]),
-                                     function(x) paste(unique(x), collapse=", "))
-                omimxgeneID <- sapply(split(res$OMIM, res[[geneKeytype]]),
-                                      function(x) {
-                                        if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
-                                      })
-                genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxgeneID[geneIDs[!maskNAs]],
-                                                         OMIM=omimxgeneID[geneIDs[!maskNAs]])
+                uniqIDs <- unique(geneIDs[!maskNAs])
+                tryCatch({
+                  res <- select(annObj, keys=as.character(uniqIDs), columns=c("SYMBOL", "OMIM"), keytype=geneKeytype)
+                  symxgeneID <- sapply(split(res$SYMBOL, res[[geneKeytype]]),
+                                       function(x) paste(unique(x), collapse=", "))
+                  omimxgeneID <- sapply(split(res$OMIM, res[[geneKeytype]]),
+                                        function(x) {
+                                          if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
+                                        })
+                  genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxgeneID[geneIDs[!maskNAs]],
+                                                           OMIM=omimxgeneID[geneIDs[!maskNAs]])
+                }, error=function(err) {
+                  misk <- ifelse(length(uniqIDs) > 3, sprintf("%s, ...", paste(head(uniqIDs, n=3), collapse=", ")),
+                                 paste(uniqIDs, collapse=", "))
+                  warning(sprintf("Could not retrieve any %s keys (%s) from the gene-centric annotation package %s\n",
+                                  geneKeytype, misk, annObj$packageName))
+                })
+
               }
             }
             genelevel_annot
@@ -540,10 +578,17 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
               txlevel_annot <- DataFrame(TXNAME=rep(NA_character_, times=length(txIDs)))
               if (sum(!maskNAs) > 0) {
                 uniqTxIDs <- unique(txIDs[!maskNAs])
-                res <- select(annObj, keys=as.character(uniqTxIDs), columns="TXNAME", keytype="TXID")
-                txnamextxID <- sapply(split(res$TXNAME, res$TXID),
-                                       function(x) paste(unique(x), collapse=", "))
-                txlevel_annot[!maskNAs, ] <- DataFrame(TXNAME=txnamextxID[txIDs[!maskNAs]])
+                tryCatch({
+                  res <- select(annObj, keys=as.character(uniqTxIDs), columns="TXNAME", keytype="TXID")
+                  txnamextxID <- sapply(split(res$TXNAME, res$TXID),
+                                         function(x) paste(unique(x), collapse=", "))
+                  txlevel_annot[!maskNAs, ] <- DataFrame(TXNAME=txnamextxID[txIDs[!maskNAs]])
+                }, error=function(err) {
+                  misk <- ifelse(length(uniqTxIDs) > 3, sprintf("%s, ...", paste(head(uniqTxIDs, n=3), collapse=", ")),
+                                 paste(uniqTxIDs, collapse=", "))
+                  warning(sprintf("Could not retrieve any %keys (%s) from the transcript-centric annotation package %s\n",
+                                  misk, annObj$packageName))
+                })
               }
             }
             txlevel_annot
