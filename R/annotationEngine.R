@@ -163,6 +163,10 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     rmcols <- match(c("TXID", "CDSID", "GENEID"), colnames(mcols(variantsVR_annotated_coding_exp)))
     mcols(variantsVR_annotated_coding_exp) <- mcols(variantsVR_annotated_coding_exp)[, -rmcols]
 
+    ## it is necessary to explicitly strand the annotated variants when calling predictCoding()
+    ## to handle properly SNPs overlapping transcripts in opposite sense (e.g., rs549311269)
+    strand(variantsVR_annotated_coding_exp) <- variantsVR_annotated_coding_exp$LOCSTRAND
+
     GRanges_coding_uq <- predictCoding(query=variantsVR_annotated_coding_exp,
                                        subject=txdb, seqSource=bsgenome, genetic.code=geneticCode,
                                        varAllele=DNAStringSet(alt(variantsVR_annotated_coding)))
@@ -183,19 +187,20 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     ## and the other way araound. In these cases we take the union of both annotations.
     ## when locateVariants() and predictCoding() disagree in the GENEID annotation then
     ## we take the one given by predictCoding() -SHOULD ASK ABOUT THIS IN THE DEVEL LIST-
-    mask <- !is.na(variantsVR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID) &
-            variantsVR_annotated_coding$GENEID != GRanges_coding_uq$GENEID
-
-    variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
-    variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
-
-    mask <- is.na(variantsVR_annotated_coding$TXID)
-    variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    mask <- elementLengths(variantsVR_annotated_coding$CDSID) == 0
-    variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
-    mask <- is.na(variantsVR_annotated_coding$GENEID)
-    variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
+    ## THIS WAS FIXED DURING THE 3.1-3.2 DEVEL CYCLE
+    ## mask <- !is.na(variantsVR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID) &
+    ##         variantsVR_annotated_coding$GENEID != GRanges_coding_uq$GENEID
+    ##
+    ## variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
+    ## variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
+    ## variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
+    ##
+    ## mask <- is.na(variantsVR_annotated_coding$TXID)
+    ## variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
+    ## mask <- elementLengths(variantsVR_annotated_coding$CDSID) == 0
+    ## variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
+    ## mask <- is.na(variantsVR_annotated_coding$GENEID)
+    ## variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
 
     ## add coding annotations from VariantAnnotation::predictCoding()
     variantsVR_annotated_coding$CDSLOC <- GRanges_coding_uq$CDSLOC
@@ -208,18 +213,27 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     variantsVR_annotated_coding$CONSEQUENCE <- GRanges_coding_uq$CONSEQUENCE
   
     ## annotate start and end positions of CDS (to determine start and stop gains and losses)
-    variantsVR_annotated_coding$CDSSTART <- IntegerList(as.list(rep(NA, length(variantsVR_annotated_coding))))
-    variantsVR_annotated_coding$CDSEND <- IntegerList(as.list(rep(NA, length(variantsVR_annotated_coding))))
-    uniqCdsIDs <- unique(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE)))
+    variantsVR_annotated_coding$CDSSTART <- rep(NA_integer_, length(variantsVR_annotated_coding))
+    variantsVR_annotated_coding$CDSEND <- rep(NA_integer_, length(variantsVR_annotated_coding))
+    uniqTxIDs <- unique(as.character(unlist(variantsVR_annotated_coding$TXID, use.names=FALSE)))
     tryCatch({
-      cdsinfo <- select(txdb, keys=uniqCdsIDs, columns=c("CDSSTART", "CDSEND"), keytype="CDSID")
-      mt <- match(as.character(unlist(variantsVR_annotated_coding$CDSID, use.names=FALSE)), cdsinfo$CDSID)
-      variantsVR_annotated_coding$CDSSTART <- relist(cdsinfo$CDSSTART[mt], variantsVR_annotated_coding$CDSID)
-      variantsVR_annotated_coding$CDSEND <- relist(cdsinfo$CDSEND[mt], variantsVR_annotated_coding$CDSID)
+      cdsinfo <- select(txdb, keys=uniqTxIDs, columns=c("CDSSTART", "CDSEND"), keytype="TXID")
+      cdsinfoStart <- split(cdsinfo$CDSSTART, cdsinfo$TXID)
+      cdsinfoStart <- sapply(cdsinfoStart, min)
+      cdsinfoEnd <- split(cdsinfo$CDSEND, cdsinfo$TXID)
+      cdsinfoEnd <- sapply(cdsinfoEnd, max)
+      stopifnot(all(names(cdsinfoStart) == names(cdsinfoEnd))) ## QC
+      cdsinfo <- data.frame(TXID=names(cdsinfoStart),
+                            CDSSTART=as.integer(cdsinfoStart),
+                            CDSEND=as.integer(cdsinfoEnd),
+                            stringsAsFactors=FALSE)
+      mt <- match(variantsVR_annotated_coding$TXID, cdsinfo$TXID)
+      variantsVR_annotated_coding$CDSSTART <- cdsinfo$CDSSTART[mt]
+      variantsVR_annotated_coding$CDSEND <- cdsinfo$CDSEND[mt]
     }, error=function(err) {
-      misk <- ifelse(length(uniqCdsIDs) > 3, sprintf("%s, ...", paste(head(uniqCdsIDs, n=3), collapse=", ")),
-                     paste(uniqCdsIDs, collapse=", "))
-      warning(sprintf("Could not find any CDSIDs (%s) in the transcript-centric annotation package %s\n",
+      misk <- ifelse(length(uniqTxIDs) > 3, sprintf("%s, ...", paste(head(uniqTxIDs, n=3), collapse=", ")),
+                     paste(uniqTxIDs, collapse=", "))
+      warning(sprintf("Could not find any TXIDs (%s) in the transcript-centric annotation package %s\n",
                       misk, txdb$packageName))
     })
 
@@ -266,8 +280,8 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
                        VARAA=AAStringSet(rep("", n.noncoding)),
                        varAllele=DNAStringSet(rep("", n.noncoding)),
                        CONSEQUENCE=factor(rep(NA, n.noncoding), levels=c("nonsynonymous", "synonymous")),
-                       CDSSTART=IntegerList(as.list(rep(NA, n.noncoding))),
-                       CDSEND=IntegerList(as.list(rep(NA, n.noncoding))),
+                       CDSSTART=rep(NA_integer_, n.noncoding),
+                       CDSEND=rep(NA_integer_, n.noncoding),
                        CUREF=rep(NA_real_,n.noncoding),
                        CUALT=rep(NA_real_,n.noncoding))
   
