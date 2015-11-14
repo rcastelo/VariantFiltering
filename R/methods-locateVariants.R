@@ -12,6 +12,16 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
             .threeSpliceSites(query, subject, region, ignore.strand=ignore.strand, asHits=asHits)
           })
 
+## adapted from function VariantAnnotation:::.location
+.location <-
+    function(length=0, value=NA)
+{
+    levels <- c("spliceSite", "intron", "fiveUTR", "threeUTR",
+        "coding", "intergenic", "promoter", "fiveSpliceSite", "threeSpliceSite")
+    factor(rep(value, length), levels=levels)
+}
+
+
 
 ## adapted from function VariantAnnotation:::.spliceSite
 .fiveSpliceSites <- function(query, subject, region, ignore.strand, asHits, ...) {
@@ -40,7 +50,8 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
     GRanges(seqnames=seqnames(query)[df$queryid],
             ranges=IRanges(ranges(query)[df$queryid]),
             strand=strand(int_start)[df$usubjectid],
-            LOCATION=rep("fiveSpliceSite", length(df$queryid)),
+            ## LOCATION=rep("fiveSpliceSite", length(df$queryid)),
+            LOCATION=.location(length(df$queryid), "fiveSpliceSite"),
             LOCSTART=start(int_start)[df$usubjectid],
             LOCEND=end(int_start)[df$usubjectid],
             QUERYID=df$queryid,
@@ -88,7 +99,8 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
     GRanges(seqnames=seqnames(query)[df$queryid],
             ranges=IRanges(ranges(query)[df$queryid]),
             strand=strand(int_end)[df$usubjectid],
-            LOCATION=rep("threeSpliceSite", length(df$queryid)),
+            ## LOCATION=rep("threeSpliceSite", length(df$queryid)),
+            LOCATION=.location(length(df$queryid), "threeSpliceSite"),
             LOCSTART=start(int_end)[df$usubjectid],
             LOCEND=end(int_end)[df$usubjectid],
             QUERYID=df$queryid,

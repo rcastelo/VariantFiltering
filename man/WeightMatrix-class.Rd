@@ -6,6 +6,7 @@
 \alias{width,WeightMatrix-method}
 \alias{conservedPositions,WeightMatrix-method}
 \alias{wmName,WeightMatrix-method}
+\alias{wmLocations,WeightMatrix-method}
 \alias{show,WeightMatrix-method}
 \alias{wmScore,WeightMatrix,DNAStringSet-method}
 \alias{wmScore,WeightMatrix,character-method}
@@ -14,6 +15,7 @@
 \alias{readWm}
 \alias{wmScore}
 \alias{wmName}
+\alias{wmLocations}
 
 \title{Weight matrix class}
 
@@ -24,6 +26,7 @@ Class for storing weight matrices that VariantFiltering uses to score potential 
 \S4method{width}{WeightMatrix}(x)
 \S4method{conservedPositions}{WeightMatrix}(x)
 \S4method{wmName}{WeightMatrix}(x)
+\S4method{wmLocations}{WeightMatrix}(x)
 \S4method{show}{WeightMatrix}(object)
 \S4method{wmScore}{WeightMatrix,DNAStringSet}(object, dnaseqs)
 \S4method{wmScore}{WeightMatrix,character}(object, dnaseqs)
@@ -76,6 +79,7 @@ Castelo, R and Guigo, R. Splice site identification by idlBNs. Bioinformatics, 2
 wm <- readWm(file.path(system.file("extdata", package="VariantFiltering"), "hsap.donors.hcmc10_15_1.ibn"))
 width(wm)
 wmName(wm)
+wmLocations(wm)
 conservedPositions(wm)
 wmScore(wm, "CAGGTAGGA")
 wmScore(wm, "CAGGAAGGA")
