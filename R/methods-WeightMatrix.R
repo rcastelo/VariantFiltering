@@ -1,6 +1,12 @@
-readWm <- function(fname) {
-  return(new("WeightMatrix", wm=.Call("scoss_read_wm", fname)))
+readWm <- function(fname, locations=levels(.location())) {
+  return(new("WeightMatrix", wm=.Call("scoss_read_wm", fname),
+             locations=locations))
 }
+
+setMethod("wmLocations", signature(x="WeightMatrix"),
+          function(x) {
+            x@locations
+          })
 
 setMethod("width", signature(x="WeightMatrix"),
           function(x) {
