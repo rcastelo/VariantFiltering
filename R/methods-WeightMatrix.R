@@ -1,11 +1,16 @@
-readWm <- function(fname, locations=levels(.location())) {
+readWm <- function(fname, locations=levels(.location()), strictLocations=FALSE) {
   return(new("WeightMatrix", wm=.Call("scoss_read_wm", fname),
-             locations=locations))
+             locations=locations, strictLocations=strictLocations))
 }
 
 setMethod("wmLocations", signature(x="WeightMatrix"),
           function(x) {
             x@locations
+          })
+
+setMethod("wmStrictLocations", signature(x="WeightMatrix"),
+          function(x) {
+            x@strictLocations
           })
 
 setMethod("width", signature(x="WeightMatrix"),
@@ -26,6 +31,8 @@ setMethod("wmName", signature(x="WeightMatrix"),
 setMethod("show", signature(object = "WeightMatrix"),
           function(object) {
             .Call("scoss_show_wm", object@wm)
+            cat(sprintf("  locations: %s\n", paste(object@locations, collapse=", ")))
+            cat(sprintf("  strict locations: %s\n", object@strictLocations))
           })
 
 
