@@ -125,7 +125,7 @@ SEXP
 scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
   /* cachedXStringSet S; */
   XStringSet_holder S;
-  int S_length, i, j, k;
+  int S_length, i, j;
   int nsco = INTEGER(nscoR)[0];
   WeightMatrix* wm = (WeightMatrix *) R_ExternalPtrAddr(wmR);
   double* scores;
@@ -555,7 +555,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
   int     alen=-1;
   int     i;
   long    wmbegin=0;
-  double* bfreq;
+  double* bfreq=NULL;
 
   if (!(fd=fopen(fname, "rt"))) {
     error("impossible to open %s\n", fname);
@@ -609,7 +609,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
         if (!strcmp(token,"alphabet")) {
           
-          if (sscanf(p, "= %[a-zA-Z]%n", &alphabet, &n) != 1) {
+          if (sscanf(p, "= %[a-zA-Z]%n", alphabet, &n) != 1) {
             fclose(fd);
             strcpy(errormsg, "alphabet line is not correctly specified in the MEME file\n");
             return(TRUE);
@@ -764,15 +764,12 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
   /* read now the weight matrix */
 
   i = 0;
-  ptoken[0] = 0;
   while (!feof(fd)) {
     char buf[4096];
 
     if (fgets(buf,4096,fd)) {
-      char  token[MAXWIDZ];
-      char* p = buf;
-      int   n;
-      char   val[MAXWIDZ];
+      char*  p = buf;
+      int    n;
       double w[MAXVALS];
       int    nv = 0;
       Tree*  ptreep;
