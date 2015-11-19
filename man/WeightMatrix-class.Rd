@@ -7,7 +7,11 @@
 \alias{conservedPositions,WeightMatrix-method}
 \alias{wmName,WeightMatrix-method}
 \alias{wmLocations,WeightMatrix-method}
+\alias{wmLocations<-,WeightMatrix-method}
+\alias{wmLocations<-,WeightMatrix,character-method}
 \alias{wmStrictLocations,WeightMatrix-method}
+\alias{wmStrictLocations<-,WeightMatrix-method}
+\alias{wmStrictLocations<-,WeightMatrix,logical-method}
 \alias{show,WeightMatrix-method}
 \alias{wmScore,WeightMatrix,DNAStringSet-method}
 \alias{wmScore,WeightMatrix,character-method}
@@ -17,7 +21,9 @@
 \alias{wmScore}
 \alias{wmName}
 \alias{wmLocations}
+\alias{wmLocations<-}
 \alias{wmStrictLocations}
+\alias{wmStrictLocations<-}
 
 \title{Weight matrix class}
 
