@@ -80,29 +80,39 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     ## filter out variants that do not segregate as an autosomal dominant trait
     vcf <- vcf[unaffectedMask & affectedMask, ]
 
-    ## coerce the VCF object to a VRanges object
-    variants <- as(vcf, "VRanges")
+    if (any(unaffectedMask & affectedMask)) {
+      ## coerce the VCF object to a VRanges object
+      variants <- as(vcf, "VRanges")
 
-    ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
-    variants$VARID <- varIDs[variants$VCFIDX]
+      ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
+      variants$VARID <- varIDs[variants$VCFIDX]
 
-    ## harmonize Seqinfo data between variants, annotations and reference genome
-    variants <- .matchSeqinfo(variants, txdb, bsgenome)
+      ## harmonize Seqinfo data between variants, annotations and reference genome
+      variants <- .matchSeqinfo(variants, txdb, bsgenome)
   
-    ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
-                                                                 BPPARAM=BPPARAM))
+      ## annotate variants
+      annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                   BPPARAM=BPPARAM))
+
+    }
+
+    message(sprintf("%d variants processed", n.var))
   }
   close(vcfFiles[[1]])
 
   gSO <- annotateSO(annotated_variants, sog(param))
+  locMask <- conMask <- varTypMask <- logical(0)
 
-  locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
-                                     levels(annotated_variants$LOCATION)))
-  conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
-                                     levels(annotated_variants$CONSEQUENCE)))
-  varTypMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$TYPE)),
-                                        levels(annotated_variants$TYPE)))
+  if (length(annotated_variants) > 0) {
+    locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
+                                       levels(annotated_variants$LOCATION)))
+    conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
+                                       levels(annotated_variants$CONSEQUENCE)))
+    varTypMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$TYPE)),
+                                          levels(annotated_variants$TYPE)))
+  } else
+    warning("No variants segregate following an autosomal dominant inheritance model.")
+
   MAFpopMask <- NA
   if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'

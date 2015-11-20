@@ -9,6 +9,9 @@
 ## variants given in the 'VRanges' first argument object 'variantsVR'
 annotateSO <- function(variantsVR, gSO) {
 
+  if (length(variantsVR) == 0)
+    return(gSO)
+
   gSOattr <- names(nodeData(gSO, n=nodes(gSO)[1])[[1]])
 
   if (!"vcfIdx" %in% gSOattr) ## if the attribute 'vcfIdx' does not exist, create it
