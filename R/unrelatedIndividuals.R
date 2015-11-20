@@ -54,13 +54,19 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
   close(vcfFiles[[1]])
 
   gSO <- annotateSO(annotated_variants, sog(param))
+  locMask <- conMask <- varTypMask <- logical(0)
 
-  locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
-                                     levels(annotated_variants$LOCATION)))
-  conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
-                                     levels(annotated_variants$CONSEQUENCE)))
-  varTypMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$TYPE)),
+  if (length(annotated_variants) > 0) {
+
+    locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
+                                       levels(annotated_variants$LOCATION)))
+    conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
+                                       levels(annotated_variants$CONSEQUENCE)))
+    varTypMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$TYPE)),
                                         levels(annotated_variants$TYPE)))
+  } else
+    warning("The input VCF file has no variants.")
+
   MAFpopMask <- NA
   if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
