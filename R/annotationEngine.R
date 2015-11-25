@@ -553,7 +553,7 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
               if (sum(!maskNAs) > 0) {
                 if (is.na(geneKeytype)) {
                   geneKeytype <- "ENTREZID"
-                  if (substr(geneIDs[!maskNAs][1], 1, 4) == "ENSG")
+                  if (substr(geneIDs[!maskNAs][1], 1, 3) == "ENS")
                     geneKeytype <- "ENSEMBL"
                   else if (substr(geneIDs[!maskNAs][1], 1, 3) %in% c("NM_", "NP_", "NR_", "XM_", "XP", "XR_", "YP_"))
                     geneKeytype <- "REFSEQ"
