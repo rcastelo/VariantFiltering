@@ -542,14 +542,23 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 setMethod("annotateVariants", signature(annObj="OrgDb"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
-            genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
+            defgenecols <- c("SYMBOL", "OMIM")
+            defgenecols <- defgenecols[defgenecols %in% columns(annObj)]
+            if (length(defgenecols) < 1 && !"SYMBOL" %in% defgenecols)
+              stop("Currently the gene-centric annotation package should have at least a SYMBOL column.")
+
+            genelevel_annot <- rep(list(rep(NA_character_, times=0)), length(defgenecols))
+            names(genelevel_annot) <- defgenecols
+            genelevel_annot <- do.call("DataFrame", genelevel_annot)
+            ## genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
             geneIDs <- variantsVR$GENEID
             geneKeytype <- param$geneKeytype
             maskNAs <- is.na(geneIDs)
             if (length(geneIDs) > 0) {
               ## if input IDs are NAs output should also be NAs and avoid querying malformed keys
-              genelevel_annot <- DataFrame(GENE=rep(NA_character_, times=length(geneIDs)),
-                                           OMIM=rep(NA_character_, times=length(geneIDs)))
+              genelevel_annot <- rep(list(rep(NA_character_, times=length(geneIDs))), length(defgenecols))
+              names(genelevel_annot) <- defgenecols
+              genelevel_annot <- do.call("DataFrame", genelevel_annot)
               if (sum(!maskNAs) > 0) {
                 if (is.na(geneKeytype)) {
                   geneKeytype <- "ENTREZID"
@@ -560,15 +569,22 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
                 }
                 uniqIDs <- unique(geneIDs[!maskNAs])
                 tryCatch({
-                  res <- select(annObj, keys=as.character(uniqIDs), columns=c("SYMBOL", "OMIM"), keytype=geneKeytype)
-                  symxgeneID <- sapply(split(res$SYMBOL, res[[geneKeytype]]),
-                                       function(x) paste(unique(x), collapse=", "))
-                  omimxgeneID <- sapply(split(res$OMIM, res[[geneKeytype]]),
-                                        function(x) {
-                                          if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
-                                        })
-                  genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxgeneID[geneIDs[!maskNAs]],
-                                                           OMIM=omimxgeneID[geneIDs[!maskNAs]])
+                  res <- select(annObj, keys=as.character(uniqIDs), columns=defgenecols, keytype=geneKeytype)
+                  for (colname in defgenecols) {
+                    colxgeneID <- sapply(split(res[[colname]], res[[geneKeytype]]),
+                                         function(x) {
+                                           if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
+                                         })
+                    genelevel_annot[[colname]][!maskNAs] <- colxgeneID[geneIDs[!maskNAs]]
+                  }
+                  ## symxgeneID <- sapply(split(res$SYMBOL, res[[geneKeytype]]),
+                  ##                      function(x) paste(unique(x), collapse=", "))
+                  ## omimxgeneID <- sapply(split(res$OMIM, res[[geneKeytype]]),
+                  ##                       function(x) {
+                  ##                         if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
+                  ##                       })
+                  ## genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxgeneID[geneIDs[!maskNAs]],
+                  ##                                          OMIM=omimxgeneID[geneIDs[!maskNAs]])
                 }, error=function(err) {
                   misk <- ifelse(length(uniqIDs) > 3, sprintf("%s, ...", paste(head(uniqIDs, n=3), collapse=", ")),
                                  paste(uniqIDs, collapse=", "))
@@ -578,6 +594,8 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
 
               }
             }
+            genelevel_annot$GENE <- genelevel_annot$SYMBOL
+            genelevel_annot$SYMBOL <- NULL
             genelevel_annot
           })
 
