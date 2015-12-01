@@ -41,7 +41,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
                                                 elementLengths(subject)))
 
   res <- GRanges()
-  values(res) <- DataFrame(LOCATION=character(0),
+  values(res) <- DataFrame(LOCATION=.location(0, "fiveSpliceSite"),
                            LOCSTART=integer(), LOCEND=integer(),
                            QUERYID=integer(), TXID=integer(),
                            CDSID=IntegerList(), GENEID=character(),
@@ -94,10 +94,10 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
                                                 elementLengths(subject)))
 
   res <- GRanges()
-  values(res) <- DataFrame(LOCATION=character(0),
-                             LOCSTART=integer(), LOCEND=integer(),
-                             QUERYID=integer(), TXID=integer(),
-                             CDSID=IntegerList(), GENEID=character(),
+  values(res) <- DataFrame(LOCATION=.location(0, "threeSpliceSite"),
+                             LOCSTART=integer(0), LOCEND=integer(0),
+                             QUERYID=integer(0), TXID=integer(0),
+                             CDSID=IntegerList(), GENEID=character(0),
                              PRECEDEID=CharacterList(),
                              FOLLOWID=CharacterList())
 
@@ -139,9 +139,12 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
   annotations <- GRanges()
   if (length(vfParam$regionAnnotations) > 0) {
     annotations <- lapply(vfParam$regionAnnotations,
-                          function(r)
-                            locateVariants(query, subject, r, cache=cache,
-                                           ignore.strand=ignore.strand))
+                          function(r) {
+                            loc <- locateVariants(query, subject, r, cache=cache,
+                                                  ignore.strand=ignore.strand)
+                            levels(loc$LOCATION) <- levels(.location(0))
+                            loc
+                          })
     names(annotations) <- NULL
     annotations <- do.call("c", annotations)
   }

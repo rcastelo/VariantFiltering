@@ -603,7 +603,7 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
             txlevel_annot <- DataFrame(TXNAME=character())
-            txIDs <- variantsVR$TXID
+            txIDs <- as.character(variantsVR$TXID)
             maskNAs <- is.na(txIDs)
             if (length(txIDs) > 0) {
               ## if input IDs are NAs output should also be NAs and avoid querying malformed keys
@@ -611,14 +611,14 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
               if (sum(!maskNAs) > 0) {
                 uniqTxIDs <- unique(txIDs[!maskNAs])
                 tryCatch({
-                  res <- select(annObj, keys=as.character(uniqTxIDs), columns="TXNAME", keytype="TXID")
+                  res <- select(annObj, keys=uniqTxIDs, columns="TXNAME", keytype="TXID")
                   txnamextxID <- sapply(split(res$TXNAME, res$TXID),
                                          function(x) paste(unique(x), collapse=", "))
                   txlevel_annot[!maskNAs, ] <- DataFrame(TXNAME=txnamextxID[txIDs[!maskNAs]])
                 }, error=function(err) {
                   misk <- ifelse(length(uniqTxIDs) > 3, sprintf("%s, ...", paste(head(uniqTxIDs, n=3), collapse=", ")),
                                  paste(uniqTxIDs, collapse=", "))
-                  warning(sprintf("Could not retrieve any %keys (%s) from the transcript-centric annotation package %s\n",
+                  warning(sprintf("Could not retrieve any keys (%s) from the transcript-centric annotation package %s\n",
                                   misk, annObj$packageName))
                 })
               }

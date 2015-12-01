@@ -636,7 +636,7 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
             if (groupBy[1] %in% "sample") {
               f <- sampleNames(x@variants)
               if (all(is.na(f)))
-                f <- rep("nosample")
+                f <- rep("nosample", length(x))
               vars <- split(x@variants, f)
             } else if (groupBy[1] %in% colnames(mcols(x@variants)))
               vars <- split(x@variants, mcols(x@variants)[, groupBy])
@@ -820,8 +820,12 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
   if (type == "csv" || type == "tsv") {
     varsdf <- filteredVariants(vfResultsObj, groupBy="nothing")
-    varsdf <- as.data.frame(DataFrame(VarID=names(varsdf), CHR=seqnames(varsdf),
-                                      POS=start(varsdf), mcols(varsdf)))
+    varsdf <- as.data.frame(DataFrame(CHR=seqnames(varsdf),
+                                      POS=start(varsdf),
+                                      SAMPLEID=sampleNames(varsdf),
+                                      mcols(varsdf)))
+    firstcols <- c("VARID", "dbSNP", "CHR", "POS", "SAMPLEID", "GT")
+    varsdf <- varsdf[, c(firstcols, setdiff(colnames(varsdf), firstcols))]
     if (type == "csv")
       write.csv(varsdf, file=file, quote=FALSE, row.names=FALSE, col.names=TRUE)
     else
