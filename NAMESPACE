@@ -144,8 +144,8 @@ importFrom(GenomeInfoDb, seqnames,
                          Seqinfo)
 importFrom(BSgenome, snpcount,
                      snplocs)
-importFrom(GenomicRanges, GRanges,
-                          rowRanges)
+importFrom(SummarizedExperiment, rowRanges)
+importFrom(GenomicRanges, GRanges)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)

@@ -58,18 +58,18 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
     df <- df[width(usub)[df$usubjectid] > minIntronLength(region), ]
 
     if (nrow(df) > 0)
-      GRanges(seqnames=seqnames(query)[df$queryid],
-              ranges=IRanges(ranges(query)[df$queryid]),
-              strand=strand(int_start)[df$usubjectid],
-              LOCATION=.location(length(df$queryid), "fiveSpliceSite"),
-              LOCSTART=start(int_start)[df$usubjectid],
-              LOCEND=end(int_start)[df$usubjectid],
-              QUERYID=df$queryid,
-              TXID=as.integer(names(subject)[df$subjectid]),
-              CDSID=IntegerList(integer(0)),
-              GENEID=NA_character_,
-              PRECEDEID=CharacterList(character(0)),
-              FOLLOWID=CharacterList(character(0)))
+      res <- GRanges(seqnames=seqnames(query)[df$queryid],
+                     ranges=IRanges(ranges(query)[df$queryid]),
+                     strand=strand(int_start)[df$usubjectid],
+                     LOCATION=.location(length(df$queryid), "fiveSpliceSite"),
+                     LOCSTART=start(int_start)[df$usubjectid],
+                     LOCEND=end(int_start)[df$usubjectid],
+                     QUERYID=df$queryid,
+                     TXID=as.integer(names(subject)[df$subjectid]),
+                     CDSID=IntegerList(integer(0)),
+                     GENEID=NA_character_,
+                     PRECEDEID=CharacterList(character(0)),
+                     FOLLOWID=CharacterList(character(0)))
 
   }
 
@@ -110,18 +110,18 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
     df <- df[width(usub)[df$usubjectid] > minIntronLength(region), ]
 
     if (nrow(df) > 0)
-      GRanges(seqnames=seqnames(query)[df$queryid],
-              ranges=IRanges(ranges(query)[df$queryid]),
-              strand=strand(int_end)[df$usubjectid],
-              LOCATION=.location(length(df$queryid), "threeSpliceSite"),
-              LOCSTART=start(int_end)[df$usubjectid],
-              LOCEND=end(int_end)[df$usubjectid],
-              QUERYID=df$queryid,
-              TXID=as.integer(names(subject)[df$subjectid]),
-              CDSID=IntegerList(integer(0)),
-              GENEID=NA_character_,
-              PRECEDEID=CharacterList(character(0)),
-              FOLLOWID=CharacterList(character(0)))
+      res <- GRanges(seqnames=seqnames(query)[df$queryid],
+                     ranges=IRanges(ranges(query)[df$queryid]),
+                     strand=strand(int_end)[df$usubjectid],
+                     LOCATION=.location(length(df$queryid), "threeSpliceSite"),
+                     LOCSTART=start(int_end)[df$usubjectid],
+                     LOCEND=end(int_end)[df$usubjectid],
+                     QUERYID=df$queryid,
+                     TXID=as.integer(names(subject)[df$subjectid]),
+                     CDSID=IntegerList(integer(0)),
+                     GENEID=NA_character_,
+                     PRECEDEID=CharacterList(character(0)),
+                     FOLLOWID=CharacterList(character(0)))
   }
 
   res
