@@ -46,8 +46,12 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
     ## annotate variants
-    annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
-                                                                 BPPARAM=BPPARAM))
+    if (length(annotated_variants) > 0)
+      annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                   BPPARAM=BPPARAM))
+    else
+      annotated_variants <- annotationEngine(variants, param, annotationCache,
+                                             BPPARAM=BPPARAM)
 
     message(sprintf("%d variants processed", n.var))
   }
