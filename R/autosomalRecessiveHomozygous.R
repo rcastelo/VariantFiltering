@@ -84,7 +84,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     }
 
     affgt <- gt[, aff$IndividualID, drop=FALSE]
-    if (any(missingMask) & use == "everything")
+    if (any(missingMask) && use == "everything")
       affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
     affectedMask <- affgt == "1/1" | affgt == "1|1"
     ## affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "1/1"
@@ -92,7 +92,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     rm(affgt)
 
     caMask <- carriersMask & affectedMask
-    if (any(missingMask) & use == "complete.obs")
+    if (any(missingMask) && use == "complete.obs")
       caMask <- caMask & !missingMask
 
     ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
@@ -230,7 +230,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   }
 
   affgt <- gt[, aff$IndividualID, drop=FALSE]
-  if (any(missingMask) & use == "everything")
+  if (any(missingMask) && use == "everything")
     affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
   affectedMask <- affgt == "1/1" | affgt == "1|1"
   if (penetrance < nsamples)
@@ -240,7 +240,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   rm(affgt)
 
   caMask <- carriersMask & affectedMask
-  if (any(missingMask) & use == "complete.obs")
+  if (any(missingMask) && use == "complete.obs")
     caMask <- caMask & !missingMask
 
   ## variants ultimately set to NA are discarded (should this be tuned by an argument?)

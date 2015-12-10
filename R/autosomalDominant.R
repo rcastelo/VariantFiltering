@@ -89,7 +89,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     rm(affgt)
 
     uaMask <- unaffectedMask & affectedMask
-    if (any(missingMask) & use == "complete.obs")
+    if (any(missingMask) && use == "complete.obs")
       uaMask <- uaMask & !missingMask
 
     ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
@@ -215,14 +215,14 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   }
 
   affgt <- gt[, aff$IndividualID, drop=FALSE]
-  if (any(missingMask) & use == "everything")
+  if (any(missingMask) && use == "everything")
     affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
   affectedMask <- affgt == "0/1" | affgt == "0|1" | affgt == "1/1" | affgt == "1|1"
   affectedMask <- rowSums(affectedMask) == nrow(aff)
   rm(affgt)
 
   uaMask <- unaffectedMask & affectedMask
-  if (any(missingMask) & use == "complete.obs")
+  if (any(missingMask) && use == "complete.obs")
     uaMask <- uaMask & !missingMask
 
   ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
