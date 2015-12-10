@@ -28,19 +28,14 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   if (is.na(ped))
     stop("Please specify a PED file name when building the parameter object.")
 
-  if (!file.exists(ped))
-    stop(sprintf("could not open the PED file %s.", ped))
-
-  pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
-  pedf <- pedf[, 1:6]
-  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+  pedDf <- .readPEDfile(ped)
 
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedf$Phenotype  == 2) < 1)
+  if (sum(pedDf$Phenotype  == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
   
-  unaff <- pedf[pedf$Phenotype == 1, ]
-  aff <- pedf[pedf$Phenotype == 2, ]
+  unaff <- pedDf[pedDf$Phenotype == 1, ]
+  aff <- pedDf[pedDf$Phenotype == 2, ]
   
   annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
