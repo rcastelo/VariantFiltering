@@ -57,10 +57,10 @@ the UCSC Genome Browser. Two such annotation packages are:
     calculated from multiple genome alignments from the human genome version hg19
     to 99 vertebrate species.
   }
-  \item{\code{phastCons7way.UCSC.hg38}}{
+  \item{\code{phastCons100way.UCSC.hg38}}{
     Nucleotide-level phastCons conservation scores from the UCSC Genome Browser
     calculated from multiple genome alignments from the human genome version hg38
-    to 6 vertebrate species.
+    to 99 vertebrate species.
   }
 }
 }
@@ -68,7 +68,7 @@ the UCSC Genome Browser. Two such annotation packages are:
 \author{R. Castelo}
 \seealso{
   \code{\link[phastCons100way.UCSC.hg19]{phastCons100way.UCSC.hg19}}
-  \code{\link[phastCons7way.UCSC.hg38]{phastCons7way.UCSC.hg38}}
+  \code{\link[phastCons100way.UCSC.hg38]{phastCons100way.UCSC.hg38}}
 }
 \examples{
 if (require(phastCons100way.UCSC.hg19)) {
