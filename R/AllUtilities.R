@@ -104,3 +104,19 @@
   ## cDNA <- mapToTranscripts(gr[!duplicated(ranges(gr))], exonsbytx)
   ## cDNA <- ranges(cDNA)[togroup(gr$QUERYID)]
 }
+
+.readPEDfile <- function(pedFilename) {
+
+  if (!file.exists(pedFilename))
+    stop(sprintf("could not open the PED file %s.", pedFilename))
+
+  pedDf <- read.table(pedFilename, header=FALSE, stringsAsFactors=FALSE)
+  pedDf <- pedDf[, 1:6]
+  colnames(pedDf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+
+  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
+  if (sum(pedDf$Phenotype  == 2) < 1)
+    stop("No affected individuals detected. Something is wrong with the PED file.")
+
+  pedDf
+}
