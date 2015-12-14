@@ -30,10 +30,6 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
   pedDf <- .readPEDfile(ped)
 
-  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedDf$Phenotype  == 2) < 1)
-    stop("No affected individuals detected. Something is wrong with the PED file.")
-  
   unaff <- pedDf[pedDf$Phenotype == 1, ]
   aff <- pedDf[pedDf$Phenotype == 2, ]
   
@@ -252,6 +248,10 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     arhomMask[autosomalMask] <- mask
   } else if (class(vObj) == "CollapsedVCF")
     arhomMask[autosomalMask] <- caMask
+  else
+    warning(paste(sprintf("object 'vObj' has class %s, unknown to this function.",
+                          class(vObj)),
+                  "As a consequence, no variants are selected as autosomal recessive homozygous."))
 
   arhomMask
 }

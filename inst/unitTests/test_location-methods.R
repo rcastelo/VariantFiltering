@@ -4,8 +4,10 @@ test_location_annotations <- function() {
 
   CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
   vfpar <- VariantFilteringParam(CEUvcf,
-                                 spliceSiteMatrices=c(system.file("extdata", "hsap.donors.hcmc10_15_1.ibn", package="VariantFiltering"),
-                                                      system.file("extdata", "hsap.acceptors.hcmc10_15_1.ibn", package="VariantFiltering")),
+                                 spliceSiteMatrices=c(system.file("extdata", "hsap.donors.hcmc10_15_1.ibn",
+                                                                  package="VariantFiltering"),
+                                                      system.file("extdata", "hsap.acceptors.hcmc10_15_1.ibn",
+                                                                  package="VariantFiltering")),
                                  snpdb=list(),
                                  otherAnnotations=character(0))
 
