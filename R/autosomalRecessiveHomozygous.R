@@ -196,6 +196,12 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
                                                        seqlevelsStyle(vObj),
                                                        group="auto")
 
+  ## build logical mask for variants that segregate as an autosomal recessive homozygous trait
+  arhomMask <- vector(mode="logical", length=nvariants) ## assume default values are FALSE
+
+  if (!any(autosomalMask))
+    return(arhomMask)
+
   ## fetch genotypes
   gt <- NULL
   if (class(vObj) == "VRanges")
@@ -236,9 +242,6 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
   ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
   caMask[is.na(caMask)] <- FALSE
-
-  ## build logical mask for variants that segregate as an autosomal recessive homozygous trait
-  arhomMask <- vector(mode="logical", length=nvariants) ## assume default values are FALSE
 
   if (class(vObj) == "VRanges") {
     nauto <- sum(autosomalMask)

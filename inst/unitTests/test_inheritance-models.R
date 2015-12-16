@@ -1,5 +1,7 @@
-## create a pedigree with one affected chiled (A) and two
-## unaffected parents (B and C)
+require(BSgenome.Hsapiens.UCSC.hg19)
+
+## create a pedigree with one affected male child (A) and two
+## unaffected parents (B -male- and C -female-)
 pedDf <- data.frame(FamilyID="1", IndividualID=LETTERS[1:3],
                     FatherID=factor(c("B", NA, NA), levels=LETTERS[1:3]),
                     MotherID=factor(c("C", NA, NA), levels=LETTERS[1:3]),
@@ -14,15 +16,18 @@ vr <- VRanges(seqnames=rep("chr1", 6),
               totalDepth=rep(100, 6), sampleNames=rep(LETTERS[1:3], 2),
               softFilterMatrix=FilterMatrix(matrix=cbind(LowQual=rep(TRUE, 6)),
                                             filterRules=FilterRules(LowQual=TRUE)),
-              GT=NULL)
+              GT=NULL,
+              seqinfo=seqinfo(Hsapiens))
 
 test_deNovo_inheritance <- function() {
 
+  thisvr <- vr
+
   ## first variant segregates as a de novo trait and second one does not
-  vr$GT <- c("0/1", "0/0", "0/0", "0/1", "0/0", "1/1")
+  thisvr$GT <- c("0/1", "0/0", "0/0", "0/1", "0/0", "1/1")
 
   ## mask variants segregating as a de novo trait
-  mask <- VariantFiltering:::.deNovoMask(vObj=vr, pedDf=pedDf)
+  mask <- VariantFiltering:::.deNovoMask(vObj=thisvr, pedDf=pedDf)
 
   ## the first variant should segregate as de novo while the second should not
   checkTrue(all(mask[1:3]) && all(!mask[4:6]))
@@ -32,11 +37,13 @@ test_autosomalRecessiveHomozygous_inheritance <- function() {
 
   require(BSgenome.Hsapiens.UCSC.hg19)
 
+  thisvr <- vr
+
   ## first variant segregates as an autosomal recessive homozygous trait and second one does not
-  vr$GT <- c("1/1", "0/1", "0/1", "0/1", "0/1", "0/1")
+  thisvr$GT <- c("1/1", "0/1", "0/1", "0/1", "0/1", "0/1")
 
   ## mask variants segregating as a de novo trait
-  mask <- VariantFiltering:::.autosomalRecessiveHomozygousMask(vObj=vr,
+  mask <- VariantFiltering:::.autosomalRecessiveHomozygousMask(vObj=thisvr,
                                                                bsgenome=Hsapiens,
                                                                pedDf=pedDf)
 
@@ -48,14 +55,31 @@ test_autosomalDominant_inheritance <- function() {
 
   require(BSgenome.Hsapiens.UCSC.hg19)
 
+  thisvr <- vr
+
   ## first variant segregates as an autosomal recessive homozygous trait and second one does not
   pedDf$Phenotype[pedDf$IndividualID == "B"] <- 2
-  vr$GT <- c("0/1", "1/1", "0/0", "0/1", "0/0", "0/0")
+  thisvr$GT <- c("0/1", "1/1", "0/0", "0/1", "0/0", "0/0")
 
   ## mask variants segregating as a de novo trait
-  mask <- VariantFiltering:::.autosomalDominantMask(vObj=vr,
+  mask <- VariantFiltering:::.autosomalDominantMask(vObj=thisvr,
                                                     bsgenome=Hsapiens,
                                                     pedDf=pedDf)
+
+  ## the first variant should segregate as de novo while the second should not
+  checkTrue(all(mask[1:3]) && all(!mask[4:6]))
+}
+
+test_xLinked_inheritance <- function() {
+
+  thisvr <- vr
+
+  ## first variant segregates as an X-linked trait and second one does not
+  thisvr$GT <- c("1/1", "0/0", "0/1", "1/1", "0/1", "0/1")
+  seqnames(thisvr) <- factor("chrX", levels=seqlevels(thisvr))
+
+  ## mask variants segregating as a de novo trait
+  mask <- VariantFiltering:::.xLinkedMask(vObj=thisvr, bsgenome=Hsapiens, pedDf=pedDf)
 
   ## the first variant should segregate as de novo while the second should not
   checkTrue(all(mask[1:3]) && all(!mask[4:6]))
