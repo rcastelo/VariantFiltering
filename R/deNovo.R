@@ -169,10 +169,6 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
 
   ## PENETRANCE ??
 
-  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedDf$Phenotype  == 2) < 1)
-    stop("No affected individuals detected. Something is wrong with the PED file.")
-
   if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Gender[pedDf$Phenotype == 1]) != 1:2) 
     stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 

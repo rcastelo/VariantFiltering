@@ -12,6 +12,7 @@ This function identifies variants that appear only in the X chromosome of the un
 \usage{
 \S4method{xLinked}{VariantFilteringParam}(param,
                                           svparam=ScanVcfParam(),
+                                          use=c("everything", "complete.obs", "all.obs"),
                                           BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
@@ -22,6 +23,8 @@ This function identifies variants that appear only in the X chromosome of the un
   An instance of a \code{ScanVcfParam} object to enable analyzing a subset of variants and samples. This object
   is passed internally to a call to the \code{\link[VariantAnnotation]{readVcf}()} function in the
   \code{VariantAnnotation} package, see its help page for a complete description of this functionality.
+  }
+  \item{use}{character string specifying the policy to apply on missing genotypes when comparing them. This policy can be either '"everything"' (default), '"complete.obs"' or '"all.obs"'. The default policy ('"everything"') will propagate NA truth values using the behavior of the R logical operators, with the exception that when the final truth value associated with a variant is \code{NA}, the variant is ultimately discarded.
   }
   \item{BPPARAM}{
   An object of class \code{\link[BiocParallel]{BiocParallelParam}} specifiying parameters related to

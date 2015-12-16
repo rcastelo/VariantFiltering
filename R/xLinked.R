@@ -1,5 +1,7 @@
 setMethod("xLinked", signature(param="VariantFilteringParam"),
-          function(param, svparam=ScanVcfParam(), BPPARAM=bpparam("SerialParam")) {
+          function(param, svparam=ScanVcfParam(),
+                   use=c("everything", "complete.obs", "all.obs"),
+                   BPPARAM=bpparam("SerialParam")) {
 
   ## store call for reproducing it later
   callobj <- match.call()
@@ -24,24 +26,15 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   if (is.na(ped))
     stop("Please specify a PED file name when building the parameter object.")
 
-  if (!file.exists(ped))
-    stop(sprintf("could not open the PED file %s.", ped))
+  pedDf <- .readPEDfile(ped)
 
-  pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
-  pedf <- pedf[, 1:6]
-  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 1, ]
+  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 2, ]
   
-  ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedf$Phenotype  == 2) < 1)
-    stop("No affected individuals detected in PED file.")
-
-  unaff_males <- pedf[pedf$Phenotype == 1 && pedf$Gender == 1, ]
-  carrier_females <-  pedf[pedf$Phenotype == 1 && pedf$Gender == 2, ]
-  
-  aff_males <- pedf[pedf$Phenotype == 2 && pedf$Gender == 1, ]
+  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Gender == 1, ]
 
   if (nrow(aff_males) < 1)
-    stop("Current 'X-linked' analysis requires at least one affected male.")
+    stop("The 'X-linked' analysis requires at least one affected male.")
   
   annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
@@ -65,6 +58,8 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
                                                                   group="sex")[1]
     vcf <- vcf[XchromosomeMask, ]
 
+    gt <- geno(vcf)$GT
+    missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
 
     ## build logical mask of carrier females, unaffected males and affected males
     ## variants in carrier females should be heterozygous, in unaffected males
@@ -72,22 +67,42 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     carrierFemalesMask <- unaffectedMalesMask <- rep(TRUE, nrow(vcf))
 
     if (nrow(carrier_females) > 0) {
-      carrierFemalesMask <- geno(vcf)$GT[, carrier_females$IndividualID, drop=FALSE] == "0/1"
+      unafffemalesgt <- gt[, carrier_females$IndividualID, drop=FALSE]
+      if (any(missingMask) && use == "everything")
+        unafffemalesgt[unafffemalesgt == "." | unafffemalesgt == "./." | unafffemalesgt == ".|."] <- NA_character_
+      carrierFemalesMask <- unafffemalesgt == "0/1" | unafffemalesgt == "0|1" | unafffemalesgt == "1|0"
       carrierFemalesMask <- apply(carrierFemalesMask, 1, all)
+      rm(unafffemalesgt)
     }
 
     if (nrow(unaff_males) > 0) {
-      unaffectedMalesMask <- geno(vcf)$GT[, unaff_males$IndividualID, drop=FALSE] == "0/0"
+      unaffmalesgt <- gt[, unaff_males$IndividualID, drop=FALSE]
+      if (any(missingMask) && use == "everything")
+        unaffmalesgt[unaffmalesgt == "." | unaffmalesgt == "./." | unaffmalesgt == ".|."] <- NA_character_
+      unaffectedMalesMask <- unaffmalesgt == "0/0" | unaffmalesgt == "0|0"
       unaffectedMalesMask <- apply(unaffectedMalesMask, 1, all)
+      rm(unaffmalesgt)
     }
 
-    affectedMalesMask <- geno(vcf)$GT[, aff_males$IndividualID, drop=FALSE] == "1/1"
+    affmalesgt <- gt[, aff_males$IndividualID, drop=FALSE]
+    if (any(missingMask) && use == "everything")
+      affmalesgt[affmalesgt == "." | affmalesgt == "./." | affmalesgt == ".|."] <- NA_character_
+    affectedMalesMask <- affmalesgt == "1/1" | affmalesgt == "1|1"
     affectedMalesMask <- apply(affectedMalesMask, 1, all)
+    rm(affmalesgt)
 
-    ## filter out variants that do not segregate as an 'X-linked' trait
-    vcf <- vcf[carrierFemalesMask & unaffectedMalesMask & affectedMalesMask, ]
+    cuaMask <- carrierFemalesMask & unaffectedMalesMask & affectedMalesMask
+    if (any(missingMask) && use == "complete.obs")
+      cuaMask <- cuaMask & !missingMask
 
-    if (any(carrierFemalesMask & unaffectedMalesMask & affectedMalesMask)) {
+    ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
+    cuaMask[is.na(cuaMask)] <- FALSE
+
+    if (any(cuaMask)) {
+
+      ## filter out variants that do not segregate as an 'X-linked' trait
+      vcf <- vcf[cuaMask, ]
+
       ## coerce the VCF object to a VRanges object
       variants <- as(vcf, "VRanges")
 
@@ -98,8 +113,9 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
       variants <- .matchSeqinfo(variants, txdb, bsgenome)
   
       ## annotate variants
-      annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
-                                                                   BPPARAM=BPPARAM))
+      annotated_variants <- c(annotated_variants,
+                              annotationEngine(variants, param, annotationCache,
+                                               BPPARAM=BPPARAM))
     }
 
     message(sprintf("%d variants processed", n.var))
@@ -139,3 +155,128 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
       minScore5ss=NA_real_, minScore3ss=NA_real_, minCUFC=0)
 })
+
+## build a logical mask whose truth values correspond to variants that segregate
+## according to an X-linked inheritance model: variants in carrier females should
+## be heterozygous, in unaffected males should be homozygous reference and in
+## affected males homozygous alternative
+.xLinkedMask <- function(vObj, pedDf, bsgenome,
+                         use=c("everything", "complete.obs", "all.obs"),
+                         penetrance=1) {
+
+  use <- match.arg(use)
+
+  if (class(vObj) != "VRanges" && class(vObj) != "CollapsedVCF")
+    stop("Argument 'vObj' should be either a 'VRanges' or a 'CollapsedVCF' object.")
+
+  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype"))) ## QC
+
+  nsamples <- nvariants <- 0
+  if (class(vObj) == "VRanges") {
+    nsamples <- nlevels(sampleNames(vObj))
+    nvariants <- length(vObj)
+  } else if (class(vObj) == "CollapsedVCF") {
+    nsamples <- as.integer(ncol(vObj))
+    nvariants <- nrow(vObj)
+  }
+
+  ## PENETRANCE ??
+
+  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 1, ]
+  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 2, ]
+  
+  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Gender == 1, ]
+
+  if (nrow(aff_males) < 1)
+    stop("The 'X-linked' analysis requires at least one affected male.")
+
+  ## restrict upfront variants to those in autosomal chromosomes
+  ## we subset to the first element of the value returned by seqlevelsStyle()
+  ## to deal with cases in which only a subset of chromosomes is contained in
+  ## the input VCF (typically for teaching/example/illustration purposes) which
+  ## matches more than one chromosome style. we also assume that the X chromosome
+  ## is the first sex chromosome returned by extractSeqlevelsByGroup(group="sex")
+  snames <- as.character(seqnames(vObj))
+  XchromosomeMask <- snames %in% extractSeqlevelsByGroup(organism(bsgenome),
+                                                         seqlevelsStyle(vObj)[1],
+                                                         group="sex")[1]
+
+  ## build logical mask for variants that segregate as an X-linked trait
+  xlinkedMask <- vector(mode="logical", length=nvariants) ## assume defaults values are FALSE
+
+  if (!any(XchromosomeMask))
+    return(xlinkedMask)
+  
+  ## fetch genotypes
+  gt <- NULL
+  if (class(vObj) == "VRanges")
+    gt <- do.call("cbind", split(vObj$GT[XchromosomeMask], sampleNames(vObj)))
+  else if (class(vObj) == "CollapsedVCF")
+    gt <- geno(vObj)$GT[XchromosomeMask, , drop=FALSE]
+
+  missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
+
+  if (any(missingMask) && use == "all.obs")
+    stop("There are missing genotypes and current policy to deal with them is 'all.obs', which does not allow them.")
+
+  ## build logical masks of carrier females, unaffected males and affected males
+  carrierFemalesMask <- unaffectedMalesMask <- rep(TRUE, nrow(gt))
+
+  if (nrow(carrier_females) > 0) {
+    unafffemalesgt <- gt[, carrier_females$IndividualID, drop=FALSE]
+    if (any(missingMask) && use == "everything")
+      unafffemalesgt[unafffemalesgt == "." | unafffemalesgt == "./." | unafffemalesgt == ".|."] <- NA_character_
+    carrierFemalesMask <- unafffemalesgt == "0/1" | unafffemalesgt == "0|1" | unafffemalesgt == "1|0"
+    carrierFemalesMask <- apply(carrierFemalesMask, 1, all)
+    rm(unafffemalesgt)
+  }
+
+  if (nrow(unaff_males) > 0) {
+    unaffmalesgt <- gt[, unaff_males$IndividualID, drop=FALSE]
+    if (any(missingMask) && use == "everything")
+      unaffmalesgt[unaffmalesgt == "." | unaffmalesgt == "./." | unaffmalesgt == ".|."] <- NA_character_
+    unaffectedMalesMask <- unaffmalesgt == "0/0" | unaffmalesgt == "0|0"
+    unaffectedMalesMask <- apply(unaffectedMalesMask, 1, all)
+    rm(unaffmalesgt)
+  }
+
+  affmalesgt <- gt[, aff_males$IndividualID, drop=FALSE]
+  if (any(missingMask) && use == "everything")
+    affmalesgt[affmalesgt == "." | affmalesgt == "./." | affmalesgt == ".|."] <- NA_character_
+  affectedMalesMask <- affmalesgt == "1/1" | affmalesgt == "1|1"
+  affectedMalesMask <- apply(affectedMalesMask, 1, all)
+  rm(affmalesgt)
+
+  cuaMask <- carrierFemalesMask & unaffectedMalesMask & affectedMalesMask
+  if (any(missingMask) && use == "complete.obs")
+    cuaMask <- cuaMask & !missingMask
+
+  ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
+  cuaMask[is.na(cuaMask)] <- FALSE
+
+  if (class(vObj) == "VRanges") {
+    nxchrom <- sum(XchromosomeMask)
+    idx <- split(1:nxchrom, sampleNames(vObj[XchromosomeMask]))
+    mask <- vector(mode="logical", length(nxchrom))
+    mask[unlist(idx, use.names=FALSE)] <- rep(cuaMask, times=nsamples)
+    xlinkedMask[XchromosomeMask] <- mask
+  } else if (class(vObj) == "CollapsedVCF")
+    xlinkedMask[XchromosomeMask] <- cuaMask
+  else
+    warning(paste(sprintf("object 'vObj' has class %s, unknown to this function.",
+                          class(vObj)),
+                  "As a consequence, no variants are selected as X-linked."))
+
+  xlinkedMask
+}
+
+.xLinkedFilter <- function(x) {
+
+  if (is.null(param(x)$pedFilename))
+    stop("Please specify a PED file name in the 'VariantFiltering' parameter object.")
+
+  pedDf <- .readPEDfile(param(x)$pedFilename)
+
+  .xLinkedMask(vObj=allVariants(x, groupBy="nothing"),
+               pedDf=pedDf, bsgenome=param(x)$bsgenome, use="everything")
+}

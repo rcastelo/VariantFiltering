@@ -150,7 +150,9 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 })
 
 ## build a logical mask whose truth values correspond to variants that segregate
-## according to an autosomal dominant inheritance model
+## according to an autosomal dominant inheritance model: variants in unaffected
+## individuals should be homozygous reference and in affected individuals should
+## be either homozygous alternative or heterozygous
 .autosomalDominantMask <- function(vObj, pedDf, bsgenome,
                                    use=c("everything", "complete.obs", "all.obs"),
                                    penetrance=1) {
@@ -181,12 +183,20 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   aff <- pedDf[pedDf$Phenotype == 2, ]
 
   ## restrict upfront variants to those in autosomal chromosomes
+  ## we subset to the first element of the value returned by seqlevelsStyle()
+  ## to deal with cases in which only a subset of chromosomes is contained in
+  ## the input VCF (typically for teaching/example/illustration purposes) which
+  ## matches more than one chromosome style
   snames <- as.character(seqnames(vObj))
-
-  ## mask variants and annotations in autosomes
   autosomalMask <- snames %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                       seqlevelsStyle(vObj),
+                                                       seqlevelsStyle(vObj)[1],
                                                        group="auto")
+
+  ## build logical mask for variants that segregate as an autosomal dominant trait
+  adomMask <- vector(mode="logical", length=nvariants) ## assume default values are FALSE
+
+  if (!any(autosomalMask))
+    return(adomMask)
 
   ## fetch genotypes
   gt <- NULL
@@ -223,9 +233,6 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 
   ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
   uaMask[is.na(uaMask)] <- FALSE
-
-  ## build logical mask for variants that segregate as an autosomal dominant trait
-  adomMask <- vector(mode="logical", length=nvariants) ## assume default values are FALSE
 
   if (class(vObj) == "VRanges") {
     nauto <- sum(autosomalMask)
