@@ -168,7 +168,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   otherannotations <- list()
   for (name in otherAnnotations)  {
     if (!exists(name)) {
-      if (!name %in% installed.packages()[, "Package"])
+      if (!name %in% installed.packages(noCache=TRUE)[, "Package"])
         stop(sprintf("please install the Bioconductor package %s.", name))
       if (!.isPkgLoaded(name)) {
         message("Loading annotation package ", name)
@@ -329,7 +329,7 @@ setMethod("soamat", signature(x="VariantFilteringParam"),
   annotObj <- NULL
 
   if (is.character(pkgName)) {
-    if (!pkgName %in% installed.packages()[, "Package"])
+    if (!pkgName %in% installed.packages(noCache=TRUE)[, "Package"])
       stop(sprintf("please install the Bioconductor package %s.", pkgName))
     if (!.isPkgLoaded(pkgName)) {
       message("Loading ", pkgType, " annotation package ", pkgName)

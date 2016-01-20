@@ -30,7 +30,7 @@
   ## set the genome build to the one of the genome package
   message(sprintf("Assuming the genome build of the input variants is %s.",
                   unique(genome(bsgenome)[commonChr])))
-  seqinfo(variantsGR, new2old=match(seqlevels(bsgenome), seqlevels(variantsGR))) <- seqinfo(bsgenome)
+  seqinfo(variantsGR, new2old=match(commonChr, seqlevels(variantsGR))) <- seqinfo(bsgenome)[commonChr]
 
   ## set the sequence style of variants to the one of annotations
   message(sprintf("Switching to the %s chromosome-name style from the transcript-centric annotation package.",
