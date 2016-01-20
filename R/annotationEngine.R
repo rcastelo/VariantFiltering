@@ -396,7 +396,22 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             if (!"TYPE" %in% colnames(mcols(variantsVR))) {
               stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
+            ## adapt to sequence style and genome version from the input
+            ## SNPlocs object, thus assuming positions are based on the same
+            ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
             seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
+            if (any(is.na(genome(variantsVR)))) {
+              warning(sprintf("Assuming the genome build of the input variants is the one of the XtraSNPlocs package (%s).", unique(genome(annObj)[commonChr])))
+            genome(variantsVR) <- genome(annObj)
+            } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
+              warning(sprintf("Assumming %s represent the same genome build between variants and the XtraSNPlocs package, respectively.",
+                               paste(c(unique(genome(variantsVR)[commonChr]),
+                                       unique(genome(annObj)[commonChr])),
+                                     collapse=" and ")))
+              genome(variantsVR) <- genome(annObj)
+            }
+
             masksnp <- variantsVR$TYPE == "SNV"
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(masksnp)) {
@@ -417,7 +432,22 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
             if (!"TYPE" %in% colnames(mcols(variantsVR))) {
               stop("Variant type (SNV, Insertion, Deletion, MNV, Delins) has not been annotated.")
             }
+            ## adapt to sequence style and genome version from the input
+            ## SNPlocs object, thus assuming positions are based on the same
+            ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
             seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
+            if (any(is.na(genome(variantsVR)))) {
+              warning(sprintf("Assuming the genome build of the input variants is the one of the XtraSNPlocs package (%s).", unique(genome(annObj)[commonChr])))
+            genome(variantsVR) <- genome(annObj)
+            } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
+              warning(sprintf("Assumming %s represent the same genome build between variants and the XtraSNPlocs package, respectively.",
+                               paste(c(unique(genome(variantsVR)[commonChr]),
+                                       unique(genome(annObj)[commonChr])),
+                                     collapse=" and ")))
+              genome(variantsVR) <- genome(annObj)
+            }
+
             maskxtrasnp <- variantsVR$TYPE != "SNV"
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(maskxtrasnp)) {
