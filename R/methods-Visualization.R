@@ -33,7 +33,8 @@ setMethod("plot", signature(x="VariantFilteringResults"),
 
               whbam <- which(rownames(bamSamples(bamFiles(x))) %in% sampleName)
               hdr <- scanBamHeader(bamPaths(bamFiles(x))[whbam])
-              leadseqlevelsstyle <- seqlevelsStyle(names(hdr[[1]]$targets))
+              ## b/c seqlevelStyle() may return more than one, just take the first one
+              suppressWarnings(leadseqlevelsstyle <- seqlevelsStyle(names(hdr[[1]]$targets))[1])
               seqlevelsStyle(bsgenome) <- leadseqlevelsstyle
             }
 
