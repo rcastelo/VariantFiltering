@@ -156,7 +156,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
                              vcfidx
                            }, annotated_variants$VCFIDX[annotated_variants$COMPHETMOTHER == 1L],
                            annotated_variants$VCFIDX[annotated_variants$COMPHETFATHER == 1L])
-    elen <- elementLengths(vcfidxbygene)
+    elen <- elementNROWS(vcfidxbygene)
     vcfidxbygene <- vcfidxbygene[elen > 1] ## discard variants found alone in a gene
     compHetMask <- annotated_variants$VCFIDX %in% unique(unlist(vcfidxbygene, use.names=FALSE))
 

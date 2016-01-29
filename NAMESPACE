@@ -84,7 +84,7 @@ importMethodsFrom(Rsamtools, headerTabix,
                              path,
                              scanBamHeader,
                              scanBam)
-importMethodsFrom(IRanges, elementLengths,
+importMethodsFrom(IRanges, elementNROWS,
                            start,
                            width,
                            flank,

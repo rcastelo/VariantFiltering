@@ -121,7 +121,7 @@ setMethod("wmScore", signature(object="WeightMatrix", dnaseqs="character"),
 
 setMethod("wmScore", signature(object="WeightMatrix", dnaseqs="DNAStringSet"),
           function(object, dnaseqs) {
-            nsites <- elementLengths(dnaseqs) - width(object) + 1L
+            nsites <- elementNROWS(dnaseqs) - width(object) + 1L
 
             if (any(nsites < 1))
               stop(sprintf("DNA strings %s have fewer nucleotides than the width of the input weight matrix (%d)",
