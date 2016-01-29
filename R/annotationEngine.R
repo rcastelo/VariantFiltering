@@ -197,7 +197,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     ##
     ## mask <- is.na(variantsVR_annotated_coding$TXID)
     ## variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    ## mask <- elementLengths(variantsVR_annotated_coding$CDSID) == 0
+    ## mask <- elementNROWS(variantsVR_annotated_coding$CDSID) == 0
     ## variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
     ## mask <- is.na(variantsVR_annotated_coding$GENEID)
     ## variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
@@ -416,7 +416,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(masksnp)) {
               rsids_list <- .loc2SNPid(annObj, variantsVR[masksnp], BPPARAM=BPPARAM)
-              elen <- elementLengths(rsids_list)
+              elen <- elementNROWS(rsids_list)
               rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
               ## paste together multiple dbSNP identifiers
@@ -452,7 +452,7 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(maskxtrasnp)) {
               rsids_list <- .loc2XtraSNPid(annObj, variantsVR[maskxtrasnp], BPPARAM=BPPARAM)
-              elen <- elementLengths(rsids_list)
+              elen <- elementNROWS(rsids_list)
               rsids[maskxtrasnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
               ## paste together multiple dbSNP identifiers
@@ -952,7 +952,7 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   locaa <- rep(NA_character_, length(length(whnonsyn)))
   refaa <- as.character(variantsVR[whnonsyn]$REFAA)
   altaa <- as.character(variantsVR[whnonsyn]$VARAA)
-  elen <- elementLengths(variantsVR[whnonsyn]$PROTEINLOC)
+  elen <- elementNROWS(variantsVR[whnonsyn]$PROTEINLOC)
   
   locaa[elen == 1] <- as.character(unlist(variantsVR[whnonsyn]$PROTEINLOC[elen == 1], use.names=FALSE))
 
@@ -986,7 +986,7 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   locaa <- rep(NA_character_, length(length(whframeshift)))
   refaa <- as.character(variantsVR[whframeshift]$REFAA)
   altaa <- as.character(variantsVR[whframeshift]$VARAA)
-  elen <- elementLengths(variantsVR[whframeshift]$PROTEINLOC)
+  elen <- elementNROWS(variantsVR[whframeshift]$PROTEINLOC)
   locaa[elen == 1] <- as.character(unlist(variantsVR[whframeshift]$PROTEINLOC[elen == 1], use.names=FALSE))
   ## location of a multiple amino acid replacement is denoted by its position range
   locaa[elen > 1] <- sapply(variantsVR[whframeshift]$PROTEINLOC[elen > 1],

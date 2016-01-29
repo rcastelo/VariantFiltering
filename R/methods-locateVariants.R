@@ -38,7 +38,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
 
   if (asHits)
     return(VariantAnnotation:::.consolidateHits(fo, length(query), length(subject),
-                                                elementLengths(subject)))
+                                                elementNROWS(subject)))
 
   res <- GRanges()
   values(res) <- DataFrame(LOCATION=.location(0, "fiveSpliceSite"),
@@ -91,7 +91,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
 
   if (asHits)
     return(VariantAnnotation:::.consolidateHits(fo, length(query), length(subject),
-                                                elementLengths(subject)))
+                                                elementNROWS(subject)))
 
   res <- GRanges()
   values(res) <- DataFrame(LOCATION=.location(0, "threeSpliceSite"),

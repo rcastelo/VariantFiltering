@@ -787,7 +787,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             colsMask[colsIdx] <- TRUE
 
             vars <- unlist(varsxsam, use.names=FALSE)
-            sampleNames(vars) <- Rle(names(varsxsam), elementLengths(varsxsam))
+            sampleNames(vars) <- Rle(names(varsxsam), elementNROWS(varsxsam))
             rowsMask <- rep(rowsMask, length(varsxsam))
             if ("MafDb" %in% sapply(param(x)$otherAnnotations, class))
               vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
