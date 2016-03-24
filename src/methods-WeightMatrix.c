@@ -130,19 +130,21 @@ scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
   WeightMatrix* wm = (WeightMatrix *) R_ExternalPtrAddr(wmR);
   double* scores;
   SEXP scoresR;
+  SEXP result;
 
   /* S = cache_XStringSet(dnaStringSet); */
   S = hold_XStringSet(dnaStringSet);
   S_length = get_XStringSet_length(dnaStringSet);
 
-  PROTECT(scoresR = allocVector(REALSXP, nsco));
-  scores = REAL(scoresR);
-  i = 0;
+  PROTECT(result = allocVector(VECSXP, S_length));
+  /* PROTECT(scoresR = allocVector(REALSXP, nsco));
+  scores = REAL(scoresR); */
   for (j=0; j < S_length; j++) {
     Chars_holder S_elt;
     char buf[MAXVARS];
     int k;
 
+    i = 0;
     S_elt = get_elt_from_XStringSet_holder(&S, j);
     for (k=0; k < S_elt.length; k++) {
       const char* c = S_elt.ptr + k;
@@ -151,18 +153,20 @@ scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
     }
     buf[k] = 0;
 
+    SET_VECTOR_ELT(result, j, scoresR = allocVector(REALSXP, S_elt.length-wm->nvars+1));
     for (k=0; k < S_elt.length-wm->nvars+1; k++) {  
       char buf2[MAXVARS];
 
       strncpy(buf2, buf+k, wm->nvars);
       buf2[wm->nvars] = 0;
-      scores[i++] = wm_score(wm, buf2);
+      /* scores[i++] = wm_score(wm, buf2); */
+      REAL(VECTOR_ELT(result, j))[k] = wm_score(wm, buf2);
     }
 
   }
-  UNPROTECT(1); /* scoresR */
+  UNPROTECT(1); /* result */
 
-  return(scoresR);
+  return(result);
 }
 
 /* entry point to wm_show_wm */
