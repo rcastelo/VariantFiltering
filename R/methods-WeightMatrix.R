@@ -129,3 +129,31 @@ setMethod("wmScore", signature(object="WeightMatrix", dnaseqs="DNAStringSet"),
 
             return(.Call("scoss_wm_score_DNAStringSet", object@wm, dnaseqs, sum(nsites)))
           })
+
+setMethod("wmScore", signature(object="character", dnaseqs="character"),
+          function(object, dnaseqs, locations=levels(.location()), strictLocations=FALSE) {
+
+            object <- readWm(fname=object, locations=locations, strictLocations=strictLocations)
+
+            nsites <- nchar(dnaseqs) - width(object) + 1L
+
+            if (any(nsites < 1))
+              stop(sprintf("strings %s have fewer characters than the width of the input weight matrix (%d)",
+                           paste(head(which(nsites < 1)), sep=", "), width(object)))
+
+            return(.Call("scoss_wm_score", object@wm, dnaseqs, sum(nsites)))
+          })
+
+setMethod("wmScore", signature(object="character", dnaseqs="DNAStringSet"),
+          function(object, dnaseqs, locations=levels(.location()), strictLocations=FALSE) {
+
+            object <- readWm(fname=object, locations=locations, strictLocations=strictLocations)
+
+            nsites <- elementNROWS(dnaseqs) - width(object) + 1L
+
+            if (any(nsites < 1))
+              stop(sprintf("DNA strings %s have fewer nucleotides than the width of the input weight matrix (%d)",
+                           paste(head(which(nsites < 1)), sep=", "), width(object)))
+
+            return(.Call("scoss_wm_score_DNAStringSet", object@wm, dnaseqs, sum(nsites)))
+          })

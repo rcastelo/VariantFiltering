@@ -120,6 +120,15 @@ importMethodsFrom(AnnotationDbi, get,
                                  columns,
                                  keys)
 
+importFrom(utils, capture.output,
+                  combn,
+                  installed.packages,
+                  read.delim,
+                  read.table,
+                  sessionInfo,
+                  write.csv,
+                  write.table)
+
 importFrom(RBGL, tsort,
                  dijkstra.sp)
 importFrom(RSQLite, SQLite)

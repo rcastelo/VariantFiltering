@@ -15,6 +15,8 @@
 \alias{show,WeightMatrix-method}
 \alias{wmScore,WeightMatrix,DNAStringSet-method}
 \alias{wmScore,WeightMatrix,character-method}
+\alias{wmScore,character,DNAStringSet-method}
+\alias{wmScore,character,character-method}
 
 \alias{conservedPositions}
 \alias{readWm}
@@ -39,12 +41,18 @@ Class for storing weight matrices that VariantFiltering uses to score potential 
 \S4method{show}{WeightMatrix}(object)
 \S4method{wmScore}{WeightMatrix,DNAStringSet}(object, dnaseqs)
 \S4method{wmScore}{WeightMatrix,character}(object, dnaseqs)
+\S4method{wmScore}{character,DNAStringSet}(object, dnaseqs, locations, strictLocations)
+\S4method{wmScore}{character,character}(object, dnaseqs, locations, strictLocations)
 }
 \arguments{
   \item{x}{A \code{WeightMatrix} object.}
-  \item{object}{A \code{WeightMatrix} object.}
+  \item{object}{A \code{WeightMatrix} object or the file name of a weight matrix.}
   \item{dnaseqs}{Either a vector of character strings a \code{DNAStringSet} object, both of which store
         nucleotide sequences to be scored using the input \code{WeightMatrix} object.}
+  \item{locations}{Argument passed to a \code{readWm()} function call. Please consult the manual page
+        of \code{readWm()}.}
+  \item{strictLocations}{Argument passed to a \code{readWm()} function call. Please consult the manual page
+        of \code{readWm()}.}
 }
 \details{
 The \code{WeightMatrix} class and associated methods serve the purpose of enabling the \code{VariantFiltering} package
@@ -68,8 +76,13 @@ automatically converted to weights by either using the background frequencies sp
 line or using an uniform distribution otherwise.
 
 The method \code{wmScore()} scores one or more sequences of nucleotides using the input \code{WeightMatrix} object.
+When the input object is the file name of a weight matrix, the function \code{readWm()} is called to read first that
+weight matrix and internally create a \code{WeightMatrix} object. This way to call \code{wmScore()} is required when
+using it in parallel since currently \code{WeightMatrix} objects are not serializable.
+
 If the sequences are longer than the width of the weight matrix, this function will score every possible site
-within those sequences. It returns a vector of with the calculated scores. When the scores cannot be calculated
+within those sequences. It returns a list where each element is a vector with the calculated scores of the corresponding
+DNA sequence. When the scores cannot be calculated
 because of a conserved position that does not occur in the sequence (i.e., absence of a GT dinucleotide with the
 5'ss weight matrix), it returns \code{NA} as corresponding score value.
 
