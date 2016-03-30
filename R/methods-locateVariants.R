@@ -52,7 +52,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
 
     df <- unique(data.frame(queryid=queryHits(fo),
                             usubjectid=subjectHits(fo),
-                            subjectid=togroup(subject)[subjectHits(fo)]))
+                            subjectid=togroup(PartitioningByWidth(subject))[subjectHits(fo)]))
 
     ## restrict splice site annotations to those occurring in introns of a minimum length
     df <- df[width(usub)[df$usubjectid] > minIntronLength(region), ]
@@ -104,7 +104,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
   if (length(fo) > 0) {
     df <- unique(data.frame(queryid=queryHits(fo),
                             usubjectid=subjectHits(fo),
-                            subjectid=togroup(subject)[subjectHits(fo)]))
+                            subjectid=togroup(PartitioningByWidth(subject))[subjectHits(fo)]))
 
     ## restrict splice site annotations to those occurring in introns of a minimum length
     df <- df[width(usub)[df$usubjectid] > minIntronLength(region), ]

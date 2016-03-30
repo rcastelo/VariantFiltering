@@ -1,7 +1,4 @@
 test_location_annotations <- function() {
-
-  require(BiocParallel)
-
   CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
   vfpar <- VariantFilteringParam(CEUvcf,
                                  spliceSiteMatrices=c(system.file("extdata", "hsap.donors.hcmc10_15_1.ibn",
@@ -11,7 +8,7 @@ test_location_annotations <- function() {
                                  snpdb=list(),
                                  otherAnnotations=character(0))
 
-  uind <- unrelatedIndividuals(vfpar, BPPARAM=MulticoreParam(workers=1))
+  uind <- unrelatedIndividuals(vfpar)
   fv <- filteredVariants(uind)
 
   ## these are variants that pass quality filters and affect 5' and 3' ss
