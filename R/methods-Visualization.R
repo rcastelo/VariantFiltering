@@ -114,7 +114,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
 
             ## geneannot <- exonsBy(txdb, by="gene")
             ## flatgeneannot <- unlist(geneannot)
-            ## flatgeneannot$symbol <- select(param(x)$orgdb, keys=names(flatgeneannot), columns="SYMBOL")$SYMBOL
+            ## flatgeneannot$symbol <- suppressMessages(select(param(x)$orgdb, keys=names(flatgeneannot), columns="SYMBOL")$SYMBOL)
             ## seqlevelsStyle(flatgeneannot) <- leadseqlevelsstyle
             ## flatgeneannot <- flatgeneannot[seqnames(flatgeneannot) %in% as.character(seqnames(vars1))[1]]
             ## geneannot <- split(flatgeneannot, names(flatgeneannot))

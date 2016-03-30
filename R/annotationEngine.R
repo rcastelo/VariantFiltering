@@ -218,7 +218,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     variantsVR_annotated_coding$CDSEND <- rep(NA_integer_, length(variantsVR_annotated_coding))
     uniqTxIDs <- unique(as.character(unlist(variantsVR_annotated_coding$TXID, use.names=FALSE)))
     tryCatch({
-      cdsinfo <- select(txdb, keys=uniqTxIDs, columns=c("CDSSTART", "CDSEND"), keytype="TXID")
+      cdsinfo <- suppressMessages(select(txdb, keys=uniqTxIDs, columns=c("CDSSTART", "CDSEND"), keytype="TXID"))
       cdsinfoStart <- split(cdsinfo$CDSSTART, cdsinfo$TXID)
       cdsinfoStart <- sapply(cdsinfoStart, min)
       cdsinfoEnd <- split(cdsinfo$CDSEND, cdsinfo$TXID)
@@ -299,7 +299,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   variantsVR_annotated$TXEND <- rep(NA, length(variantsVR_annotated))
   uniqTxIDs <- unique(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE)))
   tryCatch({
-    txinfo <- select(txdb, keys=uniqTxIDs, columns=c("TXSTART", "TXEND"), keytype="TXID")
+    txinfo <- suppressMessages(select(txdb, keys=uniqTxIDs, columns=c("TXSTART", "TXEND"), keytype="TXID"))
     mt <- match(as.character(unlist(variantsVR_annotated$TXID, use.names=FALSE)), txinfo$TXID)
     variantsVR_annotated$TXSTART <- txinfo$TXSTART[mt]
     variantsVR_annotated$TXEND <- txinfo$TXEND[mt]
@@ -480,8 +480,8 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
             rsids <- rsids[!is.na(rsids)]
             if (length(rsids) > 0) {
               tryCatch({
-                pp <- select(annObj, keys=rsids,
-                             cols=c("TRAININGSET", "PREDICTION", "PPH2PROB"))
+                pp <- suppressMessages(select(annObj, keys=rsids,
+                                       cols=c("TRAININGSET", "PREDICTION", "PPH2PROB")))
               }, error=function(err) {
                 misk <- ifelse(length(rsids) > 3, sprintf("%s, ...", paste(head(rsids, n=3), collapse=", ")),
                                paste(rsids, collapse=", "))
@@ -511,7 +511,7 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
             if (length(rsids) > 0) {
               rsids <- gsub("rs", "", rsids)
               tryCatch({
-                pv <- select(annObj, keys=rsids, columns="PROVEANPRED")
+                pv <- suppressMessages(select(annObj, keys=rsids, columns="PROVEANPRED"))
               }, error=function(err) {
                 misk <- ifelse(length(rsids) > 3, sprintf("%s, ...", paste(head(rsids, n=3), collapse=", ")),
                                paste(rsids, collapse=", "))
@@ -602,7 +602,7 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
                 }
                 uniqIDs <- unique(geneIDs[!maskNAs])
                 tryCatch({
-                  res <- select(annObj, keys=as.character(uniqIDs), columns=defgenecols, keytype=geneKeytype)
+                  res <- suppressMessages(select(annObj, keys=as.character(uniqIDs), columns=defgenecols, keytype=geneKeytype))
                   for (colname in defgenecols) {
                     colxgeneID <- sapply(split(res[[colname]], res[[geneKeytype]]),
                                          function(x) {
@@ -644,7 +644,7 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
               if (sum(!maskNAs) > 0) {
                 uniqTxIDs <- unique(txIDs[!maskNAs])
                 tryCatch({
-                  res <- select(annObj, keys=uniqTxIDs, columns="TXNAME", keytype="TXID")
+                  res <- suppressMessages(select(annObj, keys=uniqTxIDs, columns="TXNAME", keytype="TXID"))
                   txnamextxID <- sapply(split(res$TXNAME, res$TXID),
                                          function(x) paste(unique(x), collapse=", "))
                   txlevel_annot[!maskNAs, ] <- DataFrame(TXNAME=txnamextxID[txIDs[!maskNAs]])
