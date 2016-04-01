@@ -43,7 +43,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   if (sum(pedf$Phenotype == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
 
-  unaff <- pedf[pedf$Phenotype == 2, ]
+  unaff <- pedf[pedf$Phenotype == 1, ]
   aff <- pedf[pedf$Phenotype == 2, ]
   
   motherID <- unique(aff$MotherID)
