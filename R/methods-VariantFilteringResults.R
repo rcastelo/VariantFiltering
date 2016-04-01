@@ -17,7 +17,7 @@ setMethod("show", signature(object="VariantFilteringResults"),
           function(object) {
             cat("\nVariantFiltering results object\n")
             cat(sprintf("\n  Genome version(s):"))
-            for (i in seq(along=param(object)$seqInfos))
+            for (i in seq_along(param(object)$seqInfos))
               if (length(param(object)$seqInfos[[i]]) > 0)
                 cat(sprintf(" %s(%s)", paste(unique(genome(param(object)$seqInfos[[i]])), collapse=","),
                             seqlevelsStyle(param(object)$seqInfos[[i]])))

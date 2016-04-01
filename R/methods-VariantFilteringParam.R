@@ -83,7 +83,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   sampleNames <- character()
   seqinfos <- vector(mode="list", length=length(vcfFilenames))
   tfl <- list()
-  for (i in seq(along=vcfFilenames)) {
+  for (i in seq_along(vcfFilenames)) {
     hd <- scanVcfHeader(vcfFilenames[i])
     seqinfos[[i]] <- seqinfo(hd)
     sampleNames <- c(sampleNames, samples(hd))
@@ -237,7 +237,7 @@ setMethod("show", signature(object="VariantFilteringParam"),
             sampleNames <- ifelse(length(object$sampleNames) <= 4, paste(object$sampleNames, collapse=", "),
                                   paste(paste(head(object$sampleNames, n=4), collapse=", "), "...", sep=", "))
             cat(sprintf("\n  Genome version(s):"))
-            for (i in seq(along=object$seqInfos))
+            for (i in seq_along(object$seqInfos))
               if (length(object$seqInfos[[i]]) > 0) {
                 ## sometimes the 'genome' tag comes flanked by \" :-? let's strip that out for pure aesthetics
                 genomestr <- paste(gsub("\\\"", "", unique(genome(object$seqInfos[[i]]))), collapse=",")
