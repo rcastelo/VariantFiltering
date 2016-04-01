@@ -372,7 +372,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   ##                    ##
   ########################
   
-  for (i in seq(along=otherAnnotations)) {
+  for (i in seq_along(otherAnnotations)) {
     message(sprintf("Annotating with %s", names(otherAnnotations)[i]))
     mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
                                          annotateVariants(otherAnnotations[[i]],
