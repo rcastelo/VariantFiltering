@@ -15,8 +15,7 @@ setMethod("knownVariantsMAFcols", signature(mafdb="MafDb"),
 
 setMethod("fetchKnownVariantsByID", signature(mafdb="MafDb"),
           function(mafdb, varID) {
-            .Deprecated("snpid2maf")
-            snpid2maf(mafdb, varID)
+            .Defunct("snpid2maf")
           })
 
 ## method for fetching variants in a MafDb database object

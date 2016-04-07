@@ -12,12 +12,13 @@
 }
 
 \details{
-  The following functions are deprecated and will be made defunct; use
-  the replacement indicated below:
-
-  \itemize{
-    \item{fetchKnownVariantsByID: \code{\link{snpid2maf}}}
-  }
+  There are currently no deprecated functions.
+  %% The following functions are deprecated and will be made defunct; use
+  %% the replacement indicated below:
+  %%
+  %% \itemize{
+  %%   \item{fetchKnownVariantsByID(): \code{\link{snpid2maf}()}}
+  %% }
 }
 \author{
   Robert Castelo <robert.castelo@upf.edu>
