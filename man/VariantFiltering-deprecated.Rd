@@ -1,8 +1,5 @@
 \name{VariantFiltering-deprecated}
 \alias{VariantFiltering-deprecated}
-\alias{fetchKnownVariantsByID,MafDb-method}
-\alias{fetchKnownVariantsByID}
-
 
 \title{Deprecated functions in package \sQuote{VariantFiltering}}
 
