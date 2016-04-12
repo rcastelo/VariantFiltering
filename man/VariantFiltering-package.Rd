@@ -8,7 +8,7 @@ Filtering of coding and non-coding genetic variants
 \description{
 The \code{VariantFiltering} package filters coding and non-coding genetic variants using different
 criteria such as an inheritance model (autosomal recessive -both, homozygous and heterozygous-,
-autosomal dominant, X-linked and \emph{de novo}), amino acid change consequence, minimum allele
+autosomal dominant, X-linked and \emph{de novo}), amino acid change consequence, minor allele
 frequencies, cryptic splice site potential, conservation, etc.
 }
 \section{Functions}{
