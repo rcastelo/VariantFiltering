@@ -245,11 +245,12 @@ exportMethods(summary,
               ## specific for the MafDb class
               knownVariantsMAFcols,
               snpid2maf,
-              fetchKnownVariantsByID,
               keytypes,
               keys,
               columns,
               select,
+              populations,
+              mafByOverlaps,
 
               ## specific for the PhastConsDb class
               provider,
@@ -259,6 +260,7 @@ exportMethods(summary,
               seqinfo,
               seqnames,
               seqlengths,
+              seqlevelsStyle,
               scores,
 
               ## for the GenePhylostrataDb class
@@ -276,6 +278,9 @@ export(VariantFilteringParam,
 
        ## for the FiveSpliceSiteVariants and ThreeSpliceSiteVariants
        FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
+
+       ## for the MafDb2 class
+       MafDb2,
 
        ## for the PhastConsDb class
        PhastConsDb,
