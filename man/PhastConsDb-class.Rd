@@ -14,6 +14,7 @@
 \alias{seqinfo,PhastConsDb-method}
 \alias{seqlengths,PhastConsDb-method}
 \alias{seqnames,PhastConsDb-method}
+\alias{seqlevelsStyle,PhastConsDb-method}
 \alias{show,PhastConsDb-method}
 
 \title{PhastConsDb class}
