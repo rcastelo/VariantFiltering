@@ -29,7 +29,7 @@
 \title{MafDb class}
 
 \description{
-Class for annotation packages storing minimum allele frequency data.
+Class for annotation packages storing minor allele frequency data.
 }
 \usage{
 \S4method{snpid2maf}{MafDb}(mafdb, varID)
@@ -61,7 +61,7 @@ Class for annotation packages storing minimum allele frequency data.
 }
 \details{
 The \code{MafDb} class and associated methods serve the purpose of creating
-annotation packages that store minimum allele frequency data. Two such
+annotation packages that store minor allele frequency data. Two such
 annotation packages are:
 
 \tabular{ll}{

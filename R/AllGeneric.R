@@ -8,6 +8,10 @@ setGeneric("knownVariantsMAFcols", function(mafdb, ...) standardGeneric("knownVa
 setGeneric("snpid2maf", function(mafdb, ...) standardGeneric("snpid2maf"))
 setGeneric("fetchKnownVariantsByID", function(mafdb, ...) standardGeneric("fetchKnownVariantsByID"))
 
+## for MafDb2 class
+setGeneric("mafByOverlaps", function(x, ...) standardGeneric("mafByOverlaps"))
+setGeneric("populations", function(x) standardGeneric("populations"))
+
 ## for PhastConsDb class
 setGeneric("scores", function(object, gpos, ...) standardGeneric("scores"))
 
