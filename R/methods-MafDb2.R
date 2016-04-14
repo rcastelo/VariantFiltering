@@ -1,6 +1,7 @@
 ## constructor
 MafDb2 <- function(provider, provider_version, download_url,
                    download_date, reference_genome,
+                   rsIDgpSNVs, rsIDSNVs,
                    data_pkgname, data_dirpath) {
   data_cache <- new.env(hash=TRUE, parent=emptyenv())
   data_pops <- list.files(path=data_dirpath, pattern="AF$")
@@ -8,6 +9,8 @@ MafDb2 <- function(provider, provider_version, download_url,
                                   list.files(path=data_pops, pattern="*.rds"))
 
   assign(data_pkgname, list(), envir=data_cache)
+  assign("rsIDgpSNVs", rsIDgpSNVs, envir=data_cache)
+  assign("rsIDSNVs", rsIDSNVs, envir=data_cache)
 
   new("MafDb2", provider=provider,
                 provider_version=provider_version,
@@ -58,8 +61,8 @@ setMethod("populations", "MafDb2", function(x) x@data_pops)
 
 ## adapted from VariantTools::extractCoverageForPositions()
 .extractRawFromRleList <- function(rlelst, pos) {
-  if (length(setdiff(seqlevels(pos), names(rlelst))) > 0L)
-    stop("Some seqlevels are missing from rlelst")
+  if (any(!unique(seqnames(pos)) %in% names(rlelst)))
+    stop("Some sequence names from input positions are missing from rlelst")
   if (any(width(pos) > 1L))
     stop("Some ranges are of width > 1")
   seqlevels(pos) <- names(rlelst)
@@ -87,8 +90,8 @@ setMethod("populations", "MafDb2", function(x) x@data_pops)
     ranges <- GRanges(seqnames=ranges[, 1],
                       IRanges(start=as.integer(ranges[, 2]),
                               end=as.integer(ranges[, 3])))
-  } else if (class(ranges) != "GRanges")
-    stop("argument 'ranges' must be a GRanges object or a character string with the format CHR:START[-END]\n")
+  } else if (class(ranges) != "GRanges" && class(ranges) != "GPos")
+    stop("argument 'ranges' must be either a GRanges object, a GPos object or a character string with the format CHR:START[-END]\n")
 
   ranges
 }
@@ -105,7 +108,7 @@ setMethod("mafByOverlaps", signature="MafDb2",
 
             snames <- unique(as.character(runValue(seqnames(ranges))))
             if (any(!snames %in% seqnames(x)))
-              stop("Sequence names %s in GRanges object not present in MafDb2 object.",
+              stop("Sequence names %s in 'ranges' not present in MafDb2 object.",
                    paste(snames[!snames %in% seqnames(x)], collapse=", "))
 
             if (any(!pop %in% populations(x)))
@@ -138,6 +141,33 @@ setMethod("mafByOverlaps", signature="MafDb2",
             if (anyMissing && caching)
               assign(x@data_pkgname, maflist, envir=x@.data_cache)
             rm(maflist)
+
+            ans
+          })
+
+setMethod("mafById", signature="MafDb2",
+          function(x, ids, pop="AF", caching=TRUE) {
+            if (class(ids) != "character")
+              stop("argument 'ids' must be a character string vector.")
+
+            if (!exists("rsIDSNVs", envir=x@.data_cache))
+              stop(sprintf("package %s given in the 'x' argument does not contain its own map of identifers to MAF values.",
+                           x@data_pkgname))
+
+            rsIDSNVs <- get("rsIDSNVs", envir=x@.data_cache)
+            mt <- match(ids, rsIDSNVs)
+
+            if (any(!pop %in% populations(x)))
+              stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
+
+            ans <- as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
+                                        dimnames=list(ids, pop)))
+
+            if (any(!is.na(mt))) {
+              rsIDgpSNVs <- get("rsIDgpSNVs", envir=x@.data_cache)
+              rng <- rsIDgpSNVs[mt[!is.na(mt)]]
+              ans[!is.na(mt), ] <- mafByOverlaps(x, rsIDgpSNVs[mt[!is.na(mt)]], pop, caching)
+            }
 
             ans
           })

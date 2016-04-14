@@ -13,7 +13,7 @@ importClassesFrom(VariantAnnotation, VariantType, SpliceSiteVariants,
                   PromoterVariants, FiveUTRVariants, ThreeUTRVariants,
                   IntergenicVariants, PolyPhenDb)
 importClassesFrom(GenomeInfoDb, Seqinfo, GenomeDescription)
-importClassesFrom(GenomicRanges, GRanges, GRangesList)
+importClassesFrom(GenomicRanges, GRanges, GRangesList, GPos)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
 importClassesFrom(Rsamtools, TabixFile, TabixFileList, BamViews)
 
@@ -251,6 +251,7 @@ exportMethods(summary,
               select,
               populations,
               mafByOverlaps,
+              mafById,
 
               ## specific for the PhastConsDb class
               provider,
