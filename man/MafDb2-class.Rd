@@ -6,6 +6,8 @@
 \alias{annotateVariants,MafDb2-method}
 \alias{mafByOverlaps,MafDb2-method}
 \alias{mafByOverlaps}
+\alias{mafById,MafDb2-method}
+\alias{mafById}
 \alias{populations,MafDb2-method}
 \alias{populations}
 %%\alias{keytypes,MafDb2-method}
@@ -41,12 +43,14 @@ Class for annotation packages storing minor allele frequency data.
 }
 \usage{
 \S4method{mafByOverlaps}{MafDb2}(x, ranges, pop, caching)
+\S4method{mafById}{MafDb2}(x, ids, pop, caching)
 \S4method{populations}{MafDb2}(x)
 }
 \arguments{
   \item{x}{A \code{MafDb2} object.}
-  \item{ranges}{Either a \code{GRanges} object or a character string vector with the format \code{"CHR:START[-END]"}.}
-  \item{pop}{A character string with the populations for which we want to retrieve MAF values.}
+  \item{ranges}{Either a \code{GRanges} object, a \code{GPos} object or a character string vector with the format \code{"CHR:START[-END]"}.}
+  \item{ids}{A character string vector with variant identifiers annotated by the MAF data source, typically dbSNP 'rs' identifiers. Note that the mapping of these identifiers to genomic positions and MAF values might be a subset of the most up to date dbSNP 'rs' identifier assignment to variants. To access the latter, please use the \code{snpsById()} method from the \code{BSgenome} package with the desired \code{SNPlocs.*} package.}
+  \item{pop}{A character string vector with the populations for which we want to retrieve MAF values.}
   \item{caching}{logical; TRUE (default) indicates that the function stores into main memeory the MAF data as it gets loaded from disk, improving performance; FALSE forces this function to load MAF data from disk each time, decreasing performance and memory requirements.}
 %%  \item{varID}{A variant identifier, typically a \code{rsxxxx} dbSNP identifier.}
 %%  \item{keytype}{the keytype that matches the keys used. For \code{MafDb2} objects
@@ -122,6 +126,8 @@ the maximum AF value is stored.
 
     ## specialized interface
     populations(MafDb.ExAC.r0.3.1.snvs.hs37d5)
+
+    mafById(MafDb.ExAC.r0.3.1.snvs.hs37d5, "rs1129038")
   }
 
 }
