@@ -47,54 +47,12 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 
     n.var <- n.var + nrow(vcf)
 
-    ## restrict upfront variants to those in autosomal chromosomes
-    ## we subset to the first element of the value returned by seqlevelsStyle()
-    ## to deal with cases in which only a subset of chromosomes is contained in
-    ## the input VCF (typically for teaching/example/illustration purposes) which
-    ## matches more than one chromosome style
-    autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                                seqlevelsStyle(vcf)[1],
-                                                                group="auto")
-    vcf <- vcf[autosomalMask, ]
+    mask <- .autosomalDominantMask(vcf, pedDf, bsgenome, use)
 
-    gt <- geno(vcf)$GT
-    missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
-
-    if (any(missingMask) && use == "all.obs")
-      stop("There are missing genotypes and current policy to deal with them is 'all.obs', which does not allow them.")
-
-    ## build logical masks of affected and unaffected individuals
-    ## variants in unaffected individuals should be homozygous reference and
-    ## in affected individuals should be either homozygous alternative or heterozygous alternative
-    unaffectedMask <- rep(TRUE, times=nrow(vcf))
-    if (nrow(unaff) > 0) {
-      unaffgt <- gt[, unaff$IndividualID, drop=FALSE]
-      if (any(missingMask) && use == "everything")
-        unaffgt[unaffgt == "." | unaffgt == "./." | unaffgt == ".|."] <- NA_character_
-      unaffectedMask <- unaffgt == "0/0" | unaffgt == "0|0"
-      unaffectedMask <- apply(unaffectedMask, 1, all)
-      rm(unaffgt)
-    }
-
-    affgt <- gt[, aff$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
-    affectedMask <- affgt == "0/1" | affgt == "0|1" | affgt == "1|0" |
-                    affgt == "1/1" | affgt == "1|1"
-    affectedMask <- rowSums(affectedMask) == nrow(aff)
-    rm(affgt)
-
-    uaMask <- unaffectedMask & affectedMask
-    if (any(missingMask) && use == "complete.obs")
-      uaMask <- uaMask & !missingMask
-
-    ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
-    uaMask[is.na(uaMask)] <- FALSE
-
-    if (any(uaMask)) {
+    if (any(mask)) {
 
       ## filter out variants that do not segregate as an autosomal dominant trait
-      vcf <- vcf[uaMask, ]
+      vcf <- vcf[mask, ]
 
       ## coerce the VCF object to a VRanges object
       variants <- as(vcf, "VRanges")
@@ -186,7 +144,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   ## we subset to the first element of the value returned by seqlevelsStyle()
   ## to deal with cases in which only a subset of chromosomes is contained in
   ## the input VCF (typically for teaching/example/illustration purposes) which
-  ## matches more than one chromosome style
+  ## matches more than one chromosome style, or because Ensembl is identical to NCBI for human :\
   snames <- as.character(seqnames(vObj))
   autosomalMask <- snames %in% extractSeqlevelsByGroup(organism(bsgenome),
                                                        seqlevelsStyle(vObj)[1],

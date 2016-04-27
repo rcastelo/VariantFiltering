@@ -82,8 +82,12 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     n.var <- n.var + nrow(vcf)
 
     ## restrict upfront variants to those in autosomal chromosomes
+    ## we subset to the first element of the value returned by seqlevelsStyle()
+    ## to deal with cases in which only a subset of chromosomes is contained in
+    ## the input VCF (typically for teaching/example/illustration purposes) which
+    ## matches more than one chromosome style, or because Ensembl is identical to NCBI for human :\
     autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                                seqlevelsStyle(vcf),
+                                                                seqlevelsStyle(vcf)[1],
                                                                 group="auto")
     vcf <- vcf[autosomalMask, ]
 

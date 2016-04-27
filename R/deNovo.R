@@ -55,44 +55,12 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
 
     n.var <- n.var + nrow(vcf)
   
-    ## fetch genotypes and build a logical mask to flag variants with missing genotypes
-    gt <- geno(vcf)$GT
-    missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".| ."))
+    mask <- .deNovoMask(vcf, pedDf, use)
 
-    if (any(missingMask) && use == "all.obs")
-      stop("There are missing genotypes and current policy to deal with them is 'all.obs', which does not allow them.")
-
-    ## build logical masks of affected and unaffected individuals
-    ## variants in unaffected individuals should be homozygous reference and
-    ## in affected individuals should be either homozygous alternative or heterozygous alternative
-    unaffectedMask <- rep(TRUE, times=nrow(vcf))
-    unaffgt <- gt[, unaff$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      unaffgt[unaffgt == "." | unaffgt == "./." | unaffgt == ".|."] <- NA_character_
-    unaffectedMask <- unaffgt == "0/0" | unaffgt == "0|0"
-    unaffectedMask <- apply(unaffectedMask, 1, all)
-    rm(unaffgt)
-
-
-    affgt <- gt[, aff$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
-    affectedMask <- affgt == "0/1" | affgt == "0|1" | affgt == "1/1" | affgt == "1|1"
-    affectedMask <- rowSums(affectedMask) == nrow(aff)
-    rm(affgt)
-
-    uaMask <- unaffectedMask & affectedMask
-    if (any(missingMask) && use == "complete.obs")
-      uaMask <- uaMask & !missingMask
-
-    ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
-    uaMask[is.na(uaMask)] <- FALSE
-
-
-    if (any(uaMask)) {
+    if (any(mask)) {
 
       ## filter out variants that do not segregate as a "de novo" trait
-      vcf <- vcf[uaMask, ]
+      vcf <- vcf[mask, ]
      
       ## coerce the VCF object to a VRanges object
       variants <- as(vcf, "VRanges")
