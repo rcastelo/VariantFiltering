@@ -140,8 +140,8 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
   if (length(vfParam$regionAnnotations) > 0) {
     annotations <- lapply(vfParam$regionAnnotations,
                           function(r) {
-                            loc <- locateVariants(query, subject, r, cache=cache,
-                                                  ignore.strand=ignore.strand)
+                            suppressMessages(loc <- locateVariants(query, subject, r, cache=cache,
+                                                                   ignore.strand=ignore.strand))
                             levels(loc$LOCATION) <- levels(.location(0))
                             loc
                           })

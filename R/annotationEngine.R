@@ -100,9 +100,6 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   message("Annotating location with VariantAnnotation::locateVariants()")
   located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsVR, "GRanges"),
                                            subject=txdb, cache=cache, BPPARAM=BPPARAM)
-  ## located_variantsGR <- locateVariants(query=as(variantsVR, "GRanges"), subject=txdb,
-  ##                                      region=AllVariants(intergenic=IntergenicVariants(0, 0)),
-  ##                                      cache=cache)
   variantsVR_annotated <- variantsVR[located_variantsGR$QUERYID] ## REPLACE variantsVR_annotated by variantsVR ??
   variantsVR_annotated$LOCATION <- located_variantsGR$LOCATION
   variantsVR_annotated$LOCSTART <- located_variantsGR$LOCSTART
@@ -182,26 +179,6 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
       GRanges_coding_uq <- GRanges_coding_uq[!duplicated(mcols(GRanges_coding_uq)[, c("QUERYID", "GENEID", "CONSEQUENCE")])]
 
     variantsVR_annotated_coding <- variantsVR_annotated_coding[GRanges_coding_uq$QUERYID]
-
-    ## some TXID, CDSID and GENEID annotations are catched by
-    ## VariantAnnotation::locateVariants() and not by VariantAnnotation::predictCoding()
-    ## and the other way araound. In these cases we take the union of both annotations.
-    ## when locateVariants() and predictCoding() disagree in the GENEID annotation then
-    ## we take the one given by predictCoding() -SHOULD ASK ABOUT THIS IN THE DEVEL LIST-
-    ## THIS WAS FIXED DURING THE 3.1-3.2 DEVEL CYCLE
-    ## mask <- !is.na(variantsVR_annotated_coding$GENEID) & !is.na(GRanges_coding_uq$GENEID) &
-    ##         variantsVR_annotated_coding$GENEID != GRanges_coding_uq$GENEID
-    ##
-    ## variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    ## variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
-    ## variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
-    ##
-    ## mask <- is.na(variantsVR_annotated_coding$TXID)
-    ## variantsVR_annotated_coding$TXID[mask] <- GRanges_coding_uq$TXID[mask]
-    ## mask <- elementNROWS(variantsVR_annotated_coding$CDSID) == 0
-    ## variantsVR_annotated_coding$CDSID[mask] <- GRanges_coding_uq$CDSID[mask]
-    ## mask <- is.na(variantsVR_annotated_coding$GENEID)
-    ## variantsVR_annotated_coding$GENEID[mask] <- GRanges_coding_uq$GENEID[mask]
 
     ## add coding annotations from VariantAnnotation::predictCoding()
     variantsVR_annotated_coding$CDSLOC <- GRanges_coding_uq$CDSLOC

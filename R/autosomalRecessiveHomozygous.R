@@ -49,50 +49,12 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     n.var <- n.var + nrow(vcf)
 
-    ## restrict upfront variants to those in autosomal chromosomes
-    autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                                seqlevelsStyle(vcf),
-                                                                group="auto")
-    vcf <- vcf[autosomalMask, ]
+    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use)
 
-    gt <- geno(vcf)$GT
-    missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
-
-    if (any(missingMask) && use == "all.obs")
-      stop("There are missing genotypes and current policy to deal with them is 'all.obs', which does not allow them.")
-
-    ## build logical masks of carriers (unaffected) and affected individuals
-    ## variants in carriers should be heterozygous and affected should be homozygous alternative
-    carriersMask <- rep(TRUE, times=nrow(vcf))
-    if (nrow(unaff) > 0) {
-      unaffgt <- gt[, unaff$IndividualID, drop=FALSE]
-      if (any(missingMask) && use == "everything")
-        unaffgt[unaffgt == "." | unaffgt == "./." | unaffgt == ".|."] <- NA_character_
-      carriersMask <- unaffgt == "0/1" | unaffgt == "0|1" | unaffgt == "1|0"
-      ## carriersMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "0/1"
-      carriersMask <- apply(carriersMask, 1, all)
-      rm(unaffgt)
-    }
-
-    affgt <- gt[, aff$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
-    affectedMask <- affgt == "1/1" | affgt == "1|1"
-    ## affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "1/1"
-    affectedMask <- apply(affectedMask, 1, all)
-    rm(affgt)
-
-    caMask <- carriersMask & affectedMask
-    if (any(missingMask) && use == "complete.obs")
-      caMask <- caMask & !missingMask
-
-    ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
-    caMask[is.na(caMask)] <- FALSE
-
-    if (any(caMask)) {
+    if (any(mask)) {
 
       ## filter out variants that do not segregate as an autosomal recessive homozygous trait
-      vcf <- vcf[caMask, ]
+      vcf <- vcf[mask, ]
 
       ## coerce the VCF object to a VRanges object
       variants <- as(vcf, "VRanges")
@@ -191,9 +153,13 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   ## restrict upfront variants to those in autosomal chromosomes
   snames <- as.character(seqnames(vObj))
 
-  ## mask variants and annotations in autosomes
+  ## restrict upfront variants to those in autosomal chromosomes
+  ## we subset to the first element of the value returned by seqlevelsStyle()
+  ## to deal with cases in which only a subset of chromosomes is contained in
+  ## the input VCF (typically for teaching/example/illustration purposes) which
+  ## matches more than one chromosome style, or because Ensembl is identical to NCBI for human :\
   autosomalMask <- snames %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                       seqlevelsStyle(vObj),
+                                                       seqlevelsStyle(vObj)[1],
                                                        group="auto")
 
   ## build logical mask for variants that segregate as an autosomal recessive homozygous trait

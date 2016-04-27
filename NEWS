@@ -1,3 +1,20 @@
+CHANGES IN VERSION 1.8
+----------------------
+
+USER VISIBLE CHANGES
+
+    o Analysis methods (autosomalDominant(), etc.) now accept an argument called 'svparam' that takes an object produced by the 'ScanVcfParam()' function from the VariantAnnotation package. This allows one to parametrize the way in which VCF files are read. For instance, if one wishes to analyze a specific set of genomic ranges.
+
+    o Analysis methods (autosomalDominant(), etc.) now accept an argument called 'use' that allows the user to select among three simple strategies to handle missing genotypes. See the corresponding help page for further information.
+
+    o No messages from the AnnotationDbi::select() method are given anymore about the 1:1, 1:many or many:1 results obtained when fetching annotations.
+
+BUG FIXES
+
+    o Several bugfixes including dealing with transcript-centric annotations anchored at Ensembl gene identifiers, avoid querying for an OMIM column when working with organisms other than human, correctly identifying unaffected individuals in the autosomal recessive heterozygous analysis.
+
+    o Added methods to deal with the new ExAC MafDb packages that enable the user to query allele frequencies by position.
+
 CHANGES IN VERSION 1.6
 ----------------------
 
