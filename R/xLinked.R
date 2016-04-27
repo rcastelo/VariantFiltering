@@ -52,56 +52,12 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
     n.var <- n.var + nrow(vcf)
 
-    ## restrict upfront variants to those in chromosome X
-    XchromosomeMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
-                                                                  seqlevelsStyle(vcf),
-                                                                  group="sex")[1]
-    vcf <- vcf[XchromosomeMask, ]
+    mask <- .xLinkedMask(vcf, pedDf, bsgenome, use)
 
-    gt <- geno(vcf)$GT
-    missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
-
-    ## build logical mask of carrier females, unaffected males and affected males
-    ## variants in carrier females should be heterozygous, in unaffected males
-    ## should be homozygous reference and in affected males homozygous alternative
-    carrierFemalesMask <- unaffectedMalesMask <- rep(TRUE, nrow(vcf))
-
-    if (nrow(carrier_females) > 0) {
-      unafffemalesgt <- gt[, carrier_females$IndividualID, drop=FALSE]
-      if (any(missingMask) && use == "everything")
-        unafffemalesgt[unafffemalesgt == "." | unafffemalesgt == "./." | unafffemalesgt == ".|."] <- NA_character_
-      carrierFemalesMask <- unafffemalesgt == "0/1" | unafffemalesgt == "0|1" | unafffemalesgt == "1|0"
-      carrierFemalesMask <- apply(carrierFemalesMask, 1, all)
-      rm(unafffemalesgt)
-    }
-
-    if (nrow(unaff_males) > 0) {
-      unaffmalesgt <- gt[, unaff_males$IndividualID, drop=FALSE]
-      if (any(missingMask) && use == "everything")
-        unaffmalesgt[unaffmalesgt == "." | unaffmalesgt == "./." | unaffmalesgt == ".|."] <- NA_character_
-      unaffectedMalesMask <- unaffmalesgt == "0/0" | unaffmalesgt == "0|0"
-      unaffectedMalesMask <- apply(unaffectedMalesMask, 1, all)
-      rm(unaffmalesgt)
-    }
-
-    affmalesgt <- gt[, aff_males$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      affmalesgt[affmalesgt == "." | affmalesgt == "./." | affmalesgt == ".|."] <- NA_character_
-    affectedMalesMask <- affmalesgt == "1/1" | affmalesgt == "1|1"
-    affectedMalesMask <- apply(affectedMalesMask, 1, all)
-    rm(affmalesgt)
-
-    cuaMask <- carrierFemalesMask & unaffectedMalesMask & affectedMalesMask
-    if (any(missingMask) && use == "complete.obs")
-      cuaMask <- cuaMask & !missingMask
-
-    ## variants ultimately set to NA are discarded (should this be tuned by an argument?)
-    cuaMask[is.na(cuaMask)] <- FALSE
-
-    if (any(cuaMask)) {
+    if (any(mask)) {
 
       ## filter out variants that do not segregate as an 'X-linked' trait
-      vcf <- vcf[cuaMask, ]
+      vcf <- vcf[mask, ]
 
       ## coerce the VCF object to a VRanges object
       variants <- as(vcf, "VRanges")
