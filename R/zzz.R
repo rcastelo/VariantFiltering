@@ -12,7 +12,7 @@
          envir=ns)
 
   ## read Sequence Ontology graph for the 'sequence_variant' ontology
-  assign("sequence_variant.gSOXP", readRDS(file.path(data_dir, "sequence_variant.gSOXPmarch2015.rds")),
+  assign("sequence_variant.gSOXP", readRDS(file.path(data_dir, "sequence_variant.gSOXPapril2016.rds")),
          envir=ns)
 
   namespaceExport(ns, "humanGenesPhylostrata")
