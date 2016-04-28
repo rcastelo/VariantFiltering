@@ -252,6 +252,7 @@ exportMethods(summary,
               populations,
               mafByOverlaps,
               mafById,
+              "$",
 
               ## specific for the PhastConsDb class
               provider,

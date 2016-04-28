@@ -29,6 +29,7 @@
 \alias{seqnames,MafDb2-method}
 \alias{seqlevelsStyle,MafDb2-method}
 \alias{show,MafDb2-method}
+\alias{$,MafDb2-method}
 
 %%\S4method{keytypes}{MafDb2}(x)
 %%\S4method{keys}{MafDb2}(x, keytype)
