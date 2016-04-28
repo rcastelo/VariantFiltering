@@ -3,6 +3,8 @@ CHANGES IN VERSION 1.8
 
 USER VISIBLE CHANGES
 
+    o Sequence Ontology (SO) annotations have been updated from https://github.com/The-Sequence-Ontology/SO-Ontologies to the latest version of the data available on April, 2016.
+
     o Analysis methods (autosomalDominant(), etc.) now accept an argument called 'svparam' that takes an object produced by the 'ScanVcfParam()' function from the VariantAnnotation package. This allows one to parametrize the way in which VCF files are read. For instance, if one wishes to analyze a specific set of genomic ranges.
 
     o Analysis methods (autosomalDominant(), etc.) now accept an argument called 'use' that allows the user to select among three simple strategies to handle missing genotypes. See the corresponding help page for further information.
