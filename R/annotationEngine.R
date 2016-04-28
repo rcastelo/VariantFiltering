@@ -541,6 +541,23 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             DataFrame(mafValues)
           })
 
+setMethod("annotateVariants", signature(annObj="MafDb2"),
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
+
+            ## get the MAF columns
+            mafCols <- populations(annObj)
+
+            mafValues <- matrix(NA, nrow=length(variantsVR), ncol=length(mafCols),
+                                dimnames=list(NULL, mafCols))
+            snvmask <- isSNV(variantsVR)
+            if (any(snvmask))
+              mafValues[snvmask, ] <- as.matrix(mafByOverlaps(annObj, variantsVR[snvmask], mafCols))
+
+            colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
+
+            DataFrame(mafValues)
+          })
+
 ############
 ## Annotate organism-level gene-centric features
 #####
