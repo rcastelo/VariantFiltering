@@ -46,14 +46,14 @@ setMethod("populations", "MafDb2", function(x) x@data_pops)
 
 .decodeRAW2AF2 <- function(x) {
   x <- as.numeric(x)
-  mask0s <- x == 254    ## decode raw byte value 254 as 0
-  maskNAs <- x == 255   ## decode raw byte value 255 as NAs
+  mask0s <- x == 0 | x == 254    ## decode both, raw byte values 0 and 254 as 0
+  maskNAs <- x == 255            ## decode raw byte value 255 as NAs
   z <- x[!maskNAs & !mask0s]
   mask <- z <= 100 
   z[mask] <- z[mask] / 100
   z[!mask] <- ((z[!mask]-100)%%10)/10^(floor((z[!mask]-100)/10)+3)
   x[!maskNAs & !mask0s] <- z
-  x[mask0s] <- 0
+  x[mask0s] <- NA_real_
   x[maskNAs] <- NA_real_
   x
 }
@@ -90,6 +90,9 @@ setMethod("populations", "MafDb2", function(x) x@data_pops)
     ranges <- GRanges(seqnames=ranges[, 1],
                       IRanges(start=as.integer(ranges[, 2]),
                               end=as.integer(ranges[, 3])))
+  } else if (class(ranges) == "VRanges") {
+    ranges <- as(ranges, "GRanges")
+    mcols(ranges) <- NULL
   } else if (class(ranges) != "GRanges" && class(ranges) != "GPos")
     stop("argument 'ranges' must be either a GRanges object, a GPos object or a character string with the format CHR:START[-END]\n")
 
@@ -177,4 +180,13 @@ setMethod("show", "MafDb2",
           function(object) {
             cat(class(object), " object for ", organism(object), " (",
                 provider(object), ")\n", sep="")
+          })
+
+## $ method
+setMethod("$", signature(x="MafDb2"),
+          function(x, name) {
+            switch(name,
+                   tag=gsub("MafDb.|.snvs.hs37d5", "", x@data_pkgname), ## by now just hardcoded, this should be part of the annotation package
+                   stop("uknown MafDb2 slot.")
+                   )
           })
