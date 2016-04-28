@@ -1,0 +1,45 @@
+## This README file explains how the Sequence Ontology information
+## was downloaded processed and stored into the VariantFiltering package
+## For questions and comments on this procedure please use the
+## Bioconductor support site at http://support.bioconductor.org
+## or open an issue at https://github.com/rcastelo/VariantFiltering/issues
+
+## clone the Sequence Ontology (SO) data from the GitHub repository
+## git clone https://github.com/The-Sequence-Ontology/SO-Ontologies
+
+## use the ontoCAT package to read all SO term descriptions
+library(ontoCAT)
+
+oboSOXP <- getOntology(file.path("SO-Ontologies", "so-xp.obo"))
+allterms <- getAllTerms(oboSOXP)
+alltermsAcc <- sapply(allterms, getAccession)
+alltermsLab <- sapply(allterms, getLabel)
+allterms <- do.call("names<-", list(alltermsLab, gsub("_", ":", alltermsAcc)))
+
+## use the graph and GSEABase package to transfrom the SO ontology
+## into a graph and add the previous term descriptions to its nodes
+library(graph)
+library(GSEABase)
+
+oboSOXP <- getOBOCollection(file.path("SO-Ontologies", "so-xp.obo"))
+gSOXP <- as(oboSOXP, "graphNEL")
+nodeDataDefaults(gSOXP, "label") <- NA_character_
+nodeData(gSOXP, names(allterms), "label") <- allterms
+
+## use the RBGL package to isolate the ontology subtree of 'sequence_variant', which
+## as of April 2016 is located within the 'sequence_comparison' branch
+library(RBGL)
+
+svid <- names(allterms)[allterms == "sequence_variant"]
+svid
+## [1] "SO:0001060"
+cc <- connComp(gSOXP)
+ccsv <- unlist(cc[sapply(cc, function(x, svid) svid %in% x, svid)])
+
+gSOXP.sequence_variant <- subGraph(ccsv, gSOXP)
+gSOXP.sequence_variant
+## A graphNEL graph with directed edges
+## Number of Nodes = 189 
+## Number of Edges = 209 
+
+saveRDS(gSOXP.sequence_variant, file="sequence_variant.gSOXPapril2016.rds")
