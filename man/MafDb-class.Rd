@@ -65,12 +65,9 @@ annotation packages that store minor allele frequency data. Two such
 annotation packages are:
 
 \tabular{ll}{
-  \code{MafDb.ALL.wgs.phase1.release.v3.20101123} \tab MAF values from the 1000 Genomes project
-        downloaded in October 2013 from
-        \url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz}. \cr
+  \code{MafDb.1Kgenomes.phase1.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 1. \cr
 
-  \code{MafDb.ESP6500SI.V2.SSA137} \tab MAF values from 6500 ESP exomes downloaded in March 2015 from
-        \url{http://evs.gs.washington.edu/evs_bulk_data/ESP6500SI-V2-SSA137.GRCh38-liftover.snps_indels.vcf.tar.gz}. \cr
+  \code{MafDb.1Kgenomes.phase3.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 3. \cr
 }
 
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
@@ -101,9 +98,8 @@ the maximum AF value is stored.
 }
 \author{R. Castelo}
 \seealso{
-  \code{\link[MafDb.ALL.wgs.phase1.release.v3.20101123]{MafDb.ALL.wgs.phase1.release.v3.20101123}}
-  \code{\link[MafDb.ESP6500SI.V2.SSA137]{MafDb.ESP6500SI.V2.SSA137}}
-  \code{\link[MafDb.ExAC.r0.3.sites]{MafDb.ExAC.r0.3.sites}}
+  \code{\link[MafDb.1Kgenomes.phase1.hs37d5]{MafDb.1Kgenomes.phase1.hs37d5}}
+  \code{\link[MafDb.1Kgenomes.phase3.hs37d5]{MafDb.1Kgenomes.phase3.hs37d5}}
 }
 \examples{
 
@@ -112,26 +108,22 @@ the maximum AF value is stored.
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
   ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
 
-  if (require(MafDb.ESP6500SI.V2.SSA137)) {
-    MafDb.ESP6500SI.V2.SSA137
+  if (require(MafDb.1Kgenomes.phase3.hs37d5)) {
+    mafdb <- MafDb.1Kgenomes.phase3.hs37d5
+    mafdb
 
     ## specialized interface
-    knownVariantsMAFcols(MafDb.ESP6500SI.V2.SSA137)
-    snpid2maf(MafDb.ESP6500SI.V2.SSA137, "rs1129038")
+    knownVariantsMAFcols(mafdb)
+    snpid2maf(mafdb, "rs1129038")
 
     ## standard AnnotationDbi interface
-    keytypes(MafDb.ESP6500SI.V2.SSA137)
-    columns(MafDb.ESP6500SI.V2.SSA137)
-    select(MafDb.ESP6500SI.V2.SSA137,
-           keys="rs1129038", columns=c("varID", "AF"))
+    keytypes(mafdb)
+    columns(mafdb)
+    select(mafdb, keys="rs1129038", columns=c("varID", "AF"))
   }
 
 }
 \source{
   \url{ftp://ftp.1000genomes.ebi.ac.uk}
-
-  \url{http://evs.gs.washington.edu/EVS}
-
-  \url{http://exac.broadinstitute.org}
 }
 \keyword{datasets}

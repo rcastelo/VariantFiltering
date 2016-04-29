@@ -29,7 +29,7 @@ segregating inheritance model (\code{xLinked()}, \code{autosomalRecessiveHomozyg
 }
 \usage{
 VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
-                      bsgenome="BSgenome.Hsapiens.UCSC.hg19",
+                      bsgenome="BSgenome.Hsapiens.1000genomes.hs37d5",
                       orgdb="org.Hs.eg.db",
                       txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                       snpdb="SNPlocs.Hsapiens.dbSNP144.GRCh37",
@@ -45,7 +45,7 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
                       regionAnnotations=list(CodingVariants(), IntronVariants(),
                                              FiveSpliceSiteVariants(), ThreeSpliceSiteVariants(),
                                              PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants()),
-                      otherAnnotations=c("MafDb.1Kgenomes.phase3.hs37d5"
+                      otherAnnotations=c("MafDb.1Kgenomes.phase3.hs37d5",
                                          "MafDb.ExAC.r0.3.1.snvs.hs37d5",
                                          "PolyPhen.Hsapiens.dbSNP131",
                                          "SIFT.Hsapiens.dbSNP137",

@@ -71,48 +71,23 @@ Class for annotation packages storing minor allele frequency data.
 }
 \details{
 The \code{MafDb2} class and associated methods serve the purpose of creating
-annotation packages that store minor allele frequency data. Two such
-annotation packages are:
+annotation packages that store minor allele frequency data that can be queried by genomic position. Two such annotation packages are:
 
 \tabular{ll}{
-  \code{MafDb2.ALL.wgs.phase1.release.v3.20101123} \tab MAF values from the 1000 Genomes project
-        downloaded in October 2013 from
-        \url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz}. \cr
-
-  \code{MafDb2.ESP6500SI.V2.SSA137} \tab MAF values from 6500 ESP exomes downloaded in March 2015 from
-        \url{http://evs.gs.washington.edu/evs_bulk_data/ESP6500SI-V2-SSA137.GRCh38-liftover.snps_indels.vcf.tar.gz}. \cr
+  \code{MafDb.ExAC.r0.3.1.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
+  \code{MafDb.ExAC.r0.3.1.nonTCGA.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
 }
 
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
 for millions of SNPs by coding AF float values, which range between 0 and 1, into a single-byte
-\code{raw} object type. To achieve this, the original AF values are rounded and coded as follows:
-
-\itemize{
-  \item AF >= 0.01 & AF <= 1 values are rounded to 2 digits, where values 0.01, ..., 0.99, 1, are coded as
-        raw byte values 1 to 100.
-  \item AF >= 0.001 & AF < 0.01 values are rounded to 3 digits, where values 0.001, ..., 0.009 are coded
-        as raw byte values 101 to 109.
-  \item AF >= 0.0001 & AF < 0.001 are rounded to 4 digits, where values 0.0001, ..., 0.0009 are coded
-        as raw byte values 111 to 119.
-  \item AF >= 0.00001 & AF < 0.0001 are rounded to 5 digits, where values 0.00001, ..., 0.00009 are coded
-        as raw byte values 121 to 129.
-  \item AF < 0.00001 are rounded to 6 digits, where values 0, 0.000001, ..., 0.000009 are coded
-        as raw byte values 130 to 139.
-  \item AF \code{NA} values are coded to raw byte value of 255. Note that by default \code{NA}
-        values are coded by the raw byte value 0 but this corresponds by default to the null
-        string when raw byte values are coerced into char, which is problematic when storing
-        this data as \code{CHAR} values in a SQLite database. This precludes using this original coding
-        of \code{NA} values.
-}
+\code{raw} object type. To achieve this, the original AF values are rounded to one significant
+digit for AF < 0.01 and two significant digits for AF >= 0.01.
 
 A further compression of these data is performed in the cases of variants with mutiple
 alternative alleles. In those cases, instead of storing the AF of each alternate allele only
 the maximum AF value is stored.
 }
 \author{R. Castelo}
-%%\seealso{
-%%  \code{\link[MafDb2.ExAC.r0.3.1.snvs.hs37d5]{MafDb2.ExAC.r0.3.1.snvs.hs37d5}}
-%%}
 \examples{
 
   ## lookup allele frequencies for rs1129038, a SNP associated to blue and brown eye colors
@@ -120,20 +95,22 @@ the maximum AF value is stored.
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
   ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
 
-\dontrun{
-
   if (require(MafDb.ExAC.r0.3.1.snvs.hs37d5)) {
-    MafDb.ExAC.r0.3.1.snvs.hs37d5
+    mafdb <- MafDb.ExAC.r0.3.1.snvs.hs37d5
+    mafdb
 
     ## specialized interface
-    populations(MafDb.ExAC.r0.3.1.snvs.hs37d5)
+    populations(mafdb)
 
-    mafById(MafDb.ExAC.r0.3.1.snvs.hs37d5, "rs1129038")
+    rng <- GRanges("15", IRanges(28356859, 28356859))
+    mafByOverlaps(mafdb, rng)
+    mafByOverlaps(mafdb, "15:28356859-28356859")
+    mafByOverlaps(mafdb, "15:28356859")
+    mafById(mafdb, "rs1129038")
   }
 
 }
 
-}
 \source{
   \url{http://exac.broadinstitute.org}
 }
