@@ -1,5 +1,5 @@
 VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
-                                  bsgenome="BSgenome.Hsapiens.UCSC.hg19",
+                                  bsgenome="BSgenome.Hsapiens.1000genomes.hs37d5",
                                   orgdb="org.Hs.eg.db",
                                   txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                                   snpdb="SNPlocs.Hsapiens.dbSNP144.GRCh37",
