@@ -3,6 +3,10 @@
 ##
 
 ## harmonize sequence style between variants, annotations and genome sequence
+## because variants, annotations and genome sequence may originate from the
+## same genome under different nomenclatures (e.g., GRCh37.p13, hg19, hs37d5, etc.)
+## we'll assume that genome sequence is the same when there is at least one
+## sequence that matches in name (up to the known "styles") and length.
 .matchSeqinfo <- function(variantsGR, txdb, bsgenome) {
 
   ## set temporarily the sequence style of variants to that of
@@ -27,7 +31,7 @@
     commonChr <- commonChr[slenVcf == slenBSgenome]
   }
 
-  ## set the genome build to the one of the genome package
+  ## set the genome information to the one of the genome package, which should be complete
   message(sprintf("Assuming the genome build of the input variants is %s.",
                   unique(genome(bsgenome)[commonChr])))
   seqinfo(variantsGR, new2old=match(commonChr, seqlevels(variantsGR))) <- seqinfo(bsgenome)[commonChr]
@@ -38,8 +42,24 @@
   seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
   commonChr <- intersect(seqlevels(variantsGR), seqlevels(txdb))
 
+  ## subset further the sequences to analyze to those whose length also matches the ones of annotations
+  slenVcf <- seqlengths(variantsGR)[commonChr]
+  slenTxDb <- seqlengths(txdb)[commonChr]
+  if (any(slenVcf != slenTxDb)) {
+    if (sum(slenVcf != slenTxDb) == 1) {
+      warning(sprintf("Chromosome %s has different lengths between the input VCF and the input TxDb pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
+    } else {
+      warning(sprintf("Chromosomes %s have different lengths between the input VCF and the input TxDb package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
+    }
+    if (sum(slenVcf == slenTxDb) == 0)
+      stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the input TxDb package. The genome reference sequence employed to generate the VCF file was probably different from the one in the input TxDb package.")
+    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenTxDb])
+    commonChr <- commonChr[slenVcf == slenTxDb]
+  }
+
   ## inform the user the genome build is going to be the one of the
   ## variants and genome package, in case it does not match the one of the annotations
+  ## the genome build is going to be the one of the annotations assuming it's the same
   if (any(is.na(genome(txdb)[commonChr])))
     warning(sprintf("Assuming the genome build of transcript-centric annotations is %s.",
                     unique(genome(variantsGR)[commonChr])))
@@ -47,6 +67,7 @@
     warning(sprintf("Assumming %s represent the same genome build.",
                     paste(c(unique(genome(variantsGR)[commonChr]), unique(genome(txdb)[commonChr])),
                           collapse=" and ")))
+    seqinfo(variantsGR, new2old=match(commonChr, seqlevels(variantsGR))) <- seqinfo(txdb)[commonChr]
   }
 
   ## discard scaffold sequences
