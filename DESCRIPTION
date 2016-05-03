@@ -2,10 +2,10 @@ Package: VariantFiltering
 Type: Package
 Title: Filtering of coding and non-coding genetic variants
 Description: Filter genetic variants using different criteria such as
-             inheritance model, amino acid change consequence, minimum
+             inheritance model, amino acid change consequence, minor
              allele frequencies across human populations, splice site
              strength, conservation, etc.
-Version: 1.7.41
+Version: 1.7.42
 Authors@R: c(person("Robert", "Castelo", role=c("aut", "cre"), email="robert.castelo@upf.edu"),
              person("Dei", "Martinez Elurbe", role="ctb"),
              person("Pau", "Puigdevall", role="ctb"))
