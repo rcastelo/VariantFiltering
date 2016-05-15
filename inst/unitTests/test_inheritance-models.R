@@ -1,4 +1,5 @@
-require(BSgenome.Hsapiens.UCSC.hg19)
+## should BSgenome.Hsapiens.UCSC.hg19 be replaced by BSgenome.Hsapiens.1000genomes.hs37d5
+checkTrue(require(BSgenome.Hsapiens.UCSC.hg19))
 
 ## create a pedigree with one affected male child (A) and two
 ## unaffected parents (B -male- and C -female-)
@@ -35,7 +36,7 @@ test_deNovo_inheritance <- function() {
 
 test_autosomalRecessiveHomozygous_inheritance <- function() {
 
-  require(BSgenome.Hsapiens.UCSC.hg19)
+  checkTrue(require(BSgenome.Hsapiens.UCSC.hg19))
 
   thisvr <- vr
 
@@ -53,7 +54,7 @@ test_autosomalRecessiveHomozygous_inheritance <- function() {
 
 test_autosomalDominant_inheritance <- function() {
 
-  require(BSgenome.Hsapiens.UCSC.hg19)
+  checkTrue(require(BSgenome.Hsapiens.UCSC.hg19))
 
   thisvr <- vr
 
