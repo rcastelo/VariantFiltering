@@ -30,7 +30,7 @@ the [devtools](https://github.com/hadley/devtools "devtools") package.
 ```r
 install.packages("devtools")
 library(devtools)
-install_github("VariantFiltering", "rcastelo")
+install_github("rcastelo/VariantFiltering")
 ```
 
 ## Questions, bug reports and issues
