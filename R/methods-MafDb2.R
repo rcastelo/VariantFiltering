@@ -163,13 +163,14 @@ setMethod("mafById", signature="MafDb2",
             if (any(!pop %in% populations(x)))
               stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
 
-            ans <- as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
-                                        dimnames=list(ids, pop)))
+            ans <- as.data.frame(matrix(NA_real_, nrow=length(ids), ncol=length(pop),
+                                        dimnames=list(NULL, pop)))
+            ans <- cbind(ID=ids, ans, stringsAsFactors=FALSE)
 
             if (any(!is.na(mt))) {
               rsIDgpSNVs <- get("rsIDgpSNVs", envir=x@.data_cache)
               rng <- rsIDgpSNVs[mt[!is.na(mt)]]
-              ans[!is.na(mt), ] <- mafByOverlaps(x, rsIDgpSNVs[mt[!is.na(mt)]], pop, caching)
+              ans[!is.na(mt), pop] <- mafByOverlaps(x, rsIDgpSNVs[mt[!is.na(mt)]], pop, caching)
             }
 
             ans
