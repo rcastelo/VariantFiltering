@@ -18,9 +18,14 @@ readWm <- function(fname, locations=levels(.location()), strictLocations=FALSE) 
 
   strictLocations <- strictLocations[locations]
 
-  return(new("WeightMatrix", wm=.Call("scoss_read_wm", fname),
+  return(new("WeightMatrix", wm=.Call("scoss_read_wm", fname), filename=fname,
              locations=locations, strictLocations=strictLocations))
 }
+
+setMethod("wmFilename", signature(x="WeightMatrix"),
+          function(x) {
+            x@filename
+          })
 
 setMethod("wmLocations", signature(x="WeightMatrix"),
           function(x) {
