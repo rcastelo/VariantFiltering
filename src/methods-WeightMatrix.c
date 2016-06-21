@@ -99,31 +99,31 @@ scoss_wm_score(SEXP wmR, SEXP dnastringR, SEXP nscoR) {
   int nsco = INTEGER(nscoR)[0];
   double* scores;
   SEXP scoresR;
+  SEXP result;
 
-  PROTECT(scoresR = allocVector(REALSXP, nsco));
-  scores = REAL(scoresR);
+  PROTECT(result = allocVector(VECSXP, ndnastrings));
   k = 0;
   for (i=0; i < ndnastrings; i++) {
     const char* dnaseq = CHAR(STRING_ELT(dnastringR, i));
 
+    SET_VECTOR_ELT(result, i, scoresR=allocVector(REALSXP, strlen(dnaseq)-wm->nvars+1));
     for (j=0; j < strlen(dnaseq)-wm->nvars+1; j++) {
       char buf[MAXVARS];
 
       strncpy(buf, dnaseq+j, wm->nvars);
       buf[wm->nvars] = 0;
-      scores[k++] = wm_score(wm, buf);
+      REAL(VECTOR_ELT(result, i))[j] = wm_score(wm, buf);
     }
   }
-  UNPROTECT(1); /* scoresR */
+  UNPROTECT(1); /* result */
 
-  return(scoresR);
+  return(result);
 }
 
 
 /* entry point to wm_score_DNAStringSet */
 SEXP
 scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
-  /* cachedXStringSet S; */
   XStringSet_holder S;
   int S_length, i, j;
   int nsco = INTEGER(nscoR)[0];
@@ -132,35 +132,29 @@ scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
   SEXP scoresR;
   SEXP result;
 
-  /* S = cache_XStringSet(dnaStringSet); */
   S = hold_XStringSet(dnaStringSet);
   S_length = get_XStringSet_length(dnaStringSet);
 
   PROTECT(result = allocVector(VECSXP, S_length));
-  /* PROTECT(scoresR = allocVector(REALSXP, nsco));
-  scores = REAL(scoresR); */
-  for (j=0; j < S_length; j++) {
+  for (i=0; i < S_length; i++) {
     Chars_holder S_elt;
     char buf[MAXVARS];
-    int k;
 
-    i = 0;
-    S_elt = get_elt_from_XStringSet_holder(&S, j);
-    for (k=0; k < S_elt.length; k++) {
-      const char* c = S_elt.ptr + k;
+    S_elt = get_elt_from_XStringSet_holder(&S, i);
+    for (j=0; j < S_elt.length; j++) {
+      const char* c = S_elt.ptr + j;
 
-      buf[k] = DNAdecode(*c);
+      buf[j] = DNAdecode(*c);
     }
-    buf[k] = 0;
+    buf[j] = 0;
 
-    SET_VECTOR_ELT(result, j, scoresR = allocVector(REALSXP, S_elt.length-wm->nvars+1));
-    for (k=0; k < S_elt.length-wm->nvars+1; k++) {  
+    SET_VECTOR_ELT(result, i, scoresR=allocVector(REALSXP, S_elt.length-wm->nvars+1));
+    for (j=0; j < S_elt.length-wm->nvars+1; j++) {  
       char buf2[MAXVARS];
 
-      strncpy(buf2, buf+k, wm->nvars);
+      strncpy(buf2, buf+j, wm->nvars);
       buf2[wm->nvars] = 0;
-      /* scores[i++] = wm_score(wm, buf2); */
-      REAL(VECTOR_ELT(result, j))[k] = wm_score(wm, buf2);
+      REAL(VECTOR_ELT(result, i))[j] = wm_score(wm, buf2);
     }
 
   }
