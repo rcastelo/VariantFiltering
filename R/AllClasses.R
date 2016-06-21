@@ -143,5 +143,6 @@ setClass("VariantFilteringResults",
 
 setClass("WeightMatrix",
          representation(wm="externalptr",
+                        filename="character",
                         locations="character",
                         strictLocations="logical"))

@@ -6,6 +6,7 @@
 \alias{width,WeightMatrix-method}
 \alias{conservedPositions,WeightMatrix-method}
 \alias{wmName,WeightMatrix-method}
+\alias{wmFilename,WeightMatrix-method}
 \alias{wmLocations,WeightMatrix-method}
 \alias{wmLocations<-,WeightMatrix-method}
 \alias{wmLocations<-,WeightMatrix,character-method}
@@ -22,6 +23,7 @@
 \alias{readWm}
 \alias{wmScore}
 \alias{wmName}
+\alias{wmFilename}
 \alias{wmLocations}
 \alias{wmLocations<-}
 \alias{wmStrictLocations}
@@ -36,6 +38,7 @@ Class for storing weight matrices that VariantFiltering uses to score potential 
 \S4method{width}{WeightMatrix}(x)
 \S4method{conservedPositions}{WeightMatrix}(x)
 \S4method{wmName}{WeightMatrix}(x)
+\S4method{wmFilename}{WeightMatrix}(x)
 \S4method{wmLocations}{WeightMatrix}(x)
 \S4method{wmStrictLocations}{WeightMatrix}(x)
 \S4method{show}{WeightMatrix}(object)
@@ -101,6 +104,7 @@ Castelo, R and Guigo, R. Splice site identification by idlBNs. Bioinformatics, 2
 wm <- readWm(file.path(system.file("extdata", package="VariantFiltering"), "hsap.donors.hcmc10_15_1.ibn"),
              locations="fiveSpliceSite", strictLocations=TRUE)
 wm
+wmFilename(wm)
 width(wm)
 wmName(wm)
 wmLocations(wm)
