@@ -80,6 +80,7 @@ setGeneric("annotateVariants", function(annObj, ...) standardGeneric("annotateVa
 setGeneric("wmScore", function(object, dnaseqs, ...) standardGeneric("wmScore"))
 setGeneric("conservedPositions", function(x, ...) standardGeneric("conservedPositions"))
 setGeneric("wmName", function(x, ...) standardGeneric("wmName"))
+setGeneric("wmFilename", function(x, ...) standardGeneric("wmFilename"))
 setGeneric("wmLocations", function(x, ...) standardGeneric("wmLocations"))
 setGeneric("wmLocations<-", function(x, value) standardGeneric("wmLocations<-"))
 setGeneric("wmStrictLocations", function(x, ...) standardGeneric("wmStrictLocations"))
