@@ -190,7 +190,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   ## to deal with this we check whether the column exists and if not
   ## just return a mask of truth logical values
   qualityFilterDescriptions <- fixed(scanVcfHeader(tfl[[1]]))$FILTER
-  qualityFilterNames <- rownames(qualityFilterDescriptions)
+  qualityFilterNames <- make.names(rownames(qualityFilterDescriptions), unique=TRUE)
+  rownames(qualityFilterDescriptions) <- qualityFilterNames
   qfilters <- sapply(qualityFilterNames,
                      function(qfname) {
                        f <- sprintf("function(x) { sfm <- softFilterMatrix(allVariants(x, groupBy=\"nothing\")) ; mask <- rep(TRUE, nrow(sfm)) ; if (!is.na(match(qfname, colnames(sfm)))) mask <- sfm[, \"%s\"] ; mask }", qfname)
