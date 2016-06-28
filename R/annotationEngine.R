@@ -1226,9 +1226,9 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
 
   message("Scoring potential cryptic splice sites in coding synonymous variants")
 
-  if (any(variantsVR$CONSEQUENCE %in% "synonymous")) {
-    ## %in% avoids NAs when comparing with them (THIS MASK IS ALSO USED BELOW !!)
-    synonymousSNVmask <- variantsVR$CONSEQUENCE %in% "synonymous"
+  ## %in% avoids NAs when comparing with them (THIS MASK IS ALSO USED BELOW !!)
+  synonymousSNVmask <- variantsVR$TYPE == "SNV" & variantsVR$CONSEQUENCE %in% "synonymous"
+  if (any(synonymousSNVmask)) {
 
     GRanges_SY <- variantsVR[synonymousSNVmask]
     stopifnot(all(!is.na(GRanges_SY$LOCSTRAND))) ## QC
