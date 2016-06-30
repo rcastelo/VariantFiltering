@@ -60,12 +60,12 @@ setMethod("show", signature(object="VariantFilteringResults"),
                             minPhylostratum(object),
                             nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
             }
-            if (all(!is.na(param(object)$spliceSiteMatricesFilenames))) {
-              if (!is.na(minScore5ss(object)))
-                cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minScore5ss(object)))
-              if (!is.na(minScore3ss(object)))
-                cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minScore3ss(object)))
-            }
+            ## if (all(!is.na(param(object)$spliceSiteMatricesFilenames))) {
+            ##   if (!is.na(minScore5ss(object)))
+            ##     cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minScore5ss(object)))
+            ##   if (!is.na(minScore3ss(object)))
+            ##     cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minScore3ss(object)))
+            ## }
           })
 
 setMethod("summary", signature(object="VariantFilteringResults"),
@@ -744,29 +744,29 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             }
 
             ## if any of the 5' cryptic ss or 3' cryptic ss meet the cutoff, select the row
-            mtNoSCORE5ss <- mtNoSCORE3ss <- NULL
-            if (all(!is.na(param(x)$spliceSiteMatricesFilenames))) {
-              crypssMask <- rep(FALSE, length(vars))
-              if (is.na(minScore5ss(x)))
-                mtNoSCORE5ss <- grep("SCORE5ss", colnames(mcols(vars)))
-              else {
-                cryp5ssMask <- vars$SCORE5ssALT >= minScore5ss(x)
-                cryp5ssMask[is.na(cryp5ssMask)] <- FALSE
-                crypssMask <- crypssMask | cryp5ssMask
-              }
-              if (is.na(minScore3ss(x)))
-                mtNoSCORE3ss <- grep("SCORE3ss", colnames(mcols(vars)))
-              else {
-                cryp3ssMask <- vars$SCORE3ssALT >= minScore3ss(x)
-                cryp3ssMask[is.na(cryp3ssMask)] <- FALSE
-                crypssMask <- crypssMask | cryp3ssMask
-              }
-              ## if no filter on 5' and 3' cryptic ss is set, then select all rows
-              if (is.na(minScore5ss(x)) && is.na(minScore3ss(x)))
-                crypssMask <- rep(TRUE, length(vars))
-
-              rowsMask <- rowsMask & crypssMask
-            }
+            ## mtNoSCORE5ss <- mtNoSCORE3ss <- NULL
+            ## if (all(!is.na(param(x)$spliceSiteMatricesFilenames))) {
+            ##   crypssMask <- rep(FALSE, length(vars))
+            ##   if (is.na(minScore5ss(x)))
+            ##     mtNoSCORE5ss <- grep("SCORE5ss", colnames(mcols(vars)))
+            ##   else {
+            ##     cryp5ssMask <- vars$SCORE5ssALT >= minScore5ss(x)
+            ##     cryp5ssMask[is.na(cryp5ssMask)] <- FALSE
+            ##     crypssMask <- crypssMask | cryp5ssMask
+            ##   }
+            ##   if (is.na(minScore3ss(x)))
+            ##     mtNoSCORE3ss <- grep("SCORE3ss", colnames(mcols(vars)))
+            ##   else {
+            ##     cryp3ssMask <- vars$SCORE3ssALT >= minScore3ss(x)
+            ##     cryp3ssMask[is.na(cryp3ssMask)] <- FALSE
+            ##     crypssMask <- crypssMask | cryp3ssMask
+            ##   }
+            ##   ## if no filter on 5' and 3' cryptic ss is set, then select all rows
+            ##   if (is.na(minScore5ss(x)) && is.na(minScore3ss(x)))
+            ##     crypssMask <- rep(TRUE, length(vars))
+            ##
+            ##   rowsMask <- rowsMask & crypssMask
+            ## }
 
             ## codon-usage fold-change
             minCUFCannot <- log2(vars$CUALT) - log2(vars$CUREF)
@@ -857,7 +857,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   phylostrata <- "Unavailable"
   if (!is.na(mtGenePhylostrataDb))
     phylostrata <- rev(genePhylostrata(param(vfResultsObj)$otherAnnotations[[mtGenePhylostrataDb]])$Description)
-  crypsplice <- param(vfResultsObj)$spliceSiteMatricesFilenames
+  ## crypsplice <- param(vfResultsObj)$spliceSiteMatricesFilenames
   
   app <- list(ui=NULL, server=NULL)
 
@@ -1024,17 +1024,17 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (all(!is.na(crypsplice))) {
-          if (input$minScore5ssFlag)
-            minScore5ss(vfResultsObj) <- input$minScore5ss
-          else
-            minScore5ss(vfResultsObj) <- NA_real_
-
-          if (input$minScore3ssFlag)
-            minScore3ss(vfResultsObj) <- input$minScore3ss
-          else
-            minScore3ss(vfResultsObj) <- NA_real_
-        }
+        ## if (all(!is.na(crypsplice))) {
+        ##   if (input$minScore5ssFlag)
+        ##     minScore5ss(vfResultsObj) <- input$minScore5ss
+        ##   else
+        ##     minScore5ss(vfResultsObj) <- NA_real_
+        ##
+        ##   if (input$minScore3ssFlag)
+        ##     minScore3ss(vfResultsObj) <- input$minScore3ss
+        ##   else
+        ##     minScore3ss(vfResultsObj) <- NA_real_
+        ## }
 
         ## codon-usage fold-change
         minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
@@ -1107,17 +1107,17 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       }
 
       ## cryptic splice sites
-      if (all(!is.na(crypsplice))) {
-        if (input$minScore5ssFlag)
-          minScore5ss(vfResultsObj) <- as.numeric(input$minScore5ss)
-        else
-          minScore5ss(vfResultsObj) <- NA_real_
-
-        if (input$minScore3ssFlag)
-          minScore3ss(vfResultsObj) <- as.numeric(input$minScore3ss)
-        else
-          minScore3ss(vfResultsObj) <- NA_real_
-      }
+      ## if (all(!is.na(crypsplice))) {
+      ##   if (input$minScore5ssFlag)
+      ##     minScore5ss(vfResultsObj) <- as.numeric(input$minScore5ss)
+      ##   else
+      ##     minScore5ss(vfResultsObj) <- NA_real_
+      ##
+      ##   if (input$minScore3ssFlag)
+      ##     minScore3ss(vfResultsObj) <- as.numeric(input$minScore3ss)
+      ##   else
+      ##     minScore3ss(vfResultsObj) <- NA_real_
+      ## }
 
       ## codon-usage fold-change
       minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
@@ -1189,8 +1189,8 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       if ("PhastConsDb" %in% annotationObjClasses || "GenePhylostrataDb" %in% annotationObjClasses)
         tabPanelList[[length(tabPanelList)+1]] <- tabPanel("Conservation", tableOutput('tableConservation'), value="conservation")
 
-      if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames)))
-        tabPanelList[[length(tabPanelList)+1]] <- tabPanel("CrypSplice", tableOutput('tableCrypSplice'), value="cryp")
+      ## if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames)))
+      ##   tabPanelList[[length(tabPanelList)+1]] <- tabPanel("CrypSplice", tableOutput('tableCrypSplice'), value="cryp")
 
       tabPanelList[[length(tabPanelList)+1]] <- tabPanelAbout()
 
@@ -1257,10 +1257,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     output$tableCrypSplice <- renderTable({
       selcols <- selcolsnames <- c("VarID", "POSITION")
 
-      if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames))) {
-        selcols <- c(selcols, "SCORE5ssREF", "SCORE5ssALT", "SCORE5ssPOS", "SCORE3ssREF", "SCORE3ssALT", "SCORE3ssPOS")
-        selcolsnames <- c(selcolsnames, "5'ss Ref", "5'ss Alt", "5'ss Pos", "3'ss Ref", "3'ss Alt", "3'ss Pos")
-      }
+      ## if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames))) {
+      ##   selcols <- c(selcols, "SCORE5ssREF", "SCORE5ssALT", "SCORE5ssPOS", "SCORE3ssREF", "SCORE3ssALT", "SCORE3ssPOS")
+      ##   selcolsnames <- c(selcolsnames, "5'ss Ref", "5'ss Alt", "5'ss Pos", "3'ss Ref", "3'ss Alt", "3'ss Pos")
+      ## }
 
       fv <- filteredVariantsReact()[, selcols]
       colnames(fv) <- selcolsnames
@@ -1332,17 +1332,17 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (all(!is.na(crypsplice))) {
-          if (input$minScore5ssFlag)
-            minScore5ss(vfResultsObj) <- as.numeric(input$minScore5ss)
-          else
-            minScore5ss(vfResultsObj) <- NA_real_
-
-          if (input$minScore3ssFlag)
-            minScore3ss(vfResultsObj) <- as.numeric(input$minScore3ss)
-          else
-            minScore3ss(vfResultsObj) <- NA_real_
-        }
+        ## if (all(!is.na(crypsplice))) {
+        ##   if (input$minScore5ssFlag)
+        ##     minScore5ss(vfResultsObj) <- as.numeric(input$minScore5ss)
+        ##   else
+        ##     minScore5ss(vfResultsObj) <- NA_real_
+        ##
+        ##   if (input$minScore3ssFlag)
+        ##     minScore3ss(vfResultsObj) <- as.numeric(input$minScore3ss)
+        ##   else
+        ##     minScore3ss(vfResultsObj) <- NA_real_
+        ## }
 
         ## codon-usage fold-change
         minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
@@ -1428,17 +1428,17 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         }
 
         ## cryptic splice sites
-        if (all(!is.na(crypsplice))) {
-          if (input$minScore5ssFlag)
-            minScore5ss(vfResultsObj) <- as.numeric(input$minScore5ss)
-          else
-            minScore5ss(vfResultsObj) <- NA_real_
-
-          if (input$minScore3ssFlag)
-            minScore3ss(vfResultsObj) <- as.numeric(input$minScore3ss)
-          else
-            minScore3ss(vfResultsObj) <- NA_real_
-        }
+        ## if (all(!is.na(crypsplice))) {
+        ##   if (input$minScore5ssFlag)
+        ##     minScore5ss(vfResultsObj) <- as.numeric(input$minScore5ss)
+        ##   else
+        ##     minScore5ss(vfResultsObj) <- NA_real_
+        ##
+        ##   if (input$minScore3ssFlag)
+        ##     minScore3ss(vfResultsObj) <- as.numeric(input$minScore3ss)
+        ##   else
+        ##     minScore3ss(vfResultsObj) <- NA_real_
+        ## }
 
         ## codon-usage fold-change
         minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
@@ -1479,12 +1479,12 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
           if (!is.na(minPhylostratum(vfResultsObj)))
             cat(sprintf("> minPhylostratum(res) <- %d\n", minPhylostratum(vfResultsObj)))
         }
-        if (all(!is.na(crypsplice))) {
-          if (!is.na(minScore5ss(vfResultsObj)))
-            cat(sprintf("> minScore5ss(res) <- %.2f\n", minScore5ss(vfResultsObj)))
-          if (!is.na(minScore3ss(vfResultsObj)))
-            cat(sprintf("> minScore3ss(res) <- %.2f\n", minScore3ss(vfResultsObj)))
-        }
+        ## if (all(!is.na(crypsplice))) {
+        ##   if (!is.na(minScore5ss(vfResultsObj)))
+        ##     cat(sprintf("> minScore5ss(res) <- %.2f\n", minScore5ss(vfResultsObj)))
+        ##   if (!is.na(minScore3ss(vfResultsObj)))
+        ##     cat(sprintf("> minScore3ss(res) <- %.2f\n", minScore3ss(vfResultsObj)))
+        ## }
         cat("> res\n")
         print(vfResultsObj)
         cat("> reportVariants(res, type=\"tsv\", file=\"variants.tsv\")\n")
