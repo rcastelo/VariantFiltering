@@ -3,7 +3,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
                                   orgdb="org.Hs.eg.db",
                                   txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                                   snpdb="SNPlocs.Hsapiens.dbSNP144.GRCh37",
-                                  spliceSiteMatricesFilenames=NA,
+                                  weightMatricesFilenames=NA,
                                   radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                                     "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
                                   codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),
@@ -43,14 +43,14 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   else
     pedFilename <- NA_character_
 
-  if (!is.na(spliceSiteMatricesFilenames) && length(spliceSiteMatricesFilenames) == 2)
+  if (!is.na(weightMatricesFilenames))
     tryCatch({
-      .io_check_exists(spliceSiteMatricesFilenames)
+      .io_check_exists(weightMatricesFilenames)
     }, error=function(err) {
          stop(conditionMessage(err), call.=FALSE)
     })
   else
-    spliceSiteMatricesFilenames <- NA_character_
+    weightMatricesFilenames <- NA_character_
 
   maskGz <- grepl("vcf.bgz$", vcfFilenames)
 
@@ -107,13 +107,12 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
                     basename(vcfFilenames[wh[1]])))
   }
 
-  ## read splice site matrices
-  spliceSiteMatrices <- list()
-  if (any(!is.na(spliceSiteMatricesFilenames))) {
-    if (class(spliceSiteMatricesFilenames) != "character" || length(spliceSiteMatricesFilenames) != 2)
-      stop("'spliceSiteMatricesFilenames' should be a character vector with two filenames of donor and acceptor splice site matrices, respectively.")
-    spliceSiteMatrices <- list(wmDonorSites=readWm(spliceSiteMatricesFilenames[1]),
-                               wmAcceptorSites=readWm(spliceSiteMatricesFilenames[2]))
+  ## read weight matrices
+  weightMatrices <- list()
+  if (any(!is.na(weightMatricesFilenames))) {
+    if (class(weightMatricesFilenames) != "character")
+      stop("'weightMatricesFilenames' should be a character vector.")
+    weightMatrices <- lapply(as.list(weightMatricesFilenames), readWm)
   }
 
   ## read radical amino acid change matrix
@@ -210,8 +209,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
 
   new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
       sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
-      gSO=gSO, gSOdmat=gSOdmat, gSOamat=gSOamat,
-      spliceSiteMatricesFilenames=spliceSiteMatricesFilenames, spliceSiteMatrices=spliceSiteMatrices,
+      gSO=gSO, gSOdmat=gSOdmat, gSOamat=gSOamat, weightMatrices=weightMatrices,
       radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
       codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
       regionAnnotations=regionAnnotations, otherAnnotations=otherannotations, allTranscripts=allTranscripts,
@@ -263,8 +261,8 @@ setMethod("show", signature(object="VariantFilteringParam"),
             else
               cat(sprintf("  Transcript-centric annotation table: %s\n", metadata(object$txdb)[grep("Table", metadata(object$txdb)$name), "value"]))
             cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
-            if (!is.na(object$spliceSiteMatricesFilenames) && length(object$spliceSiteMatricesFilenames) > 0)
-              cat(sprintf("  Splice site matrices: %s\n", paste(basename(object$spliceSiteMatricesFilenames), collapse=", ")))
+            if (length(object$weightMatrices) > 0)
+              cat(sprintf("  Weight matrices: %s\n", paste(sapply(object$weightMatrices, wmName), collapse=", ")))
             cat(sprintf("  Radical/Conservative AA changes: %s\n", basename(object$radicalAAchangeFilename)))
             cat(sprintf("  Codon usage table: %s\n", basename(object$codonusageFilename)))
             cat(sprintf("  Regions to annotate: %s\n", paste(names(object$regionAnnotations), collapse=", ")))
