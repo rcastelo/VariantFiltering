@@ -272,7 +272,7 @@ exportMethods(summary,
              )
 
 export(VariantFilteringParam,
-       spliceSiteMatricesHsapiens,
+       spliceSiteMatricesHuman,
        reportVariants,
        readWm,
        readAAradicalChangeMatrix,
