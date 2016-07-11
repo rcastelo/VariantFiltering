@@ -781,7 +781,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             ## select variant annotations using the logical mask of the filters
             colsIdx <- setdiff(1:ncol(mcols(vars)), mtNoMAF)
             if (unusedColumns.rm) ## remove data columns that are not used for filtering
-              colsIdx <- setdiff(colsIdx, c(mtNoMinPhastCons, mtNoMinPhylostratum, mtNoSCORE5ss, mtNoSCORE3ss))
+              colsIdx <- setdiff(colsIdx, c(mtNoMinPhastCons, mtNoMinPhylostratum))## , mtNoSCORE5ss, mtNoSCORE3ss))
 
             colsMask <- rep(FALSE, ncol(mcols(vars)))
             colsMask[colsIdx] <- TRUE

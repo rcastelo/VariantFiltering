@@ -219,7 +219,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
 
 ## functions with default parameters
 
-spliceSiteMatricesHsapiens <- function() {
+spliceSiteMatricesHuman <- function() {
   c(file.path(system.file("extdata", package="VariantFiltering"), "hsap.donors.hcmc10_15_1.ibn"),
     file.path(system.file("extdata", package="VariantFiltering"), "hsap.acceptors.hcmc10_15_1.ibn"))
 }
