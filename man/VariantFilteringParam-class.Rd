@@ -65,7 +65,7 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
   Character string of the pedigree file name in PED format.
   }
   \item{bsgenome}{
-  Character string of a genome annotation package (\code{BSgenome.Hsapiens.UCSC.hg19} by defautl).
+  Character string of a genome annotation package (\code{BSgenome.Hsapiens.1000genomes.hs37d5} by default).
   }
   \item{orgdb}{
   Character string of a gene-centric annotation package (\code{org.Hs.eg.db} by default).
