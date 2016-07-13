@@ -35,7 +35,7 @@ FiveSpliceSiteVariants <- function(minIntronLength=20L,
 ## 3' splice sites occur by default in introns that are at least 20nt long,
 ## have 18nt upstream and 3nt downstream from the last dinucleotide of the intron
 ThreeSpliceSiteVariants <- function(minIntronLength=20L,
-                                   upstream=18, downstream=3) {
+                                    upstream=18, downstream=3) {
   minIntronLength <- VariantAnnotation:::.checkArgs(minIntronLength, "minIntronLength")
   upstream <- VariantAnnotation:::.checkArgs(upstream, "upstream")
   downstream <- VariantAnnotation:::.checkArgs(downstream, "downstream")
