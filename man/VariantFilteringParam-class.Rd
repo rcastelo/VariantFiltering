@@ -18,6 +18,7 @@
 
 %% Functions:
 \alias{spliceSiteMatricesHuman}
+\alias{variantLocations}
 
 \title{VariantFiltering parameter class}
 
@@ -33,6 +34,8 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
                       txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                       snpdb="SNPlocs.Hsapiens.dbSNP144.GRCh37",
                       weightMatricesFilenames=NA,
+                      weightMatricesLocations=rep(list(variantLocations()), length(weightMatricesFilenames)),
+                      weightMatricesStrictLocations=rep(list(FALSE), length(weightMatricesFilenames)),
                       radicalAAchangeFilename=file.path(system.file("extdata",
                                                                     package="VariantFiltering"),
                                                         "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
@@ -77,9 +80,20 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
   Character string of a SNP-centric annotation package (\code{SNPlocs.Hsapiens.dbSNP.20120608} by default).
   }
   \item{weightMatricesFilenames}{
-  Names of text files containing position weight matrices for binding site recognition.
+  Character string of filenames of position weight matrices for binding site recognition.
   The default \code{NA} value indicates that no binding sites will be scored. To use this feature to score, for instance,
   splice sites in human, assign to this argument the function \code{spliceSiteMatricesHuman()}. See the files (\code{hsap.donors.hcmc10_15_1.ibn} and \code{hsap.acceptors.hcmc10_15_1.ibn}) returned by this function for details on their format.
+  }
+  \item{weightMatricesLocations}{
+  Keywords of the annotated locations to variants under which a weight matrix will be used for scoring binding sites. This argument
+  is only used when \code{weightMatricesFilenames!=NA} and, in such case, then more than one matrix is provided, this argument should be
+  a list of character vectors with as many elements as matrices given in \code{weightMatricesFilenames}. The possible values can be obtained
+  by typing \code{variantLocations()}.
+  }
+  \item{weightMatricesStrictLocations}{
+  Logical vector flagging whether a weight matrix should be scoring binding sites strictly within the boundaries of the given locations.
+  This argument is only used when \code{weightMatricesFilenames!=NA} and, in such case, then more than one matrix is provided, this
+  argument should be a list of logical vectors with as many elements as matrices given in \code{weightMatricesFilenames}.
   }
   \item{radicalAAchangeFilename}{
   Name of a tab-separated text file containing chemical properties of amino acids. These properties are interpreted such that amino acid changes within a property are considered "conservative" and between properties are considered "radical". See the default file (\code{AA_chemical_properties_HanadaGojoboriLi2006.tsv}) for details on its format.

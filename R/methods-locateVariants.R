@@ -17,11 +17,11 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
     function(length=0, value=NA)
 {
     levels <- c("spliceSite", "intron", "fiveUTR", "threeUTR",
-        "coding", "intergenic", "promoter", "fiveSpliceSite", "threeSpliceSite")
+                "coding", "intergenic", "promoter", "fiveSpliceSite", "threeSpliceSite")
     factor(rep(value, length), levels=levels)
 }
 
-
+variantLocations <- function() levels(.location())
 
 ## adapted from function VariantAnnotation:::.spliceSite
 .fiveSpliceSites <- function(query, subject, region, ignore.strand, asHits, ...) {
@@ -78,7 +78,7 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
 
 ## adapted from function VariantAnnotation:::.spliceSite
 .threeSpliceSites <- function(query, subject, region, ignore.strand, asHits, ...) {
-  ## Overlap any portion of first upstream and last dowstream nucleotides of the 5' end of introns
+  ## Overlap any portion of first upstream and last dowstream nucleotides of the 3' end of introns
   usub <- unlist(subject, use.names=FALSE)
 
   int_end <- GRanges(seqnames(usub),
@@ -95,11 +95,11 @@ setMethod("locateVariants", c("GRanges", "GRangesList", "ThreeSpliceSiteVariants
 
   res <- GRanges()
   values(res) <- DataFrame(LOCATION=.location(0, "threeSpliceSite"),
-                             LOCSTART=integer(0), LOCEND=integer(0),
-                             QUERYID=integer(0), TXID=integer(0),
-                             CDSID=IntegerList(), GENEID=character(0),
-                             PRECEDEID=CharacterList(),
-                             FOLLOWID=CharacterList())
+                           LOCSTART=integer(0), LOCEND=integer(0),
+                           QUERYID=integer(0), TXID=integer(0),
+                           CDSID=IntegerList(), GENEID=character(0),
+                           PRECEDEID=CharacterList(),
+                           FOLLOWID=CharacterList())
 
   if (length(fo) > 0) {
     df <- unique(data.frame(queryid=queryHits(fo),

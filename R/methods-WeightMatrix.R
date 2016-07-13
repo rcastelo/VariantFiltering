@@ -1,8 +1,8 @@
-readWm <- function(fname, locations=levels(.location()), strictLocations=FALSE) {
+readWm <- function(fname, locations=variantLocations(), strictLocations=FALSE) {
 
-  if (any(!locations %in% levels(.location())))
+  if (any(!locations %in% variantLocations()))
     stop(sprintf("values in argument 'locations' must be one of: %s\n",
-                 paste(levels(.location()), collapse=", ")))
+                 paste(variantLocations(), collapse=", ")))
 
   if (length(strictLocations) > 1 && length(strictLocations != length(locations)))
     stop("argument 'strictLocations' must be either one truth value (TRUE or FALSE) for all locations, or as many truth values as values given in the 'locations' argument\n")
