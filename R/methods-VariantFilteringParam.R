@@ -4,6 +4,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
                                   txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
                                   snpdb="SNPlocs.Hsapiens.dbSNP144.GRCh37",
                                   weightMatricesFilenames=NA,
+                                  weightMatricesLocations=rep(list(variantLocations()), length(weightMatricesFilenames)),
+                                  weightMatricesStrictLocations=rep(list(FALSE), length(weightMatricesFilenames)),
                                   radicalAAchangeFilename=file.path(system.file("extdata", package="VariantFiltering"),
                                                                     "AA_chemical_properties_HanadaGojoboriLi2006.tsv"),
                                   codonusageFilename=file.path(system.file("extdata", package="VariantFiltering"),
@@ -43,7 +45,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   else
     pedFilename <- NA_character_
 
-  if (!is.na(weightMatricesFilenames))
+  if (any(!is.na(weightMatricesFilenames)))
     tryCatch({
       .io_check_exists(weightMatricesFilenames)
     }, error=function(err) {
@@ -112,7 +114,19 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   if (any(!is.na(weightMatricesFilenames))) {
     if (class(weightMatricesFilenames) != "character")
       stop("'weightMatricesFilenames' should be a character vector.")
-    weightMatrices <- lapply(as.list(weightMatricesFilenames), readWm)
+    if (any(!is.na(weightMatricesLocations)) && class(unlist(weightMatricesLocations, use.names=FALSE)) != "character")
+      stop("elements of 'weightMatricesLocations' should be a character vector.")
+    if (any(!is.na(weightMatricesLocations)) && length(weightMatricesFilenames) > 1 && class(weightMatricesLocations) != "list")
+      stop("'weightMatricesLocations' should be a list of character vectors when more than one weight matrix filename is given to 'weightMatricesFilenames'")
+    if (any(!is.na(weightMatricesLocations)) && length(weightMatricesFilenames) == 1 && class(weightMatricesLocations) != "list")
+      weightMatricesLocations <- list(weightMatricesLocations)
+    if (any(!is.na(weightMatricesStrictLocations)) && length(weightMatricesFilenames) > 1 && class(weightMatricesStrictLocations) != "list")
+      stop("'weightMatricesStrictLocations' should be a list of logical vectors when more than one weight matrix filename is given to 'weightMatricesFilenames'")
+    if (any(!is.na(weightMatricesStrictLocations)) && length(weightMatricesFilenames) == 1 && class(weightMatricesStrictLocations) != "list")
+      weightMatricesStrictLocations <- list(weightMatricesStrictLocations)
+
+    weightMatrices <- mapply(function(fname, loc, sloc) readWm(fname, loc, sloc),
+                             as.list(weightMatricesFilenames), weightMatricesLocations, weightMatricesStrictLocations)
   }
 
   ## read radical amino acid change matrix

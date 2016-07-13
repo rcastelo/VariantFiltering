@@ -52,10 +52,9 @@ Class for storing weight matrices that VariantFiltering uses to score potential 
   \item{object}{A \code{WeightMatrix} object or the file name of a weight matrix.}
   \item{dnaseqs}{Either a vector of character strings a \code{DNAStringSet} object, both of which store
         nucleotide sequences to be scored using the input \code{WeightMatrix} object.}
-  \item{locations}{Argument passed to a \code{readWm()} function call. Please consult the manual page
-        of \code{readWm()}.}
-  \item{strictLocations}{Argument passed to a \code{readWm()} function call. Please consult the manual page
-        of \code{readWm()}.}
+  \item{locations}{Character vector of the annotated locations to variants under which the weight matrix will be used for scoring binding sites.
+        The possible values can be obtained by typing \code{variantLocations()}.}
+  \item{strictLocations}{Logical vector flagging whether the weight matrix should be scoring binding sites strictly within the boundaries of the given locations.}
 }
 \details{
 The \code{WeightMatrix} class and associated methods serve the purpose of enabling the \code{VariantFiltering} package
