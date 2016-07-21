@@ -5,7 +5,7 @@
 [![Bioconductor Commits](http://bioconductor.org/shields/commits/bioc/VariantFiltering.svg)](http://bioconductor.org/packages/devel/bioc/html/VariantFiltering.html#svn_source "Average SVN commits (to the devel branch) per month over the last 6 months")
 [![Support posts](http://bioconductor.org/shields/posts/VariantFiltering.svg)](https://support.bioconductor.org/t/VariantFiltering/ "Bioconductor support site activity on VariantFiltering, last 6 months: tagged questions/avg. answers per question/avg. comments per question/accepted answers, or 0 if no tagged posts.")
 
-** Current build status **
+**Current build status**
 - `release` [![Bioconductor Availability](http://bioconductor.org/shields/availability/release/VariantFiltering.svg)](http://bioconductor.org/packages/release/bioc/html/VariantFiltering.html#archives "Whether VariantFiltering release is available on all platforms") 
 [![Bioconductor Release Build](http://bioconductor.org/shields/build/release/bioc/VariantFiltering.svg)](http://bioconductor.org/checkResults/release/bioc-LATEST/VariantFiltering/ "Bioconductor release build")
 - `development` [![Bioconductor Availability](http://bioconductor.org/shields/availability/devel/VariantFiltering.svg)](http://bioconductor.org/packages/devel/bioc/html/VariantFiltering.html#archives "Whether VariantFiltering devel is available on all platforms") 
