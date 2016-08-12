@@ -158,7 +158,15 @@ setMethod("mafById", signature="MafDb2",
                            x@data_pkgname))
 
             rsIDSNVs <- get("rsIDSNVs", envir=x@.data_cache)
-            mt <- match(ids, rsIDSNVs)
+            if (is.character(rsIDSNVs)) ## first old inefficient storage and retrieval of rs IDs
+              mt <- match(ids, rsIDSNVs)
+            else if (is.integer(rsIDSNVs)) {    ## second more efficient storage and retrieval
+              mt <- findInterval(ids, rsIDSNVs) ## using integers and findInterval(). It requires
+              mt[mt == 0] <- 1                  ## rsIDSNVs to be sorted non-decreasingly and
+              maskNAs <- ids != rsIDSNVs[mt]    ## rsIDgpSNVs to match that order
+              mt[maskNAs] <- NA
+            } else
+              stop("internal object 'rsIDSNVs' of unknown class.")
 
             if (any(!pop %in% populations(x)))
               stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
