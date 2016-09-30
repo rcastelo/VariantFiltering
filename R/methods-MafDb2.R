@@ -1,7 +1,7 @@
 ## constructor
 MafDb2 <- function(provider, provider_version, download_url,
                    download_date, reference_genome,
-                   rsIDgpSNVs, rsIDSNVs,
+                   rsIDgpSNVs, rsIDSNVs, rsIDidxSNVs,
                    data_pkgname, data_dirpath) {
   data_cache <- new.env(hash=TRUE, parent=emptyenv())
   data_pops <- list.files(path=data_dirpath, pattern="AF$")
@@ -11,6 +11,8 @@ MafDb2 <- function(provider, provider_version, download_url,
   assign(data_pkgname, list(), envir=data_cache)
   assign("rsIDgpSNVs", rsIDgpSNVs, envir=data_cache)
   assign("rsIDSNVs", rsIDSNVs, envir=data_cache)
+  if (!missing(rsIDidxSNVs))
+    assign("rsIDidxSNVs", rsIDidxSNVs, envir=data_cache)
 
   new("MafDb2", provider=provider,
                 provider_version=provider_version,
@@ -158,13 +160,29 @@ setMethod("mafById", signature="MafDb2",
                            x@data_pkgname))
 
             rsIDSNVs <- get("rsIDSNVs", envir=x@.data_cache)
-            if (is.character(rsIDSNVs)) ## first old inefficient storage and retrieval of rs IDs
+            if (is.character(rsIDSNVs))      ## old inefficient storage and retrieval
               mt <- match(ids, rsIDSNVs)
-            else if (is.integer(rsIDSNVs)) {    ## second more efficient storage and retrieval
-              mt <- findInterval(ids, rsIDSNVs) ## using integers and findInterval(). It requires
-              mt[mt == 0] <- 1                  ## rsIDSNVs to be sorted non-decreasingly and
-              maskNAs <- ids != rsIDSNVs[mt]    ## rsIDgpSNVs to match that order
-              mt[maskNAs] <- NA
+            else if (is.integer(rsIDSNVs)) { ## more efficient storage and retrieval
+              idsint <- rep(NA_integer_, length(ids))
+              rsMask <- regexpr("^rs", ids) == 1
+              idsint[rsMask] <- as.integer(sub(pattern="^rs", replacement="", x=ids[rsMask]))
+              mt <- rep(NA_integer_, length(idsint))
+              if (any(!is.na(idsint))) {
+                idsintnoNAs <- idsint[!is.na(idsint)]
+                ord <- order(idsintnoNAs)                        ## order ids to speed up
+                mtfi <- findInterval(idsintnoNAs[ord], rsIDSNVs) ## call to findInterval()
+                mtfi[ord] <- mtfi                                ## put matches into original order
+                mt[!is.na(idsint)] <- mtfi                       ## integrate matches into result
+              }
+              mt[mt == 0] <- 1
+              if (any(!is.na(mt))) {
+                maskNAs <- idsint != rsIDSNVs[mt]
+                mt[maskNAs] <- NA
+              }
+              if (any(!is.na(mt))) {
+                rsIDidxSNVs <- get("rsIDidxSNVs", envir=x@.data_cache)
+                mt <- rsIDidxSNVs[mt]
+              }
             } else
               stop("internal object 'rsIDSNVs' of unknown class.")
 
