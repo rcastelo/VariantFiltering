@@ -9,10 +9,10 @@ MafDb2 <- function(provider, provider_version, download_url,
                                   list.files(path=data_pops, pattern="*.rds"))
 
   assign(data_pkgname, list(), envir=data_cache)
-  assign("rsIDgpSNVs", rsIDgpSNVs, envir=data_cache)
-  assign("rsIDSNVs", rsIDSNVs, envir=data_cache)
-  if (!missing(rsIDidxSNVs))
-    assign("rsIDidxSNVs", rsIDidxSNVs, envir=data_cache)
+  ## assign("rsIDgpSNVs", rsIDgpSNVs, envir=data_cache)
+  ## assign("rsIDSNVs", rsIDSNVs, envir=data_cache)
+  ## if (!missing(rsIDidxSNVs))
+  ##   assign("rsIDidxSNVs", rsIDidxSNVs, envir=data_cache)
 
   new("MafDb2", provider=provider,
                 provider_version=provider_version,
@@ -155,9 +155,11 @@ setMethod("mafById", signature="MafDb2",
             if (class(ids) != "character")
               stop("argument 'ids' must be a character string vector.")
 
-            if (!exists("rsIDSNVs", envir=x@.data_cache))
-              stop(sprintf("package %s given in the 'x' argument does not contain its own map of identifers to MAF values.",
-                           x@data_pkgname))
+            if (!exists("rsIDSNVs", envir=x@.data_cache)) {
+              message("Loading first time annotations of rs identifiers to variants, produced by data provider.")
+              rsIDSNVs <- readRDS(file.path(x@data_dirpath, "rsIDSNVs.rds"))
+              assign("rsIDSNVs", rsIDSNVs, envir=x@.data_cache)
+            }
 
             rsIDSNVs <- get("rsIDSNVs", envir=x@.data_cache)
             if (is.character(rsIDSNVs))      ## old inefficient storage and retrieval
@@ -180,6 +182,10 @@ setMethod("mafById", signature="MafDb2",
                 mt[maskNAs] <- NA
               }
               if (any(!is.na(mt))) {
+                if (!exists("rsIDidxSNVs", envir=x@.data_cache)) {
+                  rsIDidxSNVs <- readRDS(file.path(x@data_dirpath, "rsIDidxSNVs.rds"))
+                  assign("rsIDidxSNVs", rsIDidxSNVs, envir=x@.data_cache)
+                }
                 rsIDidxSNVs <- get("rsIDidxSNVs", envir=x@.data_cache)
                 mt <- rsIDidxSNVs[mt]
               }
@@ -194,6 +200,10 @@ setMethod("mafById", signature="MafDb2",
             ans <- cbind(ID=ids, ans, stringsAsFactors=FALSE)
 
             if (any(!is.na(mt))) {
+              if (!exists("rsIDgpSNVs", envir=x@.data_cache)) {
+                rsIDgpSNVs <- readRDS(file.path(x@data_dirpath, "rsIDgpSNVs.rds"))
+                assign("rsIDgpSNVs", rsIDgpSNVs, envir=x@.data_cache)
+              }
               rsIDgpSNVs <- get("rsIDgpSNVs", envir=x@.data_cache)
               rng <- rsIDgpSNVs[mt[!is.na(mt)]]
               ans[!is.na(mt), pop] <- mafByOverlaps(x, rsIDgpSNVs[mt[!is.na(mt)]], pop, caching)
