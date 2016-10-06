@@ -435,7 +435,7 @@ setReplaceMethod("variantConsequence", signature(x="VariantFilteringResults", va
 
 setMethod("naMAF", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
+            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
               stop("A MafDb object was not used to annotate variants.")
 
             x@naMAF
@@ -443,7 +443,7 @@ setMethod("naMAF", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("naMAF", signature(x="VariantFilteringResults", value="logical"),
           function(x, value) {
-            if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
+            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
               stop("A MafDb object was not used to annotate variants.")
 
             x@naMAF <- value
@@ -452,7 +452,7 @@ setReplaceMethod("naMAF", signature(x="VariantFilteringResults", value="logical"
 
 setMethod("MAFpop", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
+            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
               stop("A MafDb object was not used to annotate variants.")
 
             x@MAFpopMask
@@ -460,7 +460,7 @@ setMethod("MAFpop", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("MAFpop", signature(x="VariantFilteringResults", value="logical"),
                  function(x, popkey=NA, value) {
-                   if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
+                   if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
                      stop("A MafDb object was not used to annotate variants.")
 
                    if (any(is.na(value)))
@@ -488,7 +488,7 @@ setReplaceMethod("MAFpop", signature(x="VariantFilteringResults", value="logical
 
 setMethod("maxMAF", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
+            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
               stop("A MafDb object was not used to annotate variants.")
 
             x@maxMAF
@@ -496,7 +496,7 @@ setMethod("maxMAF", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("maxMAF", signature(x="VariantFilteringResults", value="numeric"),
                  function(x, value) {
-                   if (is.na(match("MafDb", sapply(param(x)$otherAnnotations, class))))
+                   if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
                      stop("A MafDb object was not used to annotate variants.")
 
                    x@maxMAF <- value
