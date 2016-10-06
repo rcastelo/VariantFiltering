@@ -89,7 +89,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     warning("No variants segregate following an autosomal recessive homozygous inheritance model.")
 
   MAFpopMask <- NA
-  if ("MafDb" %in% sapply(param$otherAnnotations, class)) {
+  if (any(c("MafDb", "MafDb2") %in% sapply(param$otherAnnotations, class))) {
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
     cnAF <- colnames(mcols(annotated_variants))
     colsclasses <- sapply(mcols(annotated_variants), class)
