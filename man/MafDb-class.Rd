@@ -97,12 +97,9 @@ alternative alleles. In those cases, instead of storing the AF of each alternate
 the maximum AF value is stored.
 }
 \author{R. Castelo}
-\seealso{
-  \code{\link[MafDb.1Kgenomes.phase1.hs37d5]{MafDb.1Kgenomes.phase1.hs37d5}}
-  \code{\link[MafDb.1Kgenomes.phase3.hs37d5]{MafDb.1Kgenomes.phase3.hs37d5}}
-}
 \examples{
 
+\dontrun{
   ## lookup allele frequencies for rs1129038, a SNP associated to blue and brown eye colors
   ## as reported by Eiberg et al. Blue eye color in humans may be caused by a perfectly associated
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
@@ -121,6 +118,7 @@ the maximum AF value is stored.
     columns(mafdb)
     select(mafdb, keys="rs1129038", columns=c("varID", "AF"))
   }
+}
 
 }
 \source{
