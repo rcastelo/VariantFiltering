@@ -7,7 +7,6 @@ USER VISIBLE CHANGES
 
     o Updated scoring with weight matrices to enable using any type of weight matrix, and not only splice site matrices.
 
-USER VISIBLE CHANGES
 CHANGES IN VERSION 1.8
 ----------------------
 
