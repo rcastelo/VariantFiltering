@@ -85,16 +85,21 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
 
 setMethod("scores", c("PhastConsDb", "GRanges"),
           function(object, gpos, summaryFun="mean", coercionFun="as.numeric", caching=TRUE) {
+            if (length(gpos) == 0)
+              return(numeric(0))
+
             if (seqlevelsStyle(gpos) != seqlevelsStyle(object))
               seqlevelsStyle(gpos) <- seqlevelsStyle(object)
 
             snames <- unique(as.character(runValue(seqnames(gpos))))
             if (any(!snames %in% seqnames(object)))
-              stop("Sequence names %s in GRanges object not present in PhastConsDb object.",
-                   paste(snames[!snames %in% seqnames(object)], collapse=", "))
+              stop(sprintf("Sequence names %s in GRanges object not present in reference genome %s.",
+                           paste(snames[!snames %in% seqnames(object)], collapse=", "),
+                           providerVersion(referenceGenome(object))))
 
             pcrlelist <- get(object@data_pkgname, envir=object@.data_cache)
             missingMask <- !snames %in% names(pcrlelist)
+            slengths <- seqlengths(object)
             for (sname in snames[missingMask]) {
               if (file.exists(file.path(object@data_dirpath, paste0(sname, ".phastCons100way.RData")))) {
                 warning("You are using a PhastConsDb annotation package version < 3.1.0, consider upgrading to the lastest version >= 3.1.0.")
@@ -105,7 +110,8 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
                   rm(list=objname, envir=object@.data_cache)
                 } else {
                   warning(sprintf("No phastCons scores for chromosome %s.", sname))
-                  pcrlelist[[sname]] <- Rle(raw())
+                  pcrlelist[[sname]] <- Rle(lengths=slengths[sname],
+                                            values=as.raw(255L))
                 }
               } else if (file.exists(file.path(object@data_dirpath, sprintf("%s.%s.rds", object@data_pkgname, sname))))
                 pcrlelist[[sname]] <- readRDS(file.path(object@data_dirpath, sprintf("%s.%s.rds", object@data_pkgname, sname)))
@@ -118,7 +124,9 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
             if (any(missingMask) && caching)
               assign(object@data_pkgname, pcrlelist, envir=object@.data_cache)
 
-            sco <- rleGetValues(pcrlelist, gpos, summaryFun=summaryFun, coercionFun=coercionFun) / 10
+            sco <- rleGetValues(pcrlelist, gpos, summaryFun=summaryFun, coercionFun=coercionFun)
+            sco[sco == 255L] <- NA_integer_
+            sco <- sco / 10L
             rm(pcrlelist)
 
             sco
