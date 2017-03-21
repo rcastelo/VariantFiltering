@@ -393,7 +393,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             masksnp <- variantsVR$TYPE == "SNV"
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(masksnp)) {
-              rsids_list <- .loc2SNPid(annObj, variantsVR[masksnp], BPPARAM=BPPARAM)
+              rsids_list <- .loc2dbSNPid(annObj, variantsVR[masksnp], BPPARAM=BPPARAM)
               elen <- elementNROWS(rsids_list)
               rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
@@ -921,6 +921,47 @@ variantHGVS <- function(variantsVR) {
                                
                                locs3 <- snpsByOverlaps(XtraSNPlocsObj, locs2, type="any",
                                                        columns="RefSNP_id")
+                               hits <- findOverlaps(locs2, locs3)
+
+                               if (length(hits) > 0) {
+                                   rsids <- locs3$RefSNP_id[subjectHits(hits)]
+                                   q_hits <- queryHits(hits)
+                                   tmp <- split(rsids, q_hits)
+                                   ans2[as.integer(names(tmp))] <- tmp
+                               }
+                               ans2
+                           }, BPPARAM=BPPARAM)
+  CharacterList(unsplit(rsids_by_chrom, f))
+}
+
+.loc2dbSNPid <- function(obj, locs, BPPARAM=bpparam("SerialParam")) {
+
+  if (!is(locs, "GRanges"))
+    stop("'locs' must be a GRanges object")
+
+  mcols(locs) <- NULL
+  locs <- as(locs, "GRanges") ## when 'locs' is a 'VRanges' object
+
+  common_seqlevels <- intersect(seqlevels(locs), names(snpcount(obj)))
+  if (length(common_seqlevels) == 0L)
+    stop("chromosome names (a.k.a. seqlevels) in 'locs' don't seem to ",
+          "be\n  compatible with the chromosome names in the SNPlocs ",
+          "package. Maybe they\n  use a different naming convention? ",
+          "If that's the case then you first need\n  to rename the ",
+          "seqlevels in 'locs'. See '?seqlevels' for how to do this.")
+  f <- as.factor(seqnames(locs))
+  locs_by_chrom <- split(locs, f)
+  rsids_by_chrom <- bplapply(locs_by_chrom,
+                             function(locs2) {
+                               ans2 <- vector("list", length=length(locs2))
+                               if (length(locs2) == 0L)
+                                   return(ans2)
+
+                               seqname <- as.character(seqnames(locs2)[1])
+                               if (!seqname %in% common_seqlevels)
+                                   return(ans2)
+                               
+                               locs3 <- snpsByOverlaps(obj, locs2, minoverlap=1L)
                                hits <- findOverlaps(locs2, locs3)
 
                                if (length(hits) > 0) {
