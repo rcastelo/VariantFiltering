@@ -5,21 +5,11 @@
 
 \alias{annotateVariants,MafDb2-method}
 \alias{mafByOverlaps,MafDb2-method}
-\alias{mafByOverlaps}
+%%\alias{mafByOverlaps}
 \alias{mafById,MafDb2-method}
-\alias{mafById}
+%%\alias{mafById}
 \alias{populations,MafDb2-method}
-\alias{populations}
-%%\alias{keytypes,MafDb2-method}
-%%\alias{keytypes}
-%%\alias{keys,MafDb2-method}
-%%\alias{keys}
-%%\alias{columns,MafDb2-method}
-%%\alias{columns}
-%%\alias{select,MafDb2-method}
-%%\alias{select}
-%%\alias{codeAF2RAW}
-%%\alias{decodeRAW2AF}
+%%\alias{populations}
 \alias{organism,MafDb2-method}
 \alias{provider,MafDb2-method}
 \alias{providerVersion,MafDb2-method}
@@ -30,12 +20,6 @@
 \alias{seqlevelsStyle,MafDb2-method}
 \alias{show,MafDb2-method}
 \alias{$,MafDb2-method}
-
-%%\S4method{keytypes}{MafDb2}(x)
-%%\S4method{keys}{MafDb2}(x, keytype)
-%%\S4method{columns}{MafDb2}(x)
-%%\S4method{select}{MafDb2}(x, keys, columns, keytype)
-%%\S4method{annotateVariants}{MafDb2}(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam"))
 
 \title{MafDb2 class}
 
@@ -53,21 +37,6 @@ Class for annotation packages storing minor allele frequency data.
   \item{ids}{A character string vector with variant identifiers annotated by the MAF data source, typically dbSNP 'rs' identifiers. Note that the mapping of these identifiers to genomic positions and MAF values might be a subset of the most up to date dbSNP 'rs' identifier assignment to variants. To access the latter, please use the \code{snpsById()} method from the \code{BSgenome} package with the desired \code{SNPlocs.*} package.}
   \item{pop}{A character string vector with the populations for which we want to retrieve MAF values.}
   \item{caching}{logical; TRUE (default) indicates that the function stores into main memeory the MAF data as it gets loaded from disk, improving performance; FALSE forces this function to load MAF data from disk each time, decreasing performance and memory requirements.}
-%%  \item{varID}{A variant identifier, typically a \code{rsxxxx} dbSNP identifier.}
-%%  \item{keytype}{the keytype that matches the keys used. For \code{MafDb2} objects
-%%    there is at the moment only one type of key which is the variant identifier
-%%    provided by the original data manufacturer.}
-%%  \item{keys}{the keys to select records from the database. All possible keys
-%%    are turned by using the \code{keys} method.}
-%%  \item{columns}{the columns or kinds of things that can be retrieved from the
-%%    database. As with \code{keys}, all possible columns are returned by using the
-%%    \code{columns} method.}
-%%  \item{annObj}{A \code{MafDb2} object.}
-%%  \item{variantsVR}{A \code{VRanges} object with the variants to annotate.}
-%%  \item{param}{A \code{\link{VariantFilteringParam-class}} object.}
-%%  \item{BPPARAM}{An object of class \code{BiocParallelParam} specifying parameters related to
-%%    the parallel execution of this function. See function \code{\link[BiocParallel]{bpparam}()}
-%%    from the \code{BiocParallel} package.}
 }
 \details{
 The \code{MafDb2} class and associated methods serve the purpose of creating
@@ -81,11 +50,8 @@ annotation packages that store minor allele frequency data that can be queried b
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
 for millions of SNPs by coding AF float values, which range between 0 and 1, into a single-byte
 \code{raw} object type. To achieve this, the original AF values are rounded to one significant
-digit for AF < 0.01 and two significant digits for AF >= 0.01.
-
-A further compression of these data is performed in the cases of variants with mutiple
-alternative alleles. In those cases, instead of storing the AF of each alternate allele only
-the maximum AF value is stored.
+digit for AF < 0.01 and two significant digits for AF >= 0.01. When a variant has multiple
+alternate alleles, only the larger MAF value is stored.
 }
 \author{R. Castelo}
 \examples{

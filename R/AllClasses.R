@@ -1,15 +1,22 @@
-## based on the AnnotationDb class defined in the
-## AnnotationDbi package and stores MAF data using
-## a SQLite database
-.MafDb <-
-  setRefClass("MafDb", contains="AnnotationDb",
-              fields=list(tag="character"),
-              methods=list(
-                initialize=function(...) {
-                  callSuper(...)
-                  .self$tag <- load_taginfo(.self)
-                  .self
-                }))
+## based on the SNPlocs class defined in the BSgenome package
+## maybe this class could be generalized to one whose data correspond
+## to numerical values associated to nucleotide positions and
+## sotored in a RleList object
+setClass("MafDb",
+         representation=representation(provider="character", ## e.g. UCSC
+                                       provider_version="character", ## creation date in compact format
+                                       download_url="character", ## download URL of the ExAC data
+                                       download_date="character", ## date on which data was downloaded
+                                       reference_genome="GenomeDescription", ## extracted from BSgenome.*
+
+                                       ## package name and absolute path to local directory where to find
+                                       ## the serialized objects containing the ExAC data
+                                       data_pkgname="character",
+                                       data_dirpath="character",
+                                       data_serialized_objnames="character",
+                                       data_pops="character",
+
+                                       .data_cache="environment"))
 
 
 ## based on the SNPlocs class defined in the BSgenome package
