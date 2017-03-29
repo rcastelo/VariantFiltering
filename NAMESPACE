@@ -152,7 +152,8 @@ importFrom(GenomeInfoDb, seqnames,
 importFrom(BSgenome, snpcount,
                      snplocs)
 importFrom(SummarizedExperiment, rowRanges)
-importFrom(GenomicRanges, GRanges)
+importFrom(GenomicRanges, GRanges,
+                          GRangesList)
 importFrom(BiocParallel, bpparam,
                          bpvec,
                          bplapply)
@@ -244,12 +245,6 @@ exportMethods(summary,
               minCUFC, "minCUFC<-",
 
               ## specific for the MafDb class
-              knownVariantsMAFcols,
-              snpid2maf,
-              keytypes,
-              keys,
-              columns,
-              select,
               populations,
               mafByOverlaps,
               mafById,
@@ -277,11 +272,12 @@ export(VariantFilteringParam,
        variantLocations,
        readWm,
        readAAradicalChangeMatrix,
-       codeAF2RAW,
-       decodeRAW2AF,
 
        ## for the FiveSpliceSiteVariants and ThreeSpliceSiteVariants
        FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
+
+       ## for the MafDb class
+       MafDb,
 
        ## for the MafDb2 class
        MafDb2,

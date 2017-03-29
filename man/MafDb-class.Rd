@@ -11,20 +11,22 @@
 \alias{annotateVariants,SNPlocs-method}
 \alias{annotateVariants,XtraSNPlocs-method}
 \alias{annotateVariants,TxDb-method}
-\alias{snpid2maf,MafDb-method}
-\alias{snpid2maf}
-\alias{knownVariantsMAFcols,MafDb-method}
-\alias{knownVariantsMAFcols}
-\alias{keytypes,MafDb-method}
-\alias{keytypes}
-\alias{keys,MafDb-method}
-\alias{keys}
-\alias{columns,MafDb-method}
-\alias{columns}
-\alias{select,MafDb-method}
-\alias{select}
-\alias{codeAF2RAW}
-\alias{decodeRAW2AF}
+\alias{mafByOverlaps,MafDb-method}
+\alias{mafByOverlaps}
+\alias{mafById,MafDb-method}
+\alias{mafById}
+\alias{populations,MafDb-method}
+\alias{populations}
+\alias{organism,MafDb-method}
+\alias{provider,MafDb-method}
+\alias{providerVersion,MafDb-method}
+\alias{referenceGenome,MafDb-method}
+\alias{seqinfo,MafDb-method}
+\alias{seqlengths,MafDb-method}
+\alias{seqnames,MafDb-method}
+\alias{seqlevelsStyle,MafDb-method}
+\alias{show,MafDb-method}
+\alias{$,MafDb-method}
 
 \title{MafDb class}
 
@@ -32,70 +34,34 @@
 Class for annotation packages storing minor allele frequency data.
 }
 \usage{
-\S4method{snpid2maf}{MafDb}(mafdb, varID)
-\S4method{knownVariantsMAFcols}{MafDb}(mafdb)
-\S4method{keytypes}{MafDb}(x)
-\S4method{keys}{MafDb}(x, keytype)
-\S4method{columns}{MafDb}(x)
-\S4method{select}{MafDb}(x, keys, columns, keytype)
-\S4method{annotateVariants}{MafDb}(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam"))
+\S4method{mafByOverlaps}{MafDb}(x, ranges, pop="AF", type=c("snvs", "nonsnvs"), caching=TRUE)
+\S4method{mafById}{MafDb}(x, ids, pop, caching)
+\S4method{populations}{MafDb}(x)
 }
 \arguments{
-  \item{mafdb}{A \code{MafDb} object.}
   \item{x}{A \code{MafDb} object.}
-  \item{varID}{A variant identifier, typically a \code{rsxxxx} dbSNP identifier.}
-  \item{keytype}{the keytype that matches the keys used. For \code{MafDb} objects
-    there is at the moment only one type of key which is the variant identifier
-    provided by the original data manufacturer.}
-  \item{keys}{the keys to select records from the database. All possible keys
-    are turned by using the \code{keys} method.}
-  \item{columns}{the columns or kinds of things that can be retrieved from the
-    database. As with \code{keys}, all possible columns are returned by using the
-    \code{columns} method.}
-  \item{annObj}{A \code{MafDb} object.}
-  \item{variantsVR}{A \code{VRanges} object with the variants to annotate.}
-  \item{param}{A \code{\link{VariantFilteringParam-class}} object.}
-  \item{BPPARAM}{An object of class \code{BiocParallelParam} specifying parameters related to
-    the parallel execution of this function. See function \code{\link[BiocParallel]{bpparam}()}
-    from the \code{BiocParallel} package.}
+  \item{ranges}{Either a \code{GRanges} object, a \code{GPos} object or a character string vector with the format \code{"CHR:START[-END]"}.}
+  \item{ids}{A character string vector with variant identifiers annotated by the MAF data source, typically dbSNP 'rs' identifiers. Note that the mapping of these identifiers to genomic positions and MAF values might be a subset of the most up to date dbSNP 'rs' identifier assignment to variants. To access the latter, please use the \code{snpsById()} method from the \code{BSgenome} package with the desired \code{SNPlocs.*} package.}
+  \item{pop}{Character string vector with the populations for which we want to retrieve MAF values.}
+  \item{type}{Character string setting the type of variant to seek, which can be either 'snvs' (default) when we seek single nucleotide variants or 'nonsnvs', otherwise.}
+  \item{caching}{logical; TRUE (default) indicates that the function stores into main memeory the MAF data as it gets loaded from disk, improving performance; FALSE forces this function to load MAF data from disk each time, decreasing performance and memory requirements.}
 }
 \details{
 The \code{MafDb} class and associated methods serve the purpose of creating
-annotation packages that store minor allele frequency data. Two such
-annotation packages are:
+annotation packages that store minor allele frequency data that can be queried by genomic position. Two such annotation packages are:
 
 \tabular{ll}{
-  \code{MafDb.1Kgenomes.phase1.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 1. \cr
-
-  \code{MafDb.1Kgenomes.phase3.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 3. \cr
+  \code{MafDb.ExAC.r0.3.1.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
+  \code{MafDb.ExAC.r0.3.1.nonTCGA.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
 }
 
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
 for millions of SNPs by coding AF float values, which range between 0 and 1, into a single-byte
-\code{raw} object type. To achieve this, the original AF values are rounded and coded as follows:
-
-\itemize{
-  \item AF >= 0.01 & AF <= 1 values are rounded to 2 digits, where values 0.01, ..., 0.99, 1, are coded as
-        raw byte values 1 to 100.
-  \item AF >= 0.001 & AF < 0.01 values are rounded to 3 digits, where values 0.001, ..., 0.009 are coded
-        as raw byte values 101 to 109.
-  \item AF >= 0.0001 & AF < 0.001 are rounded to 4 digits, where values 0.0001, ..., 0.0009 are coded
-        as raw byte values 111 to 119.
-  \item AF >= 0.00001 & AF < 0.0001 are rounded to 5 digits, where values 0.00001, ..., 0.00009 are coded
-        as raw byte values 121 to 129.
-  \item AF < 0.00001 are rounded to 6 digits, where values 0, 0.000001, ..., 0.000009 are coded
-        as raw byte values 130 to 139.
-  \item AF \code{NA} values are coded to raw byte value of 255. Note that by default \code{NA}
-        values are coded by the raw byte value 0 but this corresponds by default to the null
-        string when raw byte values are coerced into char, which is problematic when storing
-        this data as \code{CHAR} values in a SQLite database. This precludes using this original coding
-        of \code{NA} values.
+\code{raw} object type. To achieve this, the original AF values are rounded to one significant
+digit for AF < 0.01 and two significant digits for AF >= 0.01. When a variant has multiple
+alternate alleles, only the larger MAF value is stored.
 }
 
-A further compression of these data is performed in the cases of variants with mutiple
-alternative alleles. In those cases, instead of storing the AF of each alternate allele only
-the maximum AF value is stored.
-}
 \author{R. Castelo}
 \examples{
 
@@ -105,23 +71,21 @@ the maximum AF value is stored.
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
   ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
 
-  if (require(MafDb.1Kgenomes.phase3.hs37d5)) {
-    mafdb <- MafDb.1Kgenomes.phase3.hs37d5
+  if (require(MafDb.ExAC.r0.3.1.snvs.hs37d5)) {
+    mafdb <- MafDb.ExAC.r0.3.1.snvs.hs37d5
     mafdb
 
     ## specialized interface
-    knownVariantsMAFcols(mafdb)
-    snpid2maf(mafdb, "rs1129038")
+    populations(mafdb)
 
-    ## standard AnnotationDbi interface
-    keytypes(mafdb)
-    columns(mafdb)
-    select(mafdb, keys="rs1129038", columns=c("varID", "AF"))
+    rng <- GRanges("15", IRanges(28356859, 28356859))
+    mafByOverlaps(mafdb, rng)
+    mafByOverlaps(mafdb, "15:28356859-28356859")
+    mafByOverlaps(mafdb, "15:28356859")
+    mafById(mafdb, "rs1129038")
   }
 }
 
 }
-\source{
-  \url{ftp://ftp.1000genomes.ebi.ac.uk}
-}
+
 \keyword{datasets}
