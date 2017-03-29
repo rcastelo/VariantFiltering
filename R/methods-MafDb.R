@@ -1,195 +1,294 @@
 ## constructor
-MafDb <- function(conn) {
-  .MafDb$new(conn=conn)
+MafDb <- function(provider, provider_version, download_url,
+                  download_date, reference_genome,
+                  rsIDgpSNVs, rsIDSNVs, rsIDidxSNVs,
+                  data_pkgname, data_dirpath, data_serialized_objnames) {
+  data_cache <- new.env(hash=TRUE, parent=emptyenv())
+  data_pops <- list.files(path=data_dirpath, pattern=data_pkgname)
+  data_pops <- data_pops[grep("snv", data_pops, invert=TRUE)]
+  data_pops <- gsub(paste0(data_pkgname, "."), "", data_pops)
+  data_pops <- gsub("\\..+$", "", data_pops)
+  data_pops <- sort(unique(data_pops))
+  data_serialized_objnames <- sub(".rds", "",
+                                  list.files(path=data_dirpath, pattern="*.rds"))
+
+  assign(data_pkgname, list(), envir=data_cache)
+  assign(sprintf("%s.nonsnvs", data_pkgname), GRangesList(), envir=data_cache)
+
+  new("MafDb", provider=provider,
+               provider_version=provider_version,
+               download_url=download_url,
+               download_date=download_date,
+               reference_genome=reference_genome,
+               data_pkgname=data_pkgname,
+               data_dirpath=data_dirpath,
+               data_serialized_objnames=data_serialized_objnames,
+               data_pops=data_pops,
+               .data_cache=data_cache)
 }
 
-## extractor of the columns containing MAF values
-setMethod("knownVariantsMAFcols", signature(mafdb="MafDb"),
-          function(mafdb) {
-            conn <- dbConn(mafdb)
-            sql <- "PRAGMA table_info(knownVariants)"
-            res <- .dbEasyQuery(conn, sql)$name
-            res <- res[grep("AF", res)]
-            res
+## accessors
+setMethod("provider", "MafDb", function(x) x@provider)
+
+setMethod("providerVersion", "MafDb", function(x) x@provider_version)
+
+setMethod("referenceGenome", "MafDb", function(x) x@reference_genome)
+
+setMethod("organism", "MafDb", function(object) organism(referenceGenome(object)))
+
+setMethod("seqinfo", "MafDb", function(x) seqinfo(referenceGenome(x)))
+
+setMethod("seqnames", "MafDb", function(x) seqnames(referenceGenome(x)))
+
+setMethod("seqlengths", "MafDb", function(x) seqlengths(referenceGenome(x)))
+
+setMethod("seqlevelsStyle", "MafDb", function(x) seqlevelsStyle(referenceGenome(x)))
+
+setMethod("populations", "MafDb", function(x) x@data_pops)
+
+## adapted from VariantTools::extractCoverageForPositions()
+.extractRawFromRleList <- function(rlelst, pos) {
+  if (any(!unique(seqnames(pos)) %in% names(rlelst)))
+    stop("Some sequence names from input positions are missing from rlelst")
+  if (any(width(pos) > 1L))
+    stop("Some ranges are of width > 1")
+  seqlevels(pos) <- names(rlelst)
+  ord <- order(seqnames(pos))
+  ans <- raw(length(pos))
+  ans[ord] <- unlist(mapply(function(v, p) {
+    runValue(v)[findRun(p, v)]
+  }, rlelst, split(start(pos), seqnames(pos)), SIMPLIFY=FALSE), use.names=FALSE)
+  ans
+}
+
+## adapted from BSgenome:::.normarg_ranges()
+.str2gr <- function(ranges) {
+  if (class(ranges) == "character") {
+    spl1 <- strsplit(ranges, ":", fixed=TRUE)
+    if (!all(sapply(spl1, length) == 2L))
+      stop("Genomic ranges given in a character string should have the format CHR:START[-END]\n")
+    ranges <- sapply(spl1, function(ranges) {
+                             ss <- strsplit(ranges[2], "-", fixed=TRUE)[[1]]
+                             if (length(ss) == 1L)
+                               ss <- c(ss, ss)
+                             c(ranges[1], ss)
+                           })
+    ranges <- t(ranges)
+    ranges <- GRanges(seqnames=ranges[, 1],
+                      IRanges(start=as.integer(ranges[, 2]),
+                              end=as.integer(ranges[, 3])))
+  } else if (class(ranges) == "VRanges") {
+    ranges <- as(ranges, "GRanges")
+    mcols(ranges) <- NULL
+  } else if (class(ranges) != "GRanges" && class(ranges) != "GPos")
+    stop("argument 'ranges' must be either a GRanges object, a GPos object or a character string with the format CHR:START[-END]\n")
+
+  ranges
+}
+
+.mafByOverlaps_snvs <- function(x, ranges, snames, pop, caching) {
+  mafsnvs <- get(x@data_pkgname, envir=x@.data_cache)
+  missingMask <- !pop %in% names(mafsnvs)
+  for (popname in pop[missingMask])
+    mafsnvs[[popname]] <- RleList(compress=FALSE)
+  anyMissing <- any(missingMask)
+
+  ans <- as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
+                              dimnames=list(NULL, pop)))
+  for (popname in pop) {
+    missingMask <- !snames %in% names(mafsnvs[[popname]])
+    anyMissing <- anyMissing || any(missingMask)
+    for (sname in snames[missingMask]) {
+      fname <- file.path(x@data_dirpath,
+                         sprintf("%s.%s.%s.rds", x@data_pkgname, popname, sname))
+      if (file.exists(fname))
+        mafsnvs[[popname]][[sname]] <- readRDS(fname)
+      else {
+        warning(sprintf("No MAF data for chromosome %s.", sname))
+        mafsnvs[[popname]][[sname]] <- Rle(raw(0))
+      }
+    }
+    ans[[popname]] <- rep(NA_real_, nrow(ans))
+    if (length(mafsnvs[[popname]]) > 0) {
+      q <- .extractRawFromRleList(mafsnvs[[popname]], ranges)
+      ans[[popname]] <- metadata(mafsnvs[[popname]][[1]])$dqfun(q)
+    }
+  }
+
+  if (anyMissing && caching)
+    assign(x@data_pkgname, mafsnvs, envir=x@.data_cache)
+  rm(mafsnvs)
+
+  ans
+}
+
+.mafByOverlaps_nonsnvs <- function(x, ranges, snames, pop, caching) {
+  mafnonsnvs <- get(sprintf("%s.nonsnvs", x@data_pkgname), envir=x@.data_cache)
+  mcnames <- character(0)
+  if (length(mafnonsnvs) > 0)
+    mcnames <- colnames(mcols(mafnonsnvs[[1]]))
+  missingMask <- !snames %in% names(mafnonsnvs)
+  anyMissing <- any(missingMask)
+  for (sname in snames[missingMask]) {
+    fname <- file.path(x@data_dirpath,
+                       sprintf("%s.GRnonsnv.%s.rds", x@data_pkgname, sname))
+    obj <- GRanges()
+    if (file.exists(fname)) {
+      obj <- readRDS(fname)
+      for (pop in mcnames) {
+        fname <- file.path(x@data_dirpath,
+                           sprintf("%s.RLEnonsnv.%s.%s.rds", x@data_pkgname, pop, sname))
+        if (file.exists(fname))
+          mcols(obj) <- readRDS(fname)
+        else
+          stop(sprintf("internal file %s not found", fname))
+      }
+    } else {
+      warning(sprintf("No MAF data for chromosome %s.", sname))
+      mcols(obj) <- DataFrame(as.data.frame(matrix(raw(0), nrow=0, ncol=length(mcnames),
+                                                   dimnames=list(NULL, mcnames))))
+    }
+    mafnonsnvs[[sname]] <- obj
+  }
+
+  ans <- as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
+                              dimnames=list(NULL, pop)))
+  missingMask <- !pop %in% mcnames
+  anyMissing <- anyMissing || any(missingMask)
+  for (popname in pop[missingMask]) {
+    for (sname in snames) {
+      fname <- file.path(x@data_dirpath,
+                         sprintf("%s.RLEnonsnv.%s.rds", x@data_pkgname, sname))
+      if (file.exists(fname)) {
+        q <- readRDS(fname)
+        mcols(mafnonsnvs[[sname]])[[popname]] <- metadata(obj)$dqfun(q)
+      } else {
+        mcols(mafnonsnvs[[sname]])[[popname]] <- rep(NA_real_, length(mafnonsnvs[[sname]]))
+      }
+    }
+  }
+
+  ov <- findOverlaps(ranges, mafnonsnvs, minoverlap=0L)
+
+  if (anyMissing && caching)
+    assign(x@data_pkgname, mafnonsnvs, envir=x@.data_cache)
+  rm(mafnonsnvs)
+
+  ans
+}
+
+setMethod("mafByOverlaps", signature="MafDb",
+          function(x, ranges, pop="AF", type=c("snvs", "nonsnvs"), caching=TRUE) {
+            type <- match.arg(type)
+            ranges <- .str2gr(ranges)
+
+            if (seqlevelsStyle(ranges)[1] != seqlevelsStyle(x)[1])
+              seqlevelsStyle(ranges) <- seqlevelsStyle(x)[1]
+
+            if (class(pop) != "character")
+              stop("argument 'pop' must be a character vector")
+
+            snames <- unique(as.character(runValue(seqnames(ranges))))
+            if (any(!snames %in% seqnames(x)))
+              stop("Sequence names %s in 'ranges' not present in MafDb object.",
+                   paste(snames[!snames %in% seqnames(x)], collapse=", "))
+
+            if (any(!pop %in% populations(x)))
+              stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
+
+            ans <- NULL
+            if (type == "snvs")
+              ans <- .mafByOverlaps_snvs(x, ranges, snames, pop, caching)
+            else ## nonsnvs
+              ans <- .mafByOverlaps_nonsnvs(x, ranges, snames, pop, caching)
+
+            ans
           })
 
-setMethod("fetchKnownVariantsByID", signature(mafdb="MafDb"),
-          function(mafdb, varID) {
-            .Defunct("snpid2maf")
-          })
+setMethod("mafById", signature="MafDb",
+          function(x, ids, pop="AF", caching=TRUE) {
+            if (class(ids) != "character")
+              stop("argument 'ids' must be a character string vector.")
 
-## method for fetching variants in a MafDb database object
-setMethod("snpid2maf", signature(mafdb="MafDb"),
-          function(mafdb, varID) {
-
-            conn <- dbConn(mafdb)
-            if (any(is.na(varID))) {
-              warning("'NA' variant IDs have been removed")
-              varID <- varID[!is.na(varID)]
+            if (!exists("rsIDs", envir=x@.data_cache)) {
+              message("Loading first time annotations of rs identifiers to variants, produced by data provider.")
+              rsIDs <- readRDS(file.path(x@data_dirpath, "rsIDs.rds"))
+              assign("rsIDs", rsIDs, envir=x@.data_cache)
             }
 
-            sql <- sprintf("SELECT * FROM knownVariants WHERE varID in (%s)",
-                           paste0('"', varID, '"', collapse=","))
-            res <- .dbEasyQuery(conn, sql)
-            idxAFcols <- grep("AF", colnames(res))
-            for (i in idxAFcols)
-              res[[i]] <- decodeRAW2AF(sapply(res[[i]], charToRaw))
+            rsIDs <- get("rsIDs", envir=x@.data_cache)
+            if (is.integer(rsIDs)) {
+              idsint <- rep(NA_integer_, length(ids))
+              rsMask <- regexpr("^rs", ids) == 1
+              idsint[rsMask] <- as.integer(sub(pattern="^rs", replacement="", x=ids[rsMask]))
+              mt <- rep(NA_integer_, length(idsint))
+              if (any(!is.na(idsint))) {
+                idsintnoNAs <- idsint[!is.na(idsint)]
+                ord <- order(idsintnoNAs)                        ## order ids to speed up
+                mtfi <- findInterval(idsintnoNAs[ord], rsIDs)    ## call to findInterval()
+                mtfi[ord] <- mtfi                                ## put matches into original order
+                mt[!is.na(idsint)] <- mtfi                       ## integrate matches into result
+              }
+              mt[mt == 0] <- 1
+              if (any(!is.na(mt))) {
+                maskNAs <- idsint != rsIDs[mt]
+                mt[maskNAs] <- NA
+              }
+              if (any(!is.na(mt))) {
+                if (!exists("rsIDidx", envir=x@.data_cache)) {
+                  rsIDidx <- readRDS(file.path(x@data_dirpath, "rsIDidx.rds"))
+                  assign("rsIDidx", rsIDidx, envir=x@.data_cache)
+                }
+                rsIDidx <- get("rsIDidx", envir=x@.data_cache)
+                mt <- rsIDidx[mt]
+              }
+            } else
+              stop("internal object 'rsIDs' is not an integer vector.")
 
-            ## return a data frame with varID values in the same order as they were queried
-            df <- data.frame(varID=varID)
-            res <- merge(df, res, all.x=TRUE)
-            res <- res[match(df$varID, res$varID), ]
-            res
+            if (any(!pop %in% populations(x)))
+              stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
+
+            ans <- as.data.frame(matrix(NA_real_, nrow=length(ids), ncol=length(pop),
+                                        dimnames=list(NULL, pop)))
+            ans <- cbind(ID=ids, ans, stringsAsFactors=FALSE)
+
+            if (any(!is.na(mt))) {
+              if (!exists("rsIDgp", envir=x@.data_cache)) {
+                rsIDgp <- readRDS(file.path(x@data_dirpath, "rsIDgp.rds"))
+                assign("rsIDgp", rsIDgp, envir=x@.data_cache)
+              }
+              rsIDgp <- get("rsIDgp", envir=x@.data_cache)
+              rng <- rsIDgp[mt[!is.na(mt)]]
+              if (!exists("maskSNVs", envir=x@.data_cache)) {
+                maskSNVs <- as.logical(readRDS(file.path(x@data_dirpath, "maskSNVs.rds")))
+                assign("maskSNVs", maskSNVs, envir=x@.data_cache)
+              }
+              maskSNVs <- get("maskSNVs", envir=x@.data_cache)
+              mask <- logical(length(mt))
+              mask[!is.na(mt)] <- maskSNVs[mt[!is.na(mt)]]
+              if (any(mask))
+                ans[mask, pop] <- mafByOverlaps(x, rsIDgp[mt[mask]], pop, type="snvs", caching)
+              mask <- logical(length(mt))
+              mask[!is.na(mt)] <- !maskSNVs[mt[!is.na(mt)]]
+              if (any(mask))
+                ans[mask, pop] <- mafByOverlaps(x, rsIDgp[mt[mask]], pop, type="nonsnvs", caching)
+            }
+
+            ans
           })
 
-setMethod("dbConn", "MafDb",
-          function(x) x$conn)
-
-setMethod("keytypes", "MafDb",
-          function(x) return("varID"))
-
-setMethod("keys", "MafDb",
-          function(x, keytype) {
-            if (missing(keytype))
-              keytype <- "varID"
-
-            if (keytype != "varID")
-              stop("Only 'varID' is a valid keytype.")
-
-            res <- .dbEasyQuery(dbConn(x), "SELECT varID FROM knownVariants")
-            unique(as.character(res[!is.na(res)]))
+## show method
+setMethod("show", "MafDb",
+          function(object) {
+            cat(class(object), " object for ", organism(object), " (",
+                provider(object), ")\n", sep="")
           })
 
-setMethod("columns", "MafDb",
-          function(x)
-            dbListFields(dbConn(x), "knownVariants"))
-
-setMethod("select", "MafDb",
-          function(x, keys, columns, keytype) {
-            if (missing(keytype)) keytype <- "varID"
-            if (missing(columns)) columns <- columns(x)
-
-            if (any(!(columns %in% columns(x))))
-              stop(sprintf("Columns %s do not form part of this annotation package.",
-                           paste(columns[!(columns %in% columns(x))], collapse=", ")))
-
-            res <- snpid2maf(x, keys)
-            res[, columns]
+## $ method
+setMethod("$", signature(x="MafDb"),
+          function(x, name) {
+            switch(name,
+                   tag=gsub("MafDb.|.hs37d5", "", x@data_pkgname), ## by now just hardcoded, this should be part of the annotation package
+                   stop("uknown MafDb slot.")
+                   )
           })
-
-##
-## private functions
-##
-
-load_taginfo <- function(mafdb) {
-  conn <- dbConn(mafdb)
-  sql <- "SELECT value FROM metadata WHERE name='Data source tag'"
-  res <- .dbEasyQuery(conn, sql)
-  res[[1]]
-}
-
-## adapted from dbEasyQuery() in GenomicFeatures/R/utils.R
-.dbEasyQuery <- function(conn, SQL, j0=NA) {
-  data0 <- dbGetQuery(conn, SQL)
-
-  if (is.na(j0))
-    return(data0)
-
-  ## Needed to deal properly with data frame with 0 column ("NULL data
-  ## frames with 0 rows") returned by RSQLite when the result of a SELECT
-  ## query has 0 row
- if (nrow(data0) == 0L)
-   character(0)
-  else
-    data0[[j0]]
-}
-
-## adapted from dbEasyPreparedQuery() in GenomicFeatures/R/utils.R
-.dbEasyPreparedQuery <- function(conn, SQL, bind.data) {
-  ## sqliteExecStatement() (SQLite backend for dbSendPreparedQuery()) fails
-  ## when the nb of rows to insert is 0, hence the early bail out.
-  if (nrow(bind.data) == 0L)
-    return()
-  dbBegin(conn)
-  dbGetPreparedQuery(conn, SQL, bind.data)
-  dbCommit(conn)
-}
-
-## based on the precision requirements of MAF data, particularly from ExAC MAF data,
-## we the lowest observed allele frequency value is 8.236e-06, we
-## code and decode allele frequencies into a single-byte raw type, where:
-##
-## AF values < 0.00001 are rounded to 6 digits;
-## AF values >= 0.00001 & values < 0.0001 are rounded to 5 digits;
-## AF values >= 0.0001 & values < 0.001 are rounded to 4 digits;
-## AF values >= 0.001 & values < 0.01 are rounded to 3 digits;
-## AF values >= 0.01 & values <= 1 are rounded to 2 digits;
-##
-## and
-##
-## AF values >= 0.01 & values <= 1 rounded to 2 digits are stored as raw byte values 1 to 100
-## AF values >= 0.001 & values < 0.01 rounded to 3 digits are stored as raw byte values 101 to 109
-## AF values >= 0.0001 & values < 0.001 rounded to 4 digits are stored as raw byte values 111 to 119
-## AF values >= 0.00001 & values < 0.0001 rounded to 5 digits are stored as raw byte values 121 to 129
-## AF values < 0.00001 rounded to 6 digits are stored as raw byte values 130 to 139 (include 0 in the lowest range)
-##
-## because NAs are encoded by the raw byte value 0, and this corresponds by default to the null string
-## when raw byte values are coerced into char, which will be necessary when they are stored in the database,
-## NAs will be recoded to the highest possible raw byte value of 255
-
-codeAF2RAW <- function(x) {
-  maskNAs <- is.na(x)
-  z <- x[!maskNAs]
-
-  maskLevel1 <- z >= 0.01
-  maskLevel2 <- z >= 0.001 & z < 0.01
-  maskLevel3 <- z >= 0.0001 & z < 0.001
-  maskLevel4 <- z >= 0.00001 & z < 0.0001
-  maskLevel5 <- z < 0.00001
-
-  z[maskLevel1] <- round(z[maskLevel1], digits=2)
-  z[maskLevel2] <- round(z[maskLevel2], digits=3)
-  z[maskLevel3] <- round(z[maskLevel3], digits=4)
-  z[maskLevel4] <- round(z[maskLevel4], digits=5)
-  z[maskLevel5] <- round(z[maskLevel5], digits=6)
-  
-  ## recompute again masks to deal with rounding 0.0095 to 0.01, etc.
-  maskLevel1 <- z >= 0.01
-  maskLevel2 <- z >= 0.001 & z < 0.01
-  maskLevel3 <- z >= 0.0001 & z < 0.001
-  maskLevel4 <- z >= 0.00001 & z < 0.0001
-  maskLevel5 <- z < 0.00001
-
-  ## code AFs into integer numbers
-  z[maskLevel1] <- z[maskLevel1] * 100
-  z[maskLevel2] <- z[maskLevel2] * 1000    + 100
-  z[maskLevel3] <- z[maskLevel3] * 10000   + 110
-  z[maskLevel4] <- z[maskLevel4] * 100000  + 120
-  z[maskLevel5] <- z[maskLevel5] * 1000000 + 130 ## zero is coded here as 130
-
-  x[!maskNAs] <- z
-  x[maskNAs] <- 255 ## code NAs as raw byte value 255
-  as.raw(x)
-}
-
-decodeRAW2AF <- function(x) {
-  x <- as.numeric(x)
-  maskNAs <- x == 255 ## decode raw byte value 255 as NAs
-  z <- x[!maskNAs]
-
-  maskLevel1 <- z <= 100
-  maskLevel2 <- z > 100 & z <= 110 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
-  maskLevel3 <- z > 110 & z <= 120 ## use <= as temporary fix for the rounding 0.0095 to 0.01 case
-  maskLevel4 <- z > 120 & z < 130
-  maskLevel5 <- z >= 130
-
-  z[maskLevel1] <- z[maskLevel1] / 100
-  z[maskLevel2] <- (z[maskLevel2]-100) / 1000
-  z[maskLevel3] <- (z[maskLevel3]-110) / 10000
-  z[maskLevel4] <- (z[maskLevel4]-120) / 100000
-  z[maskLevel5] <- (z[maskLevel5]-130) / 1000000
-
-  x[!maskNAs] <- z
-  x[maskNAs] <- NA
-  x
-}

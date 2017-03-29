@@ -15,7 +15,7 @@
   indicated below:
 
   \itemize{
-    \item{fetchKnownVariantsByID(): \code{\link{snpid2maf}()}}
+    \item{snpid2maf(): \code{\link{mafByOverlaps}()}}
   }
 }
 \author{
