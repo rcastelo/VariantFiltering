@@ -93,8 +93,8 @@ setMethod("populations", "MafDb", function(x) x@data_pops)
     mafsnvs[[popname]] <- RleList(compress=FALSE)
   anyMissing <- any(missingMask)
 
-  ans <- as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
-                              dimnames=list(NULL, pop)))
+  ans <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
+                                        dimnames=list(NULL, pop)))
   for (popname in pop) {
     missingMask <- !snames %in% names(mafsnvs[[popname]])
     anyMissing <- anyMissing || any(missingMask)
@@ -135,12 +135,13 @@ setMethod("populations", "MafDb", function(x) x@data_pops)
     obj <- GRanges()
     if (file.exists(fname)) {
       obj <- readRDS(fname)
-      for (pop in mcnames) {
+      for (cname in mcnames) {
         fname <- file.path(x@data_dirpath,
-                           sprintf("%s.RLEnonsnv.%s.%s.rds", x@data_pkgname, pop, sname))
-        if (file.exists(fname))
-          mcols(obj) <- readRDS(fname)
-        else
+                           sprintf("%s.RLEnonsnv.%s.%s.rds", x@data_pkgname, cname, sname))
+        if (file.exists(fname)) {
+          q <- readRDS(fname)
+          mcols(obj)[[cname]] <- metadata(q)$dqfun(q)
+        } else
           stop(sprintf("internal file %s not found", fname))
       }
     } else {
@@ -151,27 +152,45 @@ setMethod("populations", "MafDb", function(x) x@data_pops)
     mafnonsnvs[[sname]] <- obj
   }
 
-  ans <- as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
-                              dimnames=list(NULL, pop)))
+  ans <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
+                                        dimnames=list(NULL, pop))))
   missingMask <- !pop %in% mcnames
   anyMissing <- anyMissing || any(missingMask)
+  tmp <- unlist(mafnonsnvs)
+  names(tmp) <- NULL
   for (popname in pop[missingMask]) {
-    for (sname in snames) {
+    mafvalues <- numeric(length(tmp))
+    i <- 1
+    ## b/c we're storing MAF values as metadata columns of GRanges
+    ## populations need to be loaded for all already loaded chromosomes
+    for (sname in names(mafnonsnvs)) {
       fname <- file.path(x@data_dirpath,
-                         sprintf("%s.RLEnonsnv.%s.rds", x@data_pkgname, sname))
+                         sprintf("%s.RLEnonsnv.%s.%s.rds", x@data_pkgname, popname, sname))
       if (file.exists(fname)) {
         q <- readRDS(fname)
-        mcols(mafnonsnvs[[sname]])[[popname]] <- metadata(obj)$dqfun(q)
+        mafvalues[i:(i+length(mafnonsnvs[[sname]])-1)] <- metadata(q)$dqfun(q)
       } else {
-        mcols(mafnonsnvs[[sname]])[[popname]] <- rep(NA_real_, length(mafnonsnvs[[sname]]))
+        mafvalues[i:(i+length(mafnonsnvs[[sname]])-1)] <- rep(NA_real_, length(mafnonsnvs[[sname]]))
       }
+      i <- i + length(mafnonsnvs)
     }
+    mcols(tmp)[[popname]] <- mafvalues
+  }
+  mafnonsnvs <- split(tmp, seqnames(tmp), drop=TRUE)
+  rm(tmp)
+
+  ## b/c MAF data is imported from VCF files and these represent insertions and
+  ## deletions using the nucleotide composition of the reference sequence we
+  ## use here minoverlap=1L but this may change in the future
+  ov <- findOverlaps(ranges, unlist(mafnonsnvs), minoverlap=1L)
+  if (length(ov) > 0) {
+    ans[queryHits(ov), pop] <- mcols(unlist(mafnonsnvs))[subjectHits(ov), pop]
+    if (any(duplicated(queryHits(ov))))
+      message("mafByOverlaps: more than one variant overlapping queried positions, reporting only the first hit.")
   }
 
-  ov <- findOverlaps(ranges, mafnonsnvs, minoverlap=0L)
-
   if (anyMissing && caching)
-    assign(x@data_pkgname, mafnonsnvs, envir=x@.data_cache)
+    assign(sprintf("%s.nonsnvs", x@data_pkgname), mafnonsnvs, envir=x@.data_cache)
   rm(mafnonsnvs)
 
   ans
@@ -202,7 +221,8 @@ setMethod("mafByOverlaps", signature="MafDb",
             else ## nonsnvs
               ans <- .mafByOverlaps_nonsnvs(x, ranges, snames, pop, caching)
 
-            ans
+            mcols(ranges) <- ans
+            ranges
           })
 
 setMethod("mafById", signature="MafDb",
@@ -248,8 +268,8 @@ setMethod("mafById", signature="MafDb",
             if (any(!pop %in% populations(x)))
               stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
 
-            ans <- as.data.frame(matrix(NA_real_, nrow=length(ids), ncol=length(pop),
-                                        dimnames=list(NULL, pop)))
+            ans <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(ids), ncol=length(pop),
+                                                  dimnames=list(NULL, pop))))
             ans <- cbind(ID=ids, ans, stringsAsFactors=FALSE)
 
             if (any(!is.na(mt))) {
@@ -259,19 +279,14 @@ setMethod("mafById", signature="MafDb",
               }
               rsIDgp <- get("rsIDgp", envir=x@.data_cache)
               rng <- rsIDgp[mt[!is.na(mt)]]
-              if (!exists("maskSNVs", envir=x@.data_cache)) {
-                maskSNVs <- as.logical(readRDS(file.path(x@data_dirpath, "maskSNVs.rds")))
-                assign("maskSNVs", maskSNVs, envir=x@.data_cache)
-              }
-              maskSNVs <- get("maskSNVs", envir=x@.data_cache)
               mask <- logical(length(mt))
-              mask[!is.na(mt)] <- maskSNVs[mt[!is.na(mt)]]
+              mask[!is.na(mt)] <- rng$isSNV
               if (any(mask))
-                ans[mask, pop] <- mafByOverlaps(x, rsIDgp[mt[mask]], pop, type="snvs", caching)
+                ans[mask, pop] <- mcols(mafByOverlaps(x, rng[rng$isSNV], pop, type="snvs", caching))
               mask <- logical(length(mt))
-              mask[!is.na(mt)] <- !maskSNVs[mt[!is.na(mt)]]
+              mask[!is.na(mt)] <- !rng$isSNV
               if (any(mask))
-                ans[mask, pop] <- mafByOverlaps(x, rsIDgp[mt[mask]], pop, type="nonsnvs", caching)
+                ans[mask, pop] <- mcols(mafByOverlaps(x, rng[!rng$isSNV], pop, type="nonsnvs", caching))
             }
 
             ans
