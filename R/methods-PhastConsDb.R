@@ -42,17 +42,21 @@ setMethod("seqlevelsStyle", "PhastConsDb", function(x) seqlevelsStyle(referenceG
 ## this has been improved using RleViews as discussed in
 ## https://stat.ethz.ch/pipermail/bioconductor/2013-December/056409.html
 rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric") {
-  numericmean <- TRUE
-  if (summaryFun != "mean" || coercionFun != "as.numeric")
-    numericmean <- FALSE
-
   summaryFun <- match.fun(summaryFun)
   coercionFun <- match.fun(coercionFun)
+  numericmean <- TRUE
+  if (!identical(summaryFun, mean) ||
+      (!identical(coercionFun, as.numeric) && !identical(coercionFun, as.integer)))
+    numericmean <- FALSE
+
   seqlevels(gr) <- names(rlelst)
   ord <- order(seqnames(gr))
   ans <- numeric(length(gr))
   startbyseq <- split(start(gr), seqnames(gr), drop=TRUE)
   ans[ord] <- unlist(lapply(rlelst[startbyseq], coercionFun), use.names=FALSE)
+  mask <- ans == 255
+  if (any(mask))
+    ans[mask] <- NA
   whregions <- which(width(gr) > 1)
   if (length(whregions) > 0) { ## regions comprising more than one position need to be summarized
     tmpans <- NA_real_
@@ -63,6 +67,9 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
                                           ## this coercion can take up to one second for chromosome 1
                                           ## should consider storing coerced version if memory consumption is not an issue
                                           runValue(coercedrle) <- as.numeric(runValue(coercedrle))
+                                          mask <- coercedrle == 255
+                                          if (any(mask))
+                                            coercedrle[mask] <- NA
                                           viewMeans(Views(coercedrle,
                                                           start=start(rngbyseq[[sname]]),
                                                           end=end(rngbyseq[[sname]])))
@@ -73,7 +80,13 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
       widthbyseq <- split(width(gr)[whregions], seqnames(gr)[whregions], drop=TRUE)
       tmpans <- unlist(mapply(function(r, p, w)
                                         sapply(seq_along(p),
-                                               function(i, r, p, w) summaryFun(coercionFun(r[p[i]:(p[i]+w[i]-1)])),
+                                               function(i, r, p, w) {
+                                                 x <- coercionFun(r[p[i]:(p[i]+w[i]-1)])
+                                                 mask <- x == 255
+                                                 if (any(mask))
+                                                   x[mask] <- NA
+                                                 summaryFun(x)
+                                               },
                                                r, p, w),
                                      rlelst[names(startbyseq)], startbyseq, widthbyseq, SIMPLIFY=FALSE),
                               use.names=FALSE)
@@ -125,8 +138,7 @@ setMethod("scores", c("PhastConsDb", "GRanges"),
               assign(object@data_pkgname, pcrlelist, envir=object@.data_cache)
 
             sco <- rleGetValues(pcrlelist, gpos, summaryFun=summaryFun, coercionFun=coercionFun)
-            sco[sco == 255L] <- NA_integer_
-            sco <- sco / 10L
+            sco <- sco / 10
             rm(pcrlelist)
 
             sco
