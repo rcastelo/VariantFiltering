@@ -94,7 +94,7 @@ setMethod("populations", "MafDb", function(x) x@data_pops)
   anyMissing <- any(missingMask)
 
   ans <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(ranges), ncol=length(pop),
-                                        dimnames=list(NULL, pop)))
+                                        dimnames=list(NULL, pop))))
   for (popname in pop) {
     missingMask <- !snames %in% names(mafsnvs[[popname]])
     anyMissing <- anyMissing || any(missingMask)
