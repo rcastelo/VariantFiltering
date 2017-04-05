@@ -269,8 +269,8 @@ setMethod("mafById", signature="MafDb",
               stop(sprintf("population %s must be one of %s\n", pop, paste(populations(x), collapse=", ")))
 
             ans <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(ids), ncol=length(pop),
-                                                  dimnames=list(NULL, pop))))
-            ans <- cbind(ID=ids, ans, stringsAsFactors=FALSE)
+                                                  dimnames=list(NULL, pop))),
+                             row.names=ids)
 
             if (any(!is.na(mt))) {
               if (!exists("rsIDgp", envir=x@.data_cache)) {
