@@ -97,7 +97,7 @@ rleGetValues <- function(rlelst, gr, summaryFun="mean", coercionFun="as.numeric"
 }
 
 setMethod("scores", c("PhastConsDb", "GRanges"),
-          function(object, gpos, summaryFun="mean", coercionFun="as.numeric", caching=TRUE) {
+          function(object, gpos, summaryFun="mean", coercionFun="as.numeric", caching=TRUE, scores.only=FALSE) {
             if (length(gpos) == 0)
               return(numeric(0))
 
