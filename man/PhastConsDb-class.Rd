@@ -27,7 +27,8 @@ Class for annotation packages storing UCSC phastCons conservation scores.
 \S4method{scores}{PhastConsDb,GRanges}(object, gpos,
                                        summaryFun="mean",
                                        coercionFun="as.numeric",
-                                       caching=TRUE)
+                                       caching=TRUE,
+                                       scores.only=FALSE)
 }
 \arguments{
   \item{annObj}{A \code{PhastConsDb} object.}
@@ -46,6 +47,7 @@ Class for annotation packages storing UCSC phastCons conservation scores.
                  (\code{TRUE}, default) or not (\code{FALSE}). The latter option minimizes the memory
                  footprint but slows down the performance when the \code{scores()} method is called
                  multiple times.}
+  \item{scores.only}{Dummy argument to facilitate the transition from \code{PhastConsDb} to \code{GScores} objects.}
 }
 \details{
 The \code{PhastConsDb} class and associated methods serve the purpose of creating
