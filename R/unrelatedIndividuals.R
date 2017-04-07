@@ -76,7 +76,7 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
     cnAF <- colnames(mcols(annotated_variants))
     colsclasses <- sapply(mcols(annotated_variants), class)
-    cnAF <- cnAF[intersect(grep("AF[A-Z]+", cnAF), grep("numeric", colsclasses))]
+    cnAF <- cnAF[intersect(grep("^AF.+|_AF.+", cnAF), grep("numeric", colsclasses))]
     MAFpopMask <- rep(TRUE, length(cnAF))
     names(MAFpopMask) <- cnAF
   }

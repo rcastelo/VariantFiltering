@@ -11,6 +11,7 @@
 \alias{annotateVariants,SNPlocs-method}
 \alias{annotateVariants,XtraSNPlocs-method}
 \alias{annotateVariants,TxDb-method}
+\alias{annotateVariants,GScores-method}
 \alias{mafByOverlaps,MafDb-method}
 \alias{mafByOverlaps}
 \alias{mafById,MafDb-method}
@@ -51,14 +52,14 @@ The \code{MafDb} class and associated methods serve the purpose of creating
 annotation packages that store minor allele frequency data that can be queried by genomic position. Two such annotation packages are:
 
 \tabular{ll}{
-  \code{MafDb.ExAC.r0.3.1.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
-  \code{MafDb.ExAC.r0.3.1.nonTCGA.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
+  \code{MafDb.1Kgenomes.phase1.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 1. \cr
+  \code{MafDb.1Kgenomes.phase3.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 3. \cr
 }
 
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
-for millions of SNPs by coding AF float values, which range between 0 and 1, into a single-byte
-\code{raw} object type. To achieve this, the original AF values are rounded to one significant
-digit for AF < 0.01 and two significant digits for AF >= 0.01. When a variant has multiple
+for millions of SNPs by coding MAF double-precision values, which range between 0 and 1, into a single-byte
+\code{raw} object type. To achieve this, the original MAF values are rounded to one significant
+digit for AF < 0.1 and two significant digits for AF >= 0.1. When a variant has multiple
 alternate alleles, only the larger MAF value is stored.
 }
 
@@ -71,8 +72,8 @@ alternate alleles, only the larger MAF value is stored.
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
   ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
 
-  if (require(MafDb.ExAC.r0.3.1.snvs.hs37d5)) {
-    mafdb <- MafDb.ExAC.r0.3.1.snvs.hs37d5
+  if (require(MafDb.1Kgenomes.phase3.hs37d5)) {
+    mafdb <- MafDb.1Kgenomes.phase3.hs37d5
     mafdb
 
     ## specialized interface

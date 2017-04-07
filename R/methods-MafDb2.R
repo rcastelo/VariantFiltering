@@ -9,10 +9,6 @@ MafDb2 <- function(provider, provider_version, download_url,
                                   list.files(path=data_pops, pattern="*.rds"))
 
   assign(data_pkgname, list(), envir=data_cache)
-  ## assign("rsIDgpSNVs", rsIDgpSNVs, envir=data_cache)
-  ## assign("rsIDSNVs", rsIDSNVs, envir=data_cache)
-  ## if (!missing(rsIDidxSNVs))
-  ##   assign("rsIDidxSNVs", rsIDidxSNVs, envir=data_cache)
 
   new("MafDb2", provider=provider,
                 provider_version=provider_version,
@@ -223,7 +219,7 @@ setMethod("show", "MafDb2",
 setMethod("$", signature(x="MafDb2"),
           function(x, name) {
             switch(name,
-                   tag=gsub("MafDb.|.snvs.hs37d5", "", x@data_pkgname), ## by now just hardcoded, this should be part of the annotation package
+                   tag=gsub("MafDb.|.hs37d5", "", x@data_pkgname), ## by now just hardcoded, this should be part of the annotation package
                    stop("uknown MafDb2 slot.")
                    )
           })

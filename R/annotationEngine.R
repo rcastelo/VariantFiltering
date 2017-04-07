@@ -505,38 +505,38 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
 setMethod("annotateVariants", signature(annObj="MafDb"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
-            ## get the MAF columns
-            mafCols <- knownVariantsMAFcols(annObj) ## assumes all MAF column names contain 'AF'
-
-            mafValues <- matrix(NA, nrow=length(variantsVR), ncol=length(mafCols),
-                                dimnames=list(NULL, mafCols))
-            varIDs <- variantsVR$dbSNP     ## fetch first by the annotated dbSNP identifier
-            uniqVarIDs <- unique(varIDs)
-            uniqVarIDs <- uniqVarIDs[!is.na(uniqVarIDs)]
-            if (length(varIDs) > 0) {
-              uniqMAFvalues <- snpid2maf(annObj, uniqVarIDs)
-              mt <- match(varIDs, uniqMAFvalues$varID)
-              mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
-
-              ## for missing entries then fetch by given identifier
-              varIDs <- variantsVR$VARID
-              if (!is.null(varIDs) && any(!is.na(varIDs))) {
-                maskNotFound <- apply(uniqMAFvalues[, mafCols], 1, function(x) all(is.na(x)))
-                missingdbsnpIDs <- unique(c(varIDs[is.na(variantsVR$dbSNP)],
-                                            varIDs[!is.na(variantsVR$dbSNP) &
-                                                   variantsVR$dbSNP %in% uniqMAFvalues$varID[maskNotFound]]))
-                missingdbsnpIDs <- missingdbsnpIDs[!is.na(missingdbsnpIDs)]
-                if (length(missingdbsnpIDs) > 0) {
-                  uniqMAFvalues <- snpid2maf(annObj, missingdbsnpIDs)
-                  mt <- match(varIDs, uniqMAFvalues$varID)
-                  mafValues[!is.na(mt), ] <- as.matrix(uniqMAFvalues[mt[!is.na(mt)], mafCols, drop=FALSE])
-                }
-              }
+            ## adapt to sequence style and genome version from the input
+            ## MafDb object, thus assuming positions are based on the same
+            ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
+            if (any(is.na(genome(variantsVR)))) {
+              warning(sprintf("Assuming the genome build of the input variants is the one of the XtraSNPlocs package (%s).", unique(genome(annObj)[commonChr])))
+            genome(variantsVR) <- genome(annObj)
+            } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
+              warning(sprintf("Assumming %s represent the same genome build between variants and the XtraSNPlocs package, respectively.",
+                               paste(c(unique(genome(variantsVR)[commonChr]),
+                                       unique(genome(annObj)[commonChr])),
+                                     collapse=" and ")))
+              genome(variantsVR) <- genome(annObj)
             }
+
+            ## get the MAF columns
+            mafCols <- populations(annObj)
+
+            mafValues <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(variantsVR),
+                                                        ncol=length(mafCols),
+                                                        dimnames=list(NULL, mafCols))))
+            snvmask <- isSNV(variantsVR)
+            if (any(snvmask))
+              mafValues[snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[snvmask], mafCols, type="snvs"))
+
+            if (any(!snvmask))
+              mafValues[!snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[!snvmask], mafCols, type="nonsnvs"))
 
             colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
 
-            DataFrame(mafValues)
+            mafValues
           })
 
 setMethod("annotateVariants", signature(annObj="MafDb2"),
@@ -661,6 +661,18 @@ setMethod("annotateVariants", signature(annObj="PhastConsDb"),
             sco <- scores(annObj, variantsVR)
 
             DataFrame(phastCons=sco)
+          })
+
+############
+## Annotate with GScores
+#####
+
+setMethod("annotateVariants", signature(annObj="GScores"),
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
+
+            sco <- scores(annObj, variantsVR, scores.only=TRUE)
+
+            DataFrame(gscores=sco)
           })
 
 ############
