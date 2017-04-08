@@ -1,5 +1,14 @@
+CHANGES IN VERSION 1.12
+-----------------------
+
+USER VISIBLE CHANGES
+
+    o The VariantFilteringParam constructor is restricted to one (multisample) VCF file.
+
+    o mafByOverlaps() returns now a GRanges object with minor allele frequency values in the metadata columns.
+
 CHANGES IN VERSION 1.10
-----------------------
+-----------------------
 
 USER VISIBLE CHANGES
 

@@ -43,8 +43,8 @@ The \code{MafDb2} class and associated methods serve the purpose of creating
 annotation packages that store minor allele frequency data that can be queried by genomic position. Two such annotation packages are:
 
 \tabular{ll}{
-  \code{MafDb.ExAC.r0.3.1.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
-  \code{MafDb.ExAC.r0.3.1.nonTCGA.snvs.hs37d5} \tab MAF values from the ExAC consortium. \cr
+  \code{MafDb.1Kgenomes.phase1.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 1. \cr
+  \code{MafDb.1Kgenomes.phase3.hs37d5} \tab MAF values from the 1000 Genomes Project Phase 3. \cr
 }
 
 This object class tries to reduce the disk space required to store allele frequencies (AFs)
@@ -61,8 +61,8 @@ alternate alleles, only the larger MAF value is stored.
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
   ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
 
-  if (require(MafDb.ExAC.r0.3.1.snvs.hs37d5)) {
-    mafdb <- MafDb.ExAC.r0.3.1.snvs.hs37d5
+  if (require(MafDb.1Kgenomes.phase3.hs37d5)) {
+    mafdb <- MafDb.1Kgenomes.phase3.hs37d5
     mafdb
 
     ## specialized interface

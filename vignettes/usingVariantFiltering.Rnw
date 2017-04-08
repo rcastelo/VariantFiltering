@@ -312,7 +312,7 @@ active(filters(uind)) <- FALSE
 MAFmask <- MAFpop(uind)
 MAFmask
 MAFpop(uind) <- !MAFmask
-MAFpop(uind, "EAS_AFExAC.r0.3.1") <- TRUE
+MAFpop(uind, "EAS_AF1Kgenomes.phase3") <- TRUE
 MAFpop(uind)
 maxMAF(uind) <- 0.01
 summary(uind)

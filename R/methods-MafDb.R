@@ -2,7 +2,8 @@
 MafDb <- function(provider, provider_version, download_url,
                   download_date, reference_genome,
                   rsIDgpSNVs, rsIDSNVs, rsIDidxSNVs,
-                  data_pkgname, data_dirpath, data_serialized_objnames) {
+                  data_pkgname, data_dirpath, data_serialized_objnames,
+                  data_tag="") {
   data_cache <- new.env(hash=TRUE, parent=emptyenv())
   data_pops <- list.files(path=data_dirpath, pattern=data_pkgname)
   data_pops <- data_pops[grep("snv", data_pops, invert=TRUE)]
@@ -23,6 +24,7 @@ MafDb <- function(provider, provider_version, download_url,
                data_pkgname=data_pkgname,
                data_dirpath=data_dirpath,
                data_serialized_objnames=data_serialized_objnames,
+               data_tag=data_tag,
                data_pops=data_pops,
                .data_cache=data_cache)
 }
@@ -201,9 +203,6 @@ setMethod("mafByOverlaps", signature="MafDb",
             type <- match.arg(type)
             ranges <- .str2gr(ranges)
 
-            if (seqlevelsStyle(ranges)[1] != seqlevelsStyle(x)[1])
-              seqlevelsStyle(ranges) <- seqlevelsStyle(x)[1]
-
             if (class(pop) != "character")
               stop("argument 'pop' must be a character vector")
 
@@ -303,7 +302,7 @@ setMethod("show", "MafDb",
 setMethod("$", signature(x="MafDb"),
           function(x, name) {
             switch(name,
-                   tag=gsub("MafDb.|.hs37d5", "", x@data_pkgname), ## by now just hardcoded, this should be part of the annotation package
+                   tag=x@data_tag,
                    stop("uknown MafDb slot.")
                    )
           })
