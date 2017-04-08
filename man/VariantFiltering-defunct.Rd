@@ -16,6 +16,8 @@
 
   \itemize{
     \item{snpid2maf(): \code{\link{mafByOverlaps}()}}
+    \item{knownVariantsMAFcols(): \code{\link{populations}()}}
+    \item{fetchKnownVariantsById(): \code{\link{mafById}()}}
   }
 }
 \author{

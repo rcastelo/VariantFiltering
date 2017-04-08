@@ -5,7 +5,7 @@ Description: Filter genetic variants using different criteria such as
              inheritance model, amino acid change consequence, minor
              allele frequencies across human populations, splice site
              strength, conservation, etc.
-Version: 1.11.8
+Version: 1.11.9
 Authors@R: c(person("Robert", "Castelo", role=c("aut", "cre"), email="robert.castelo@upf.edu"),
              person("Dei", "Martinez Elurbe", role="ctb"),
              person("Pau", "Puigdevall", role="ctb"))
@@ -17,7 +17,7 @@ Imports: utils, DBI, RSQLite (>= 1.0.0), Biobase, S4Vectors (>= 0.9.25),
          GenomicFeatures, Rsamtools (>= 1.17.8), BSgenome, Gviz, shiny
 Suggests: RUnit, BiocStyle, org.Hs.eg.db, BSgenome.Hsapiens.1000genomes.hs37d5,
           TxDb.Hsapiens.UCSC.hg19.knownGene, SNPlocs.Hsapiens.dbSNP144.GRCh37,
-          MafDb.1Kgenomes.phase3.hs37d5, MafDb.ExAC.r0.3.1.snvs.hs37d5, phastCons100way.UCSC.hg19,
+          MafDb.1Kgenomes.phase3.hs37d5, phastCons100way.UCSC.hg19,
           PolyPhen.Hsapiens.dbSNP131, SIFT.Hsapiens.dbSNP137
 LinkingTo: S4Vectors, IRanges, XVector, Biostrings
 LazyData: yes

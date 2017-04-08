@@ -10,10 +10,11 @@ setClass("MafDb",
                                        reference_genome="GenomeDescription", ## extracted from BSgenome.*
 
                                        ## package name and absolute path to local directory where to find
-                                       ## the serialized objects containing the ExAC data
+                                       ## the serialized objects containing the data
                                        data_pkgname="character",
                                        data_dirpath="character",
                                        data_serialized_objnames="character",
+                                       data_tag="character",
                                        data_pops="character",
 
                                        .data_cache="environment"))
@@ -31,7 +32,7 @@ setClass("MafDb2",
                                        reference_genome="GenomeDescription", ## extracted from BSgenome.*
 
                                        ## package name and absolute path to local directory where to find
-                                       ## the serialized objects containing the ExAC data
+                                       ## the serialized objects containing the data
                                        data_pkgname="character",
                                        data_dirpath="character",
                                        data_serialized_objnames="character",

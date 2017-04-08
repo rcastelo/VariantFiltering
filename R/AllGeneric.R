@@ -3,12 +3,6 @@ setGeneric("minIntronLength", function(x) standardGeneric("minIntronLength"))
 setGeneric("minIntronLength<-", function(x, value) standardGeneric("minIntronLength<-"))
 
 ## for MafDb class
-setGeneric("dbConn", function(x) standardGeneric("dbConn"))
-setGeneric("knownVariantsMAFcols", function(mafdb, ...) standardGeneric("knownVariantsMAFcols"))
-setGeneric("snpid2maf", function(mafdb, ...) standardGeneric("snpid2maf"))
-setGeneric("fetchKnownVariantsByID", function(mafdb, ...) standardGeneric("fetchKnownVariantsByID"))
-
-## for MafDb2 class
 setGeneric("mafByOverlaps", function(x, ...) standardGeneric("mafByOverlaps"))
 setGeneric("mafById", function(x, ...) standardGeneric("mafById"))
 setGeneric("populations", function(x) standardGeneric("populations"))
