@@ -185,7 +185,7 @@ importFrom(Gviz, GenomeAxisTrack,
                  plotTracks)
 
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
-              MafDb, PhastConsDb, GenePhylostrataDb,
+              MafDb, GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,
               WeightMatrix)
 
@@ -250,17 +250,6 @@ exportMethods(summary,
               mafById,
               "$",
 
-              ## specific for the PhastConsDb class
-              provider,
-              providerVersion,
-              referenceGenome,
-              organism,
-              seqinfo,
-              seqnames,
-              seqlengths,
-              seqlevelsStyle,
-              scores,
-
               ## for the GenePhylostrataDb class
               genePhylostratum,
               genePhylostrata
@@ -281,9 +270,6 @@ export(VariantFilteringParam,
 
        ## for the MafDb2 class
        MafDb2,
-
-       ## for the PhastConsDb class
-       PhastConsDb,
 
        ## for the GenePhylostrata class
        GenePhylostrataDb
