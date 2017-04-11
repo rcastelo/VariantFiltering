@@ -4,6 +4,7 @@ import(methods)
 import(BiocGenerics)
 import(S4Vectors)
 import(shiny)
+import(GenomicScores)
 
 importClassesFrom(Biobase, AssayData)
 importClassesFrom(AnnotationDbi, AnnotationDb)
