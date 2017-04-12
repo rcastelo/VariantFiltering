@@ -16,6 +16,10 @@ MafDb <- function(provider, provider_version, download_url,
   assign(data_pkgname, list(), envir=data_cache)
   assign(sprintf("%s.nonsnvs", data_pkgname), GRangesList(), envir=data_cache)
 
+  nov <- NA_integer_
+  if (file.exists(file.path(data_dirpath, "nov.rds")))
+    nov <- as.integer(readRDS(file.path(data_dirpath, "nov.rds")))
+
   new("MafDb", provider=provider,
                provider_version=provider_version,
                download_url=download_url,
@@ -26,6 +30,7 @@ MafDb <- function(provider, provider_version, download_url,
                data_serialized_objnames=data_serialized_objnames,
                data_tag=data_tag,
                data_pops=data_pops,
+               data_nov=nov,
                .data_cache=data_cache)
 }
 
@@ -49,17 +54,17 @@ setMethod("seqlevelsStyle", "MafDb", function(x) seqlevelsStyle(referenceGenome(
 setMethod("populations", "MafDb", function(x) x@data_pops)
 
 ## adapted from VariantTools::extractCoverageForPositions()
-.extractRawFromRleList <- function(rlelst, pos) {
-  if (any(!unique(seqnames(pos)) %in% names(rlelst)))
+.extractRawFromRleList <- function(rlelst, ranges) {
+  if (any(!unique(seqnames(ranges)) %in% names(rlelst)))
     stop("Some sequence names from input positions are missing from rlelst")
-  if (any(width(pos) > 1L))
+  if (any(width(ranges) > 1L))
     stop("Some ranges are of width > 1")
-  seqlevels(pos) <- names(rlelst)
-  ord <- order(seqnames(pos))
-  ans <- raw(length(pos))
+  seqlevels(ranges) <- names(rlelst)
+  ord <- order(seqnames(ranges))
+  ans <- raw(length(ranges))
   ans[ord] <- unlist(mapply(function(v, p) {
     runValue(v)[findRun(p, v)]
-  }, rlelst, split(start(pos), seqnames(pos)), SIMPLIFY=FALSE), use.names=FALSE)
+  }, rlelst, split(start(ranges), seqnames(ranges)), SIMPLIFY=FALSE), use.names=FALSE)
   ans
 }
 
@@ -82,8 +87,8 @@ setMethod("populations", "MafDb", function(x) x@data_pops)
   } else if (class(ranges) == "VRanges") {
     ranges <- as(ranges, "GRanges")
     mcols(ranges) <- NULL
-  } else if (class(ranges) != "GRanges" && class(ranges) != "GPos")
-    stop("argument 'ranges' must be either a GRanges object, a GPos object or a character string with the format CHR:START[-END]\n")
+  } else if (!is(ranges, "GenomicRanges"))
+    stop("argument 'ranges' must be either a GenomicRanges object or a character string with the format CHR:START[-END]\n")
 
   ranges
 }
@@ -291,11 +296,42 @@ setMethod("mafById", signature="MafDb",
             ans
           })
 
+.pprintseqs <- function(x) {
+  y <- x
+  if (length(x) > 5)
+    y <- c(y[1:2], "...", y[length(y)])
+  y <- paste(y, collapse=", ")
+  y 
+}
+
 ## show method
 setMethod("show", "MafDb",
           function(object) {
-            cat(class(object), " object for ", organism(object), " (",
-                provider(object), ")\n", sep="")
+            snvsobj <- get(object@data_pkgname, envir=object@.data_cache)
+            nonsnvsobj <- get(paste0(object@data_pkgname, ".nonsnvs"),
+                              envir=object@.data_cache)
+            loadedsnvspops <- loadedsnvsseqs <- "none"
+            loadednonsnvspops <- loadednonsnvsseqs <- "none"
+            if (length(snvsobj) > 0) {
+              loadedsnvspops <- names(snvsobj)
+              loadedsnvsseqs <- names(snvsobj[[1]])
+            }
+            if (ncol(mcols(nonsnvsobj)) > 0)
+              loadednonsnspops <- colnames(mcols(nonsnvsobj))
+            if (length(nonsnvsobj) > 0)
+              loadednonsnvsseqs <- unique(seqnames(nonsnvsobj))
+
+            cat("Minor allele frequency Db (MafDb) object\n",
+                "# organism: ", organism(object), "\n",
+                "# provider: ", provider(object), "\n",
+                "# provider version: ", providerVersion(object), "\n",
+                "# download date: ", object@download_date, "\n",
+                "# loaded sequences (SNVs): ", .pprintseqs(loadedsnvsseqs), "\n",
+                "# loaded sequences (nonSNVs): ", .pprintseqs(loadednonsnvsseqs), "\n",
+                "# loaded populations (SNVs): ", .pprintseqs(loadedsnvspops), "\n",
+                "# loaded populations (nonSNVs): ", .pprintseqs(loadednonsnvspops), "\n",
+                "# nr. of variants: ", object@data_nov, "\n",
+                sep="")
           })
 
 ## $ method
