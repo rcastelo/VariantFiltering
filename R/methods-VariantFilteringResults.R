@@ -48,7 +48,7 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
               cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
             }
-            if ("PhastConsDb" %in% sapply(param(object)$otherAnnotations, class)) {
+            if ("GScores" %in% sapply(param(object)$otherAnnotations, class)) {
               if (!is.na(minPhastCons(object)))
                 cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
             }
@@ -505,15 +505,15 @@ setReplaceMethod("maxMAF", signature(x="VariantFilteringResults", value="numeric
 
 setMethod("minPhastCons", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(match("PhastConsDb", sapply(param(x)$otherAnnotations, class))))
-              stop("A phastConsDb object was not used to annotate variants.")
+            if (is.na(match("GScores", sapply(param(x)$otherAnnotations, class))))
+              stop("A GScores object was not used to annotate variants.")
 
             x@minPhastCons
           })
 
 setReplaceMethod("minPhastCons", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
-                   if (is.na(match("PhastConsDb", sapply(param(x)$otherAnnotations, class))))
+                   if (is.na(match("GScores", sapply(param(x)$otherAnnotations, class))))
                      stop("A phastConsDb object was not used to annotate variants.")
 
                    if (!is.na(value) && !is.numeric(value) && !is.integer(value))
@@ -723,7 +723,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
 
             ## nucleotide conservation
             mtNoMinPhastCons <- NULL
-            if (!is.na(match("PhastConsDb", sapply(param(x)$otherAnnotations, class)))) {
+            if (!is.na(match("GScores", sapply(param(x)$otherAnnotations, class)))) {
               if (is.na(minPhastCons(x)))
                 mtNoMinPhastCons <- match("phastCons", colnames(mcols(vars)))
               else {
@@ -852,7 +852,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
   annotationObjClasses <- sapply(param(vfResultsObj)$otherAnnotations, class)
   mtMafDb <- match("MafDb", annotationObjClasses)
-  mtPhastConsDb <- match("PhastConsDb", annotationObjClasses)
+  mtPhastConsDb <- match("GScores", annotationObjClasses)
   mtGenePhylostrataDb <- match("GenePhylostrataDb", annotationObjClasses)
   phylostrata <- "Unavailable"
   if (!is.na(mtGenePhylostrataDb))
@@ -1186,7 +1186,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       if ("MafDb" %in% annotationObjClasses)
         tabPanelList[[length(tabPanelList)+1]] <- tabPanel("MAF", tableOutput('tableMAF'), value="maf")
 
-      if ("PhastConsDb" %in% annotationObjClasses || "GenePhylostrataDb" %in% annotationObjClasses)
+      if ("GScores" %in% annotationObjClasses || "GenePhylostrataDb" %in% annotationObjClasses)
         tabPanelList[[length(tabPanelList)+1]] <- tabPanel("Conservation", tableOutput('tableConservation'), value="conservation")
 
       ## if (all(!is.na(param(vfResultsObj)$spliceSiteMatricesFilenames)))
@@ -1239,7 +1239,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
     output$tableConservation <- renderTable({
       selcols <- c("VarID", "POSITION", "GENE")
-      if ("PhastConsDb" %in% annotationObjClasses)
+      if ("GScores" %in% annotationObjClasses)
         selcols <- c(selcols, "phastCons")
       if ("GenePhylostrataDb" %in% annotationObjClasses)
         selcols <- c(selcols, "GenePhylostratum", "GenePhylostratumTaxID")
