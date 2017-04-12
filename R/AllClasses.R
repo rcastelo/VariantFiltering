@@ -16,6 +16,7 @@ setClass("MafDb",
                                        data_serialized_objnames="character",
                                        data_tag="character",
                                        data_pops="character",
+                                       data_nov="integer",
 
                                        .data_cache="environment"))
 
