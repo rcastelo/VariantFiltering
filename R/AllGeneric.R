@@ -7,9 +7,6 @@ setGeneric("mafByOverlaps", function(x, ...) standardGeneric("mafByOverlaps"))
 setGeneric("mafById", function(x, ...) standardGeneric("mafById"))
 setGeneric("populations", function(x) standardGeneric("populations"))
 
-## for PhastConsDb class
-setGeneric("scores", function(object, gpos, ...) standardGeneric("scores"))
-
 ## for GenePhylostrataDb class
 setGeneric("genePhylostratum", function(object, ids) standardGeneric("genePhylostratum"))
 setGeneric("genePhylostrata", function(object) standardGeneric("genePhylostrata"))
