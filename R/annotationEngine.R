@@ -652,18 +652,6 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
           })
 
 ############
-## Annotate phastCons values
-#####
-
-setMethod("annotateVariants", signature(annObj="PhastConsDb"),
-          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
-
-            sco <- scores(annObj, variantsVR)
-
-            DataFrame(phastCons=sco)
-          })
-
-############
 ## Annotate with GScores
 #####
 
