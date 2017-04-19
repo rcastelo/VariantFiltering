@@ -72,8 +72,8 @@ alternate alleles, only the larger MAF value is stored.
   ## founder mutation in a regulatory element located within the HERC2 gene inhibiting OCA2 expression.
   ## Human Genetics, 123(2):177-87, 2008 [http://www.ncbi.nlm.nih.gov/pubmed/18172690]
 
-  if (require(MafDb.1Kgenomes.phase3.hs37d5)) {
-    mafdb <- MafDb.1Kgenomes.phase3.hs37d5
+  if (require(MafDb.1Kgenomes.phase1.hs37d5)) {
+    mafdb <- MafDb.1Kgenomes.phase1.hs37d5
     mafdb
 
     ## specialized interface
