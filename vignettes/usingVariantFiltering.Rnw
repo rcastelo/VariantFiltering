@@ -312,12 +312,12 @@ active(filters(uind)) <- FALSE
 MAFmask <- MAFpop(uind)
 MAFmask
 MAFpop(uind) <- !MAFmask
-MAFpop(uind, "EAS_AFKGp3") <- TRUE
+MAFpop(uind, "AFKGp1") <- TRUE
 MAFpop(uind)
 maxMAF(uind) <- 0.01
 summary(uind)
 @
-In this case we selected variants with MAF$< 0.01$ in the east asian population of the
+In this case we selected variants with MAF$< 0.01$ in the global population of the
 1000 Genomes project. If we are interested in retrieving the actual set of
 filtered variants, we can do it using the function \Rfunction{filteredVariants()}:
 
