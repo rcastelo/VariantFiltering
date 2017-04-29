@@ -109,7 +109,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
             txdb <- param(x)$txdb
             seqlevelsstyletxdb <- seqlevelsStyle(txdb)
             seqlevelsStyle(txdb) <- leadseqlevelsstyle
-            seqlevels(txdb, force=TRUE) <- chr2display
+            seqlevels(txdb, pruning.mode="coarse") <- chr2display
             txdbmdata <- metadata(txdb)
 
             ## geneannot <- exonsBy(txdb, by="gene")
