@@ -21,13 +21,13 @@
   slenBSgenome <- slenBSgenome[commonChr]
   if (any(slenVcf != slenBSgenome)) {
     if (sum(slenVcf != slenBSgenome) == 1) {
-      warning(sprintf("Chromosome %s has different lengths between the input VCF and the input BSgenome pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
+      warning(sprintf("Chromosome %s has different lengths between the input VCF and the BSgenome pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
     } else {
-      warning(sprintf("Chromosomes %s have different lengths between the input VCF and the input BSgenome package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
+      warning(sprintf("Chromosomes %s have different lengths between the input VCF and the BSgenome package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
     }
     if (sum(slenVcf == slenBSgenome) == 0)
       stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the input BSgenome package. The genome reference sequence employed to generate the VCF file was probably different from the one in the input BSgenome package.")
-    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenBSgenome])
+    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenBSgenome], pruning.mode="coarse")
     commonChr <- commonChr[slenVcf == slenBSgenome]
   }
 
@@ -53,7 +53,7 @@
     }
     if (sum(slenVcf == slenTxDb) == 0)
       stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the input TxDb package. The genome reference sequence employed to generate the VCF file was probably different from the one in the input TxDb package.")
-    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenTxDb])
+    variantsGR <- keepSeqlevels(variantsGR, commonChr[slenVcf == slenTxDb], pruning.mode="coarse")
     commonChr <- commonChr[slenVcf == slenTxDb]
   }
 
