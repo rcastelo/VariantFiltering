@@ -380,20 +380,40 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
             commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
             if (any(is.na(genome(variantsVR)))) {
-              warning(sprintf("Assuming the genome build of the input variants is the one of the XtraSNPlocs package (%s).", unique(genome(annObj)[commonChr])))
+              warning(sprintf("Assuming the genome build of the input variants is the one of the SNPlocs package (%s).", unique(genome(annObj)[commonChr])))
             genome(variantsVR) <- genome(annObj)
             } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
-              warning(sprintf("Assumming %s represent the same genome build between variants and the XtraSNPlocs package, respectively.",
+              warning(sprintf("Assumming %s represent the same genome build between variants and the SNPlocs package, respectively.",
                                paste(c(unique(genome(variantsVR)[commonChr]),
                                        unique(genome(annObj)[commonChr])),
                                      collapse=" and ")))
               genome(variantsVR) <- genome(annObj)
             }
 
-            masksnp <- variantsVR$TYPE == "SNV"
+            ## discard annotating variants on chromosomes with different lengths from the
+            ## chromosomes in the annotation object to avoid errors with 'snpByOverlaps()'
+            masksnp <- rep(TRUE, length(variantsVR))
+            slenVR <- seqlengths(variantsVR)[commonChr]
+            slenAnnObj <- seqlengths(annObj)[commonChr]
+            if (any(slenVR != slenAnnObj)) {
+              if (sum(slenVR != slenAnnObj) == 1) {
+                warning(sprintf("Chromosome %s has different lengths between the input VCF and the SNPlocs package. Variants in this chromosome will not be annotated with the SNPlocs package", paste(commonChr[which(slenVR != slenAnnObj)], collapse=", ")))
+              } else {
+                warning(sprintf("Chromosomes %s have different lengths between the input VCF and the SNPlocs package. Variants in these chromosomes will not be annotated with the SNPlocs package", paste(commonChr[which(slenVR != slenAnnObj)], collapse=", ")))
+              }
+              if (sum(slenVR == slenAnnObj) == 0)
+                stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the SNPlocs package. The genome reference sequence employed to generate the VCF file was probably different from the one in the SNPlocs package.")
+              commonLenChr <- commonChr[slenVR == slenAnnObj]
+              masksnp <- decode(seqnames(variantsVR) %in% commonLenChr)
+            }
+
+            masksnp <- masksnp & (variantsVR$TYPE == "SNV")
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(masksnp)) {
-              rsids_list <- .loc2dbSNPid(annObj, variantsVR[masksnp], BPPARAM=BPPARAM)
+              tmpVR <- variantsVR[masksnp]
+              tmpVR <- keepSeqlevels(tmpVR, as.character(unique(seqnames(tmpVR)))) ## drop sequence levels not in use
+              rsids_list <- .loc2dbSNPid(annObj, tmpVR, BPPARAM=BPPARAM)
+              rm(tmpVR)
               elen <- elementNROWS(rsids_list)
               rsids[masksnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
@@ -426,10 +446,30 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
               genome(variantsVR) <- genome(annObj)
             }
 
-            maskxtrasnp <- variantsVR$TYPE != "SNV"
+            ## discard annotating variants on chromosomes with different lengths from the
+            ## chromosomes in the annotation object to avoid errors with 'snpByOverlaps()'
+            maskxtrasnp <- rep(TRUE, length(variantsVR))
+            slenVR <- seqlengths(variantsVR)[commonChr]
+            slenAnnObj <- seqlengths(annObj)[commonChr]
+            if (any(slenVR != slenAnnObj)) {
+              if (sum(slenVR != slenAnnObj) == 1) {
+                warning(sprintf("Chromosome %s has different lengths between the input VCF and the SNPlocs package. Variants in this chromosome will not be annotated with the XtraSNPlocs package", paste(commonChr[which(slenVR != slenAnnObj)], collapse=", ")))
+              } else {
+                warning(sprintf("Chromosomes %s have different lengths between the input VCF and the SNPlocs package. Variants in these chromosomes will not be annotated with the XtraSNPlocs package", paste(commonChr[which(slenVR != slenAnnObj)], collapse=", ")))
+              }
+              if (sum(slenVR == slenAnnObj) == 0)
+                stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the XtraSNPlocs package. The genome reference sequence employed to generate the VCF file was probably different from the one in the XtraSNPlocs package.")
+              commonLenChr <- commonChr[slenVR == slenAnnObj]
+              maskxtrasnp <- decode(seqnames(variantsVR) %in% commonLenChr)
+            }
+
+            maskxtrasnp <- maskxtrasnp & (variantsVR$TYPE != "SNV")
             rsids <- rep(NA_character_, times=length(variantsVR))
             if (any(maskxtrasnp)) {
-              rsids_list <- .loc2XtraSNPid(annObj, variantsVR[maskxtrasnp], BPPARAM=BPPARAM)
+              tmpVR <- variantsVR[maskxtrasnp]
+              tmpVR <- keepSeqlevels(tmpVR, as.character(unique(seqnames(tmpVR)))) ## drop sequence levels not in use
+              rsids_list <- .loc2XtraSNPid(annObj, tmpVR, BPPARAM=BPPARAM)
+              rm(tmpVR)
               elen <- elementNROWS(rsids_list)
               rsids[maskxtrasnp][elen == 1] <- as.character(rsids_list[elen == 1])
 
@@ -511,10 +551,10 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
             commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
             if (any(is.na(genome(variantsVR)))) {
-              warning(sprintf("Assuming the genome build of the input variants is the one of the XtraSNPlocs package (%s).", unique(genome(annObj)[commonChr])))
+              warning(sprintf("Assuming the genome build of the input variants is the one of the MafDb package (%s).", unique(genome(annObj)[commonChr])))
             genome(variantsVR) <- genome(annObj)
             } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
-              warning(sprintf("Assumming %s represent the same genome build between variants and the XtraSNPlocs package, respectively.",
+              warning(sprintf("Assumming %s represent the same genome build between variants and the MafDb package, respectively.",
                                paste(c(unique(genome(variantsVR)[commonChr]),
                                        unique(genome(annObj)[commonChr])),
                                      collapse=" and ")))
