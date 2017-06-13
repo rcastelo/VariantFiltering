@@ -111,19 +111,16 @@ substantially filter and reduce the number of variants and annotations or,
 as we illustrate here below, calling the function \Rfunction{unrelatedIndividuals()}
 that just annotates the variants without filtering out any of them:
 
-%%<<echo=FALSE>>=
-%%if (VariantFiltering:::.getOS() == "windows") {
-%%  uind <- readRDS(system.file("extdata", "uind.rds", package="VariantFiltering"))
-%%  uind@inputParameters <- vfpar
-%%  uind@filters <- filters(vfpar)
-%%} else
-%%  system.time(uind <- unrelatedIndividuals(vfpar)) ## ~90 sec.
-%%@
-%%<<eval=FALSE, echo=TRUE>>=
-%%uind <- unrelatedIndividuals(vfpar)
-%%@
-<<>>=
+<<echo=FALSE>>=
+if (VariantFiltering:::.getOS() == "windows") {
+  uind <- VariantFiltering:::.loadPrecomputedVariantFilteringResults(vfpar)
+} else
+  uind <- unrelatedIndividuals(vfpar) ## ~90 sec.
+@
+<<eval=FALSE, echo=TRUE>>=
 uind <- unrelatedIndividuals(vfpar)
+@
+<<>>=
 class(uind)
 uind
 @

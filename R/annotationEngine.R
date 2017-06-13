@@ -700,7 +700,9 @@ setMethod("annotateVariants", signature(annObj="GScores"),
 
             sco <- scores(annObj, variantsVR, scores.only=TRUE)
 
-            DataFrame(gscores=sco)
+            dfobj <- DataFrame(sco)
+            colnames(dfobj) <- type(annObj)
+            dfobj
           })
 
 ############

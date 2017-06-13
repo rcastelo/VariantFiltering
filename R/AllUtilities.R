@@ -160,3 +160,14 @@
   }
   tolower(os)
 }
+
+## load precomputed results for the vignette
+## this is useful to meet building times in
+## the windows build machines
+
+.loadPrecomputedVariantFilteringResults <- function(vfpar) {
+  uind <- readRDS(system.file("extdata", "uind.rds", package="VariantFiltering"))
+  uind@inputParameters <- vfpar
+  uind@filters <- filters(vfpar)
+  uind
+}
