@@ -1048,63 +1048,63 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       withProgress(message="Filtering variants", value=0, {
       incProgress(1/3, detail="setting filters ...")
       ## presence in dbSNP
-      if (input$dbSNPpresentFlag)
-        dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
-      else
-        dbSNPpresent(vfResultsObj) <- NA_character_
+      ## if (input$dbSNPpresentFlag)
+      ##   dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
+      ## else
+      ##   dbSNPpresent(vfResultsObj) <- NA_character_
 
       ## presence in OMIM
-      if (input$OMIMpresentFlag)
-        OMIMpresent(vfResultsObj) <- input$OMIMpresent
-      else
-        OMIMpresent(vfResultsObj) <- NA_character_
+      ## if (input$OMIMpresentFlag)
+      ##   OMIMpresent(vfResultsObj) <- input$OMIMpresent
+      ## else
+      ##   OMIMpresent(vfResultsObj) <- NA_character_
 
       ## type of variant
-      varTypMask <- variantType(vfResultsObj)
-      for (i in names(varTypMask))
-        varTypMask[i] <- input[[i]]
-      variantType(vfResultsObj) <- varTypMask
+      ## varTypMask <- variantType(vfResultsObj)
+      ## for (i in names(varTypMask))
+      ##   varTypMask[i] <- input[[i]]
+      ## variantType(vfResultsObj) <- varTypMask
 
       ## variant location
-      locMask <- variantLocation(vfResultsObj)
-      for (i in names(locMask))
-        locMask[i] <- input[[i]]
-      variantLocation(vfResultsObj) <- locMask
+      ## locMask <- variantLocation(vfResultsObj)
+      ## for (i in names(locMask))
+      ##   locMask[i] <- input[[i]]
+      ## variantLocation(vfResultsObj) <- locMask
 
       ## variant consequence
-      conMask <- variantConsequence(vfResultsObj)
-      for (i in names(conMask))
-        conMask[i] <- input[[i]]
-      variantConsequence(vfResultsObj) <- conMask
+      ## conMask <- variantConsequence(vfResultsObj)
+      ## for (i in names(conMask))
+      ##   conMask[i] <- input[[i]]
+      ## variantConsequence(vfResultsObj) <- conMask
 
       ## type of amino acid change
-      aaChangeType(vfResultsObj) <- input$aaChangeType
+      ## aaChangeType(vfResultsObj) <- input$aaChangeType
 
       ## minimum allele frequency
-      if (!is.na(mtMafDb)) {
-        mafMask <- MAFpop(vfResultsObj)
-        for (i in names(mafMask)) ## unlisting a reactivevalues object does not work :(
-          mafMask[i] <- input[[i]]
-        MAFpop(vfResultsObj) <- mafMask
-        maxMAF(vfResultsObj) <- as.numeric(input$maxMAF)
-        naMAF(vfResultsObj) <- input$naMAF
-      }
+      ## if (!is.na(mtMafDb)) {
+      ##   mafMask <- MAFpop(vfResultsObj)
+      ##   for (i in names(mafMask)) ## unlisting a reactivevalues object does not work :(
+      ##     mafMask[i] <- input[[i]]
+      ##   MAFpop(vfResultsObj) <- mafMask
+      ##   maxMAF(vfResultsObj) <- as.numeric(input$maxMAF)
+      ##   naMAF(vfResultsObj) <- input$naMAF
+      ## }
 
       ## nucleotide conservation
-      if (!is.na(mtPhastConsDb)) {
-        if (input$minPhastConsFlag)
-          minPhastCons(vfResultsObj) <- input$minPhastCons
-        else
-          minPhastCons(vfResultsObj) <- NA_real_
-      }
+      ## if (!is.na(mtPhastConsDb)) {
+      ##   if (input$minPhastConsFlag)
+      ##     minPhastCons(vfResultsObj) <- input$minPhastCons
+      ##   else
+      ##     minPhastCons(vfResultsObj) <- NA_real_
+      ## }
 
       ## gene conservation
-      if (!is.na(mtGenePhylostrataDb)) {
-        if (input$minPhylostratumFlag)
-          minPhylostratum(vfResultsObj) <- input$minPhylostratum
-        else
-          minPhylostratum(vfResultsObj) <- NA_integer_
-      }
+      ## if (!is.na(mtGenePhylostrataDb)) {
+      ##   if (input$minPhylostratumFlag)
+      ##     minPhylostratum(vfResultsObj) <- input$minPhylostratum
+      ##   else
+      ##     minPhylostratum(vfResultsObj) <- NA_integer_
+      ## }
 
       ## cryptic splice sites
       ## if (all(!is.na(crypsplice))) {
@@ -1120,7 +1120,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       ## }
 
       ## codon-usage fold-change
-      minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
+      ## minCUFC(vfResultsObj) <- as.numeric(input$minCUFC)
 
       incProgress(2/3, detail="applying filters ...")
       fvxsam <- filteredVariants(vfResultsObj)
@@ -1239,8 +1239,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
 
     output$tableConservation <- renderTable({
       selcols <- c("VarID", "POSITION", "GENE")
-      if ("GScores" %in% annotationObjClasses)
+      if ("GScores" %in% annotationObjClasses && !is.na(mtPhastConsDb)) {
+        cname <- type(param(vfResultsObj)$otherAnnotations[[mtPhastConsDb]])
         selcols <- c(selcols, "phastCons")
+      }
       if ("GenePhylostrataDb" %in% annotationObjClasses)
         selcols <- c(selcols, "GenePhylostratum", "GenePhylostratumTaxID")
 
