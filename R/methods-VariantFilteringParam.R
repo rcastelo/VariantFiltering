@@ -26,7 +26,6 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   ## store call for reproducing it later
   callobj <- match.call()
   callstr <- gsub(".local", "VariantFilteringParam", deparse(callobj))
-  callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
 
   if (length(vcfFilenames) > 1) {
     stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with vcftools, do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
@@ -57,6 +56,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
     })
   else
     weightMatricesFilenames <- NA_character_
+
+  callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
 
   maskGz <- grepl("vcf.bgz$", vcfFilenames)
 
