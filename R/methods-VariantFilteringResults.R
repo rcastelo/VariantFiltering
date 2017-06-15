@@ -1241,7 +1241,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       selcols <- c("VarID", "POSITION", "GENE")
       if ("GScores" %in% annotationObjClasses && !is.na(mtPhastConsDb)) {
         cname <- type(param(vfResultsObj)$otherAnnotations[[mtPhastConsDb]])
-        selcols <- c(selcols, "phastCons")
+        selcols <- c(selcols, cname)
       }
       if ("GenePhylostrataDb" %in% annotationObjClasses)
         selcols <- c(selcols, "GenePhylostratum", "GenePhylostratumTaxID")
