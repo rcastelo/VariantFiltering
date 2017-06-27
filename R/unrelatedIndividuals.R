@@ -81,10 +81,17 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     names(MAFpopMask) <- cnAF
   }
 
+  annoTabs <- list()
+  if (!is.null(mcols(mcols(annotated_variants))$TAB)) {
+    mask <- !is.na(mcols(mcols(annotated_variants))$TAB)
+    annoTabs <- split(colnames(mcols(annotated_variants))[mask],
+                      mcols(mcols(annotated_variants))$TAB[mask])
+  }
+
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
-      bamViews=BamViews(), gSO=gSO, filters=filters(param), cutoffs=cutoffs(param),
+      bamViews=BamViews(), gSO=gSO, filters=filters(param), cutoffs=cutoffs(param), annoTabs=annoTabs,
       dbSNPflag=NA_character_, OMIMflag=NA_character_,
       locationMask=locMask, consequenceMask=conMask, variantTypeMask=varTypMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
