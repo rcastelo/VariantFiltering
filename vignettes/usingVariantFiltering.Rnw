@@ -116,7 +116,7 @@ if (VariantFiltering:::.getOS() == "windows") {
   uind <- VariantFiltering:::.loadPrecomputedVariantFilteringResults(vfpar)
 } else
   uind <- unrelatedIndividuals(vfpar) ## ~90 sec.
-@
+
 <<eval=FALSE, echo=TRUE>>=
 uind <- unrelatedIndividuals(vfpar)
 @

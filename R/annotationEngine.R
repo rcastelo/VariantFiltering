@@ -60,6 +60,10 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
 
     variantsVR$VARID <- vnames2
   }
+  mcols(mcols(variantsVR)) <- DataFrame(TAB=rep(NA, ncol(mcols(variantsVR))))
+  mt <- match("VARID", colnames(mcols(variantsVR)))
+  stopifnot(all(!is.na(mt))) ## QC
+  mcols(mcols(variantsVR))$TAB[mt] <- rep("Genome", length(mt))
 
   ##############################
   ##                          ##
@@ -76,17 +80,21 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   ##                          ##
   ##############################
 
-  ## do this before variants get replicated because of different functional annotations
-  variantsVR$dbSNP <- rep(NA_character_, times=length(variantsVR))
+  ## do this before variants get replicated because of different location annotations
+  ## TODO: try to do all these below within annotateVariants()
+  dbSNPannot <- DataFrame(dbSNP=rep(NA_character_, times=length(variantsVR)))
   for (i in seq_len(length(snpdb))) {
     message(sprintf("Annotating dbSNP identifiers with %s", names(snpdb)[i]))
     res <- annotateVariants(snpdb[[i]], variantsVR, param, BPPARAM=BPPARAM)
     maskNAdbsnp <- is.na(res$dbSNP)
-    maskNAannotdbsnp <- is.na(variantsVR$dbSNP)
-    variantsVR$dbSNP[maskNAannotdbsnp & !maskNAdbsnp] <- res$dbSNP[maskNAannotdbsnp & !maskNAdbsnp]
-    variantsVR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp] <-
-      paste(variantsVR$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], res$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], sep=", ")
+    maskNAannotdbsnp <- is.na(dbSNPannot$dbSNP)
+    dbSNPannot$dbSNP[maskNAannotdbsnp & !maskNAdbsnp] <- res$dbSNP[maskNAannotdbsnp & !maskNAdbsnp]
+    dbSNPannot$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp] <-
+      paste(dbSNPannot$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], res$dbSNP[!maskNAannotdbsnp & !maskNAdbsnp], sep=", ")
   }
+  mcols(dbSNPannot) <- DataFrame(TAB="Genome")
+  mcols(variantsVR) <- cbind(mcols(variantsVR), dbSNPannot)
+  rm(dbSNPannot)
 
   #######################
   ##                   ##
@@ -100,14 +108,17 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   located_variantsGR <- .locateAllVariants(vfParam=param, query=as(variantsVR, "GRanges"),
                                            subject=txdb, cache=cache, BPPARAM=BPPARAM)
   variantsVR_annotated <- variantsVR[located_variantsGR$QUERYID] ## REPLACE variantsVR_annotated by variantsVR ??
-  variantsVR_annotated$LOCATION <- located_variantsGR$LOCATION
-  variantsVR_annotated$LOCSTART <- located_variantsGR$LOCSTART
-  variantsVR_annotated$LOCEND <- located_variantsGR$LOCEND
-  variantsVR_annotated$LOCSTRAND <- strand(located_variantsGR)
-  variantsVR_annotated$QUERYID <- located_variantsGR$QUERYID
-  variantsVR_annotated$TXID <- located_variantsGR$TXID
-  variantsVR_annotated$CDSID <- located_variantsGR$CDSID
-  variantsVR_annotated$GENEID <- located_variantsGR$GENEID
+  dtf <- DataFrame(LOCATION=located_variantsGR$LOCATION,
+                   LOCSTART=located_variantsGR$LOCSTART,
+                   LOCEND=located_variantsGR$LOCEND,
+                   LOCSTRAND=strand(located_variantsGR),
+                   QUERYID=located_variantsGR$QUERYID,
+                   TXID=located_variantsGR$TXID,
+                   CDSID=located_variantsGR$CDSID,
+                   GENEID=located_variantsGR$GENEID)
+  mcols(dtf) <- DataFrame(TAB=c("Gene", "Transcript", "Transcript", "Transcript", NA, "Transcript", "Transcript", "Gene"))
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dtf)
+  rm(dtf)
   rm(located_variantsGR) ## allow R to free some memory
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
@@ -124,8 +135,11 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   ## annotate cDNA position where applicable
   maskexonic <- variantsVR_annotated$LOCATION %in% c("coding", "fiveUTR", "threeUTR")
   cDNAloc <- .cDNAloc(variantsVR_annotated[maskexonic], txdb)
-  variantsVR_annotated$cDNALOC <- rep(NA_integer_, length(variantsVR_annotated))
-  variantsVR_annotated$cDNALOC[maskexonic] <- cDNAloc
+  dtf <- DataFrame(cDNALOC=rep(NA_integer_, length(variantsVR_annotated)))
+  dtf$cDNALOC[maskexonic] <- cDNAloc
+  mcols(dtf) <- DataFrame(TAB="Transcript")
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dtf)
+  rm(dtf)
 
   ##############################
   ##                          ##
@@ -269,6 +283,9 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   } else
     variantsVR_annotated <- sort(variantsVR_annotated_noncoding)
 
+  rm(variantsVR_annotated_coding)
+  rm(variantsVR_annotated_noncoding)
+
   ## annotate start and end positions of TX (to determine pre-mRNA positions)
   ## FIXME: with intergenic variants
   variantsVR_annotated$TXSTART <- rep(NA, length(variantsVR_annotated))
@@ -285,6 +302,15 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
       warning(sprintf("Could not find any TXIDs (%s) in the transcript-centric annotation package %s\n",
                       misk, txdb$packageName))
   })
+
+  mt <- match(c("CDSLOC", "PROTEINLOC", "REFCODON", "VARCODON", "REFAA", "VARAA",
+                "varAllele", "CONSEQUENCE", "CDSSTART", "CDSEND", "CUREF", "CUALT"),
+              colnames(mcols(variantsVR_annotated)))
+  stopifnot(all(!is.na(mt))) ## QC
+  mcols(mcols(variantsVR_annotated))$TAB[mt] <- rep("Protein", length(mt))
+  mt <- match(c("TXSTART", "TXEND"), colnames(mcols(variantsVR_annotated)))
+  stopifnot(all(!is.na(mt))) ## QC
+  mcols(mcols(variantsVR_annotated))$TAB[mt] <- rep("Transcript", length(mt))
   
   #############################################################
   ##                                                         ##
@@ -294,17 +320,18 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   
   ## add metadata columns in 'variantsVR_annotated' for cryptic ss annotations
   ## this should be optional once the shiny app is aware about present/absent annotations
-  dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsVR_annotated)),
-                       SCORE5ssALT=rep(NA_real_, length(variantsVR_annotated)),
-                       SCORE5ssPOS=rep(NA_real_, length(variantsVR_annotated)),
-                       SCORE3ssREF=rep(NA_real_, length(variantsVR_annotated)),
-                       SCORE3ssALT=rep(NA_real_, length(variantsVR_annotated)),
-                       SCORE3ssPOS=rep(NA_real_, length(variantsVR_annotated)))
+  ## dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsVR_annotated)),
+  ##                      SCORE5ssALT=rep(NA_real_, length(variantsVR_annotated)),
+  ##                      SCORE5ssPOS=rep(NA_real_, length(variantsVR_annotated)),
+  ##                      SCORE3ssREF=rep(NA_real_, length(variantsVR_annotated)),
+  ##                      SCORE3ssALT=rep(NA_real_, length(variantsVR_annotated)),
+  ##                      SCORE3ssPOS=rep(NA_real_, length(variantsVR_annotated)))
 
-  if (length(weightMatrices) > 0)
+  if (length(weightMatrices) > 0) {
     dummyDF <- .scoreBindingSiteVariants(variantsVR_annotated, weightMatrices, bsgenome, BPPARAM)
 
-  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dummyDF)
+    mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dummyDF)
+  }
 
   ###############################
   ##                           ##
@@ -478,7 +505,11 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
                                                      use.names=FALSE)
               rsids[rsids == ""] <- NA_character_
             }
-            return(DataFrame(dbSNP=rsids))
+
+            dtf <- DataFrame(dbSNP=rsids)
+            mcols(dtf) <- DataFrame(TAB="Genome")
+
+            dtf
           })
 
 ###########
@@ -507,7 +538,11 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
               mt <- match(variantsVR$dbSNP, pphumvar$RSID)
               PolyPhen2[!is.na(mt)] <- pphumvar$PREDICTION[mt[!is.na(mt)]]
             }
-            DataFrame(PolyPhen2=PolyPhen2)
+
+            dtf <- DataFrame(PolyPhen2=PolyPhen2)
+            mcols(dtf) <- DataFrame(TAB="Protein")
+
+            dtf
           })
 
 ############
@@ -535,7 +570,10 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
               mt <- match(gsub("rs", "", variantsVR$dbSNP), pv$DBSNPID)
               PROVEAN[!is.na(mt)] <- pv$PROVEANPRED[mt[!is.na(mt)]]
             }
-            DataFrame(PROVEAN=PROVEAN)
+            dtf <- DataFrame(PROVEAN=PROVEAN)
+            mcols(dtf) <- DataFrame(TAB="Protein")
+
+            dtf
           })
 
 ############
@@ -575,6 +613,7 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
               mafValues[!snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[!snvmask], mafCols, type="nonsnvs"))
 
             colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
+            mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
 
             mafValues
           })
@@ -592,6 +631,7 @@ setMethod("annotateVariants", signature(annObj="MafDb2"),
               mafValues[snvmask, ] <- as.matrix(mafByOverlaps(annObj, variantsVR[snvmask], mafCols))
 
             colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
+            mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
 
             DataFrame(mafValues)
           })
@@ -661,6 +701,8 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
             }
             genelevel_annot$GENE <- genelevel_annot$SYMBOL
             genelevel_annot$SYMBOL <- NULL
+            mcols(genelevel_annot) <- DataFrame(TAB=rep("Gene", ncol(genelevel_annot)))
+
             genelevel_annot
           })
 
@@ -688,6 +730,8 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
                 })
               }
             }
+            mcols(txlevel_annot) <- DataFrame(TAB=rep("Transcript", ncol(txlevel_annot)))
+
             txlevel_annot
           })
 
@@ -700,9 +744,11 @@ setMethod("annotateVariants", signature(annObj="GScores"),
 
             sco <- scores(annObj, variantsVR, scores.only=TRUE)
 
-            dfobj <- DataFrame(sco)
-            colnames(dfobj) <- type(annObj)
-            dfobj
+            dtf <- DataFrame(sco)
+            colnames(dtf) <- type(annObj)
+            mcols(dtf) <- DataFrame(TAB="Genome")
+
+            dtf
           })
 
 ############
@@ -714,9 +760,12 @@ setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
 
             gps <- genePhylostratum(annObj, variantsVR$GENEID)
 
-            DataFrame(GenePhylostratumTaxID=gps$TaxID,
-                      GenePhylostratumIndex=gps$OldestPhylostratum,
-                      GenePhylostratum=gps$Description)
+            dtf <- DataFrame(GenePhylostratumTaxID=gps$TaxID,
+                             GenePhylostratumIndex=gps$OldestPhylostratum,
+                             GenePhylostratum=gps$Description)
+            mcols(dtf) <- DataFrame(TAB=rep("Gene", ncol(dtf)))
+
+            dtf
           })
 
 
@@ -774,7 +823,9 @@ typeOfVariants <- function(variantsVR) {
     type[as.vector(isDelins(variantsVR))] <- "Delins"
   }
 
-  DataFrame(TYPE=type)
+  dtf <- DataFrame(TYPE=type)
+  mcols(dtf) <- DataFrame(TAB="Genome")
+  dtf
 }
 
 ## this function tries to provide a variant description following
@@ -889,7 +940,9 @@ variantHGVS <- function(variantsVR) {
   mask <- maskCoding & variantsVR$TYPE == "Delins"
   pDesc[mask] <- sprintf("p.%d_%ddelins%s", locStartAllele[mask], locEndAllele[mask], variantsVR$VARAA[mask])
   
-  DataFrame(HGVSg=gDesc, HGVSc=cDesc, HGVSp=pDesc)
+  dtf <- DataFrame(HGVSg=gDesc, HGVSc=cDesc, HGVSp=pDesc)
+  mcols(dtf) <- DataFrame(TAB=c("Genome", "Transcript", "Protein"))
+  dtf
 }
 
 ## adapted from http://permalink.gmane.org/gmane.science.biology.informatics.conductor/48456
@@ -1081,7 +1134,9 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   aachange[whnonsense] <- paste0(refaa, locaa, altaa)
   aachangetype[whnonsense] <- "Radical"
 
-  DataFrame(AAchange=aachange, AAchangeType=aachangetype)
+  dtf <- DataFrame(AAchange=aachange, AAchangeType=aachangetype)
+  mcols(dtf) <- DataFrame(TAB=c("Protein", "Protein"))
+  dtf
 }
 
 .emptyAnnotations <- function(vfParObj) {
