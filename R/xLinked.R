@@ -102,16 +102,16 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     names(MAFpopMask) <- cnAF
   }
 
-  annoTabs <- list()
+  annoGroups <- list()
   if (!is.null(mcols(mcols(annotated_variants))$TAB)) {
     mask <- !is.na(mcols(mcols(annotated_variants))$TAB)
-    annoTabs <- split(colnames(mcols(annotated_variants))[mask],
+    annoGroups <- split(colnames(mcols(annotated_variants))[mask],
                       mcols(mcols(annotated_variants))$TAB[mask])
   }
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="X-linked", variants=annotated_variants,
-      bamViews=BamViews(), gSO=gSO, filters=filters(param), cutoffs=cutoffs(param), annoTabs=annoTabs,
+      bamViews=BamViews(), gSO=gSO, filters=filters(param), cutoffs=cutoffs(param), annoGroups=annoGroups,
       dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
