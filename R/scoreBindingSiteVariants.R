@@ -71,6 +71,8 @@
                                         wmObj, bsgenome, BPPARAM)
   }
 
+  mcols(dummyDF) <- DataFrame(TAB=rep("BindingSites", ncol(dummyDF)))
+
   dummyDF
 }
 

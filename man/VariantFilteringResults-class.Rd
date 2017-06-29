@@ -41,6 +41,8 @@
 \alias{bamFiles,VariantFilteringResults-method}
 \alias{bamFiles<-,VariantFilteringResults-method}
 \alias{bamFiles<-,VariantFilteringResults,BamViews-method}
+\alias{annoGroups}
+\alias{annoGroups,VariantFilteringResults-method}
 \alias{dbSNPpresent}
 \alias{dbSNPpresent<-}
 \alias{dbSNPpresent,VariantFilteringResults-method}
