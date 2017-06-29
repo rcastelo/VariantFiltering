@@ -261,6 +261,11 @@ setMethod("inheritanceModel", signature(x="VariantFilteringResults"),
             x@inheritanceModel
           })
 
+setMethod("annoGroups", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@annoGroups
+          })
+
 setMethod("dbSNPpresent", signature(x="VariantFilteringResults"),
           function(x) {
             x@dbSNPflag
