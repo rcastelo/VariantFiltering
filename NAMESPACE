@@ -8,7 +8,6 @@ import(GenomicScores)
 
 importClassesFrom(Biobase, AssayData)
 importClassesFrom(AnnotationDbi, AnnotationDb)
-importClassesFrom(RSQLite, SQLiteConnection)
 importClassesFrom(graph, graphNEL)
 importClassesFrom(VariantAnnotation, VariantType, SpliceSiteVariants,
                   PromoterVariants, FiveUTRVariants, ThreeUTRVariants,
@@ -18,13 +17,6 @@ importClassesFrom(GenomicRanges, GRanges, GRangesList, GPos)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
 importClassesFrom(Rsamtools, TabixFile, TabixFileList, BamViews)
 
-importMethodsFrom(DBI, dbListFields)
-importMethodsFrom(RSQLite, dbConnect,
-                           dbDisconnect,
-                           dbGetQuery,
-                           dbBegin,
-                           dbGetPreparedQuery,
-                           dbCommit)
 importMethodsFrom(graph, numNodes,
                          edgemode,
                          nodes,
@@ -130,7 +122,6 @@ importFrom(utils, capture.output,
 
 importFrom(RBGL, tsort,
                  dijkstra.sp)
-importFrom(RSQLite, SQLite)
 importFrom(Rsamtools, TabixFile,
                       TabixFileList,
                       indexTabix,
