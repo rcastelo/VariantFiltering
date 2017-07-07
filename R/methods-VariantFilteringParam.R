@@ -212,12 +212,14 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   rownames(qualityFilterDescriptions) <- qualityFilterNames
   qfilters <- sapply(qualityFilterNames,
                      function(qfname) {
-                       f <- sprintf("function(x) { sfm <- softFilterMatrix(allVariants(x, groupBy=\"nothing\")) ; mask <- rep(TRUE, nrow(sfm)) ; if (!is.na(match(qfname, colnames(sfm)))) mask <- sfm[, \"%s\"] ; mask }", qfname)
+                       f <- sprintf("function(x) { sfm <- VariantAnnotation::softFilterMatrix(VariantFiltering::allVariants(x, groupBy=\"nothing\")) ; mask <- rep(TRUE, nrow(sfm)) ; if (!is.na(match(\"%s\", colnames(sfm)))) mask <- sfm[, \"%s\"] ; mask }", qfname, qfname)
                        eval(parse(text=f))
                      })
+  qfilters <- lapply(qfilters, function(f) { environment(f) <- baseenv() ; f})
   qualityFR <- FilterRules(qfilters)
 
   ## add default functional annotation filters
+  .defaultFilters <- lapply(.defaultFilters, function(f) { environment(f) <- baseenv() ; f})
   defaultFR <- FilterRules(.defaultFilters)
 
   ## initially default functional annotation filters are not active
