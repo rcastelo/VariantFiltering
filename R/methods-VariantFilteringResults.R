@@ -43,23 +43,23 @@ setMethod("show", signature(object="VariantFilteringResults"),
               cat(sprintf("    Location restricted to: %s\n", paste(names(variantLocation(object))[variantLocation(object)], collapse=", ")))
             if (!all(variantConsequence(object)))
               cat(sprintf("    Consequence restricted to: %s\n", paste(names(variantConsequence(object))[variantConsequence(object)], collapse=", ")))
-            if ("MafDb" %in% sapply(param(object)$otherAnnotations, class)) {
-              cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
-              cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
-              cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
-            }
-            if ("GScores" %in% sapply(param(object)$otherAnnotations, class)) {
-              if (!is.na(minPhastCons(object)))
-                cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
-            }
-            if ("GenePhylostrataDb" %in% sapply(param(object)$otherAnnotations, class)) {
-              whGPSdb <- match("GenePhylostrataDb", sapply(param(object)$otherAnnotations, class))
-              if (!is.na(minPhylostratum(object)))
-                cat(sprintf("    Minimum conserved gene phylostratum: %s (%d/%d)\n",
-                            genePhylostrata(param(object)$otherAnnotations[[whGPSdb]])$Description[minPhylostratum(object)],
-                            minPhylostratum(object),
-                            nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
-            }
+            ## if ("MafDb" %in% sapply(param(object)$otherAnnotations, class)) {
+            ##   cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
+            ##   cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
+            ##   cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
+            ## }
+            ## if ("GScores" %in% sapply(param(object)$otherAnnotations, class)) {
+            ##   if (!is.na(minPhastCons(object)))
+            ##     cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
+            ## }
+            ## if ("GenePhylostrataDb" %in% sapply(param(object)$otherAnnotations, class)) {
+            ##   whGPSdb <- match("GenePhylostrataDb", sapply(param(object)$otherAnnotations, class))
+            ##   if (!is.na(minPhylostratum(object)))
+            ##     cat(sprintf("    Minimum conserved gene phylostratum: %s (%d/%d)\n",
+            ##                 genePhylostrata(param(object)$otherAnnotations[[whGPSdb]])$Description[minPhylostratum(object)],
+            ##                 minPhylostratum(object),
+            ##                 nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
+            ## }
             ## if (all(!is.na(param(object)$spliceSiteMatricesFilenames))) {
             ##   if (!is.na(minScore5ss(object)))
             ##     cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minScore5ss(object)))
@@ -440,7 +440,7 @@ setReplaceMethod("variantConsequence", signature(x="VariantFilteringResults", va
 
 setMethod("naMAF", signature(x="VariantFilteringResults"),
           function(x) {
-            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
+            if (!any(c("MafDb", "MafDb2") %in% param(x)$otherAnnotationsClass))
               stop("A MafDb object was not used to annotate variants.")
 
             x@naMAF
@@ -448,7 +448,7 @@ setMethod("naMAF", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("naMAF", signature(x="VariantFilteringResults", value="logical"),
           function(x, value) {
-            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
+            if (!any(c("MafDb", "MafDb2") %in% param(x)$otherAnnotationsClass))
               stop("A MafDb object was not used to annotate variants.")
 
             x@naMAF <- value
@@ -457,7 +457,7 @@ setReplaceMethod("naMAF", signature(x="VariantFilteringResults", value="logical"
 
 setMethod("MAFpop", signature(x="VariantFilteringResults"),
           function(x) {
-            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
+            if (!any(c("MafDb", "MafDb2") %in% param(x)$otherAnnotationsClass))
               stop("A MafDb object was not used to annotate variants.")
 
             x@MAFpopMask
@@ -465,7 +465,7 @@ setMethod("MAFpop", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("MAFpop", signature(x="VariantFilteringResults", value="logical"),
                  function(x, popkey=NA, value) {
-                   if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
+                   if (!any(c("MafDb", "MafDb2") %in% param(x)$otherAnnotationsClass))
                      stop("A MafDb object was not used to annotate variants.")
 
                    if (any(is.na(value)))
@@ -493,7 +493,7 @@ setReplaceMethod("MAFpop", signature(x="VariantFilteringResults", value="logical
 
 setMethod("maxMAF", signature(x="VariantFilteringResults"),
           function(x) {
-            if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
+            if (!any(c("MafDb", "MafDb2") %in% param(x)$otherAnnotationsClass))
               stop("A MafDb object was not used to annotate variants.")
 
             x@maxMAF
@@ -501,7 +501,7 @@ setMethod("maxMAF", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("maxMAF", signature(x="VariantFilteringResults", value="numeric"),
                  function(x, value) {
-                   if (!any(c("MafDb", "MafDb2") %in% sapply(param(x)$otherAnnotations, class)))
+                   if (!any(c("MafDb", "MafDb2") %in% param(x)$otherAnnotationsClass))
                      stop("A MafDb object was not used to annotate variants.")
 
                    x@maxMAF <- value
@@ -510,7 +510,7 @@ setReplaceMethod("maxMAF", signature(x="VariantFilteringResults", value="numeric
 
 setMethod("minPhastCons", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(match("GScores", sapply(param(x)$otherAnnotations, class))))
+            if (is.na(match("GScores", param(x)$otherAnnotationsClass)))
               stop("A GScores object was not used to annotate variants.")
 
             x@minPhastCons
@@ -518,7 +518,7 @@ setMethod("minPhastCons", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("minPhastCons", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
-                   if (is.na(match("GScores", sapply(param(x)$otherAnnotations, class))))
+                   if (is.na(match("GScores", param(x)$otherAnnotationsClass)))
                      stop("A phastConsDb object was not used to annotate variants.")
 
                    if (!is.na(value) && !is.numeric(value) && !is.integer(value))
@@ -537,7 +537,7 @@ setReplaceMethod("minPhastCons", signature(x="VariantFilteringResults", value="A
 
 setMethod("minPhylostratum", signature(x="VariantFilteringResults"),
           function(x) {
-            if (is.na(match("GenePhylostrataDb", sapply(param(x)$otherAnnotations, class))))
+            if (is.na(match("GenePhylostrataDb", param(x)$otherAnnotationsClass)))
               stop("A GenePhylostrataDb object was not used to annotate variants.")
 
             x@minPhylostratumIndex
@@ -545,7 +545,7 @@ setMethod("minPhylostratum", signature(x="VariantFilteringResults"),
 
 setReplaceMethod("minPhylostratum", signature(x="VariantFilteringResults", value="ANY"),
                  function(x, value) {
-                   whGPSdb <- match("GenePhylostrataDb", sapply(param(x)$otherAnnotations, class))
+                   whGPSdb <- match("GenePhylostrataDb", param(x)$otherAnnotationsClass)
                    if (is.na(whGPSdb))
                      stop("A GenePhylostrataDb object was not used to annotate variants.")
 
@@ -555,17 +555,17 @@ setReplaceMethod("minPhylostratum", signature(x="VariantFilteringResults", value
                    if (!is.na(value)) {
                      if (is.character(value)) {
                        value <- match(tolower(value),
-                                      tolower(genePhylostrata(param(x)$otherAnnotations[[whGPSdb]])$Description))
+                                      tolower(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb]))$Description))
                        if (is.na(value))
                          stop(sprintf("%s is not valid. The minimum phylostratum character value should be one of: %s",
-                                      value, paste(genePhylostrata(param(x)$otherAnnotations[[whGPSdb]])$Description,
+                                      value, paste(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb]))$Description,
                                                    collapse=",")))
                      }
 
                      value <- as.integer(value)
-                     if (value < 1 || value > nrow(genePhylostrata(param(x)$otherAnnotations[[whGPSdb]])))
+                     if (value < 1 || value > nrow(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb]))))
                        stop(sprintf("%d is not valid. The minimum phylostratum integer value should be between 1 and %d",
-                                    nrow(genePhylostrata(param(x)$otherAnnotations[[whGPSdb]]))))
+                                    nrow(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb])))))
                    }
 
                    value <- as.integer(value)
@@ -706,7 +706,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
 
             ## minimum allele frequency
             mtNoMAF <- NULL
-            if ("MafDb" %in% sapply(param(x)$otherAnnotations, class)) {
+            if ("MafDb" %in% param(x)$otherAnnotationsClass) {
               mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
               maxMAFannot <- rep(NA_real_, length(vars))
               if (any(MAFpop(x))) {
@@ -728,7 +728,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
 
             ## nucleotide conservation
             mtNoMinPhastCons <- NULL
-            if (!is.na(match("GScores", sapply(param(x)$otherAnnotations, class)))) {
+            if (!is.na(match("GScores", param(x)$otherAnnotationsClass))) {
               if (is.na(minPhastCons(x)))
                 mtNoMinPhastCons <- match("phastCons", colnames(mcols(vars)))
               else {
@@ -739,7 +739,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
 
             ## gene conservation
             mtNoMinPhylostratum <- NULL
-            if (!is.na(match("GenePhylostrataDb", sapply(param(x)$otherAnnotations, class)))) {
+            if (!is.na(match("GenePhylostrataDb", param(x)$otherAnnotationsClass))) {
               if (is.na(minPhylostratum(x)))
                 mtNoMinPhylostratum <- grep("GenePhylostratum", colnames(mcols(vars)))
               else {
@@ -794,7 +794,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             vars <- unlist(varsxsam, use.names=FALSE)
             sampleNames(vars) <- Rle(names(varsxsam), elementNROWS(varsxsam))
             rowsMask <- rep(rowsMask, length(varsxsam))
-            if ("MafDb" %in% sapply(param(x)$otherAnnotations, class))
+            if ("MafDb" %in% param(x)$otherAnnotationsClass)
               vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
             vars$CUFC <- rep(minCUFCannot, length(varsxsam))
 
@@ -855,13 +855,13 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   }
   genomeBuild <- providerVersion(param(vfResultsObj)$bsgenome)
 
-  annotationObjClasses <- sapply(param(vfResultsObj)$otherAnnotations, class)
+  annotationObjClasses <- param(vfResultsObj)$otherAnnotationsClass
   mtMafDb <- match("MafDb", annotationObjClasses)
   mtPhastConsDb <- match("GScores", annotationObjClasses)
   mtGenePhylostrataDb <- match("GenePhylostrataDb", annotationObjClasses)
   phylostrata <- "Unavailable"
   if (!is.na(mtGenePhylostrataDb))
-    phylostrata <- rev(genePhylostrata(param(vfResultsObj)$otherAnnotations[[mtGenePhylostrataDb]])$Description)
+    phylostrata <- rev(genePhylostrata(get(param(vfResultsObj)$otherAnnotations[mtGenePhylostrataDb]))$Description)
   ## crypsplice <- param(vfResultsObj)$spliceSiteMatricesFilenames
   
   app <- list(ui=NULL, server=NULL)
@@ -1245,7 +1245,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
     output$tableConservation <- renderTable({
       selcols <- c("VarID", "POSITION", "GENE")
       if ("GScores" %in% annotationObjClasses && !is.na(mtPhastConsDb)) {
-        cname <- type(param(vfResultsObj)$otherAnnotations[[mtPhastConsDb]])
+        cname <- type(get(param(vfResultsObj)$otherAnnotations[mtPhastConsDb]))
         selcols <- c(selcols, cname)
       }
       if ("GenePhylostrataDb" %in% annotationObjClasses)
