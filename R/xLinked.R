@@ -11,8 +11,8 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   vcfFiles <- param$vcfFiles
   ped <- param$pedFilename
   seqInfos <- param$seqInfos
-  txdb <- param$txdb
-  bsgenome <- param$bsgenome
+  txdb <- get(param$txdb)
+  bsgenome <- get(param$bsgenome)
   sampleNames <- param$sampleNames
   
   if (!exists(as.character(substitute(BPPARAM))))
@@ -93,7 +93,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     warning("No variants segregate following an X-linked inheritance model.")
 
   MAFpopMask <- NA
-  if (any(c("MafDb", "MafDb2") %in% sapply(param$otherAnnotations, class))) {
+  if (any(c("MafDb", "MafDb2") %in% param$otherAnnotationsClass)) {
     ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
     cnAF <- colnames(mcols(annotated_variants))
     colsclasses <- sapply(mcols(annotated_variants), class)

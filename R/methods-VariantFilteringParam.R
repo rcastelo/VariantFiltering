@@ -141,29 +141,25 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   codonusageTable <- read.table(file=codonusageFilename, sep=";")
   codonusageTable <- do.call("names<-", list(codonusageTable[[3]], codonusageTable[[1]]))
   
-  ## check that the given annotation packages are installed and can be loaded,
-  ## load them and save the annotation object into the argument
+  ## check that the given annotation packages are installed, can be loaded, and load them
 
-  bsgenome <- .loadAnnotationPackageObject(bsgenome, "begenome", "BSgenome")
+  .loadAnnotationPackageObject(bsgenome, "begenome", "BSgenome")
 
-  orgdb <- .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
+  .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
 
-  txdb <- .loadAnnotationPackageObject(txdb, "txdb", "TxDb")
+  .loadAnnotationPackageObject(txdb, "txdb", "TxDb")
 
   ## when no VCF has genome information, this information is taken from the TxDb package
   wh0 <- which(sapply(seqinfos, length) == 0)
   if (length(wh0) > 0) {
-    seqinfos[wh0] <- seqinfo(txdb)
+    seqinfos[wh0] <- seqinfo(get(txdb))
     warning(sprintf("No genome information available from any VCF file. This information will be taken from the transcript-centric package %s, thus assuming a genome version %s with %s chromosome nomenclature\n",
-            txdb$packageName, unique(genome(txdb)), seqlevelsStyle(txdb)))
+            txdb, unique(genome(get(txdb))), seqlevelsStyle(get(txdb))))
   }
 
-  snpdblst <- as.list(snpdb)
-  names(snpdblst) <- snpdb
   ## assume the first bit of the name of the package contains the class name
-  snpdb <- lapply(as.list(snpdblst),
-                  function(pkg) .loadAnnotationPackageObject(pkg, "snpdb",
-                                                             strsplit(pkg, ".", fixed=TRUE)[[1]][1]))
+  for (pkg in snpdb)
+    .loadAnnotationPackageObject(pkg, "snpdb", strsplit(pkg, ".", fixed=TRUE)[[1]][1])
 
   if (!is.logical(allTranscripts))
     stop("argument 'allTranscripts' should be logical.")
@@ -182,7 +178,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   regionAnnotations <- SimpleList(regionAnnotations)
 
   ## fetch other annotation packages
-  otherannotations <- list()
+  otherAnnotationsClass <- rep(NA_character_, length(otherAnnotations))
+  names(otherAnnotationsClass) <- otherAnnotations
   for (name in otherAnnotations)  {
     if (!exists(name)) {
       if (!name %in% installed.packages(noCache=TRUE)[, "Package"])
@@ -194,7 +191,11 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
       }
     } else
       message("Fetching annotation object ", name)
-    otherannotations[[name]] <- get(name)
+    tryCatch({
+      otherAnnotationsClass[name] <- class(get(name))
+    }, error=function(err) {
+      stop(sprintf("The annotation object %s could not be fetched from the namespace.", name))
+    })
   }
 
   ## set the empty sequence ontology graph (sequence variant) and its matrix of descendants
@@ -229,11 +230,12 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   defaultFilterDesc <- rbind(qualityFilterDescriptions, .defaultFilterDescriptions)
 
   new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
-      sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb, snpdb=snpdb,
-      gSO=gSO, gSOdmat=gSOdmat, gSOamat=gSOamat, weightMatrices=weightMatrices,
+      sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
+      snpdb=snpdb, gSO=gSO, gSOdmat=gSOdmat, gSOamat=gSOamat, weightMatrices=weightMatrices,
       radicalAAchangeFilename=radicalAAchangeFilename, radicalAAchangeMatrix=radicalAAchangeMatrix,
       codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
-      regionAnnotations=regionAnnotations, otherAnnotations=otherannotations, allTranscripts=allTranscripts,
+      regionAnnotations=regionAnnotations, otherAnnotations=otherAnnotations,
+      otherAnnotationsClass=otherAnnotationsClass, allTranscripts=allTranscripts,
       filters=defaultFR, filterDescriptions=defaultFilterDesc, qualityFilterNames=qualityFilterNames,
       cutoffs=.defaultCutoffs, geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
 }
@@ -272,16 +274,15 @@ setMethod("show", signature(object="VariantFilteringParam"),
             if (!is.na(object$pedFilename) && length(object$pedFilename) > 0)
               cat(sprintf("  PED file: %s\n", basename(object$pedFilename)))
             cat(sprintf("  Genome-centric annotation package: %s (%s %s %s)\n",
-                        object$bsgenome@pkgname, provider(object$bsgenome),
-                        providerVersion(object$bsgenome), releaseName(object$bsgenome)))
-            cat(sprintf("  Variant-centric annotation package: %s (%s %s)\n",
-                        names(object$snpdb), sapply(object$snpdb, provider), sapply(object$snpdb, releaseName)),
-                sep="")
-            if (length(object$txdb$packageName) > 0)
-              cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb$packageName))
-            else
-              cat(sprintf("  Transcript-centric annotation table: %s\n", metadata(object$txdb)[grep("Table", metadata(object$txdb)$name), "value"]))
-            cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb$packageName))
+                        object$bsgenome, provider(get(object$bsgenome)),
+                        providerVersion(get(object$bsgenome)), releaseName(get(object$bsgenome))))
+            if (length(object$snpdb) > 0) {
+              for (pkg in object$snpdb)
+                cat(sprintf("  Variant-centric annotation package: %s (%s %s)\n",
+                            pkg, provider(get(pkg)), releaseName(get(pkg))), sep="")
+            }
+            cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb))
+            cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb))
             if (length(object$weightMatrices) > 0)
               cat(sprintf("  Weight matrices: %s\n", paste(sapply(object$weightMatrices, wmName), collapse=", ")))
             cat(sprintf("  Radical/Conservative AA changes: %s\n", basename(object$radicalAAchangeFilename)))
@@ -289,7 +290,7 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat(sprintf("  Regions to annotate: %s\n", paste(names(object$regionAnnotations), collapse=", ")))
             if (length(object$otherAnnotations) > 0)
               cat(sprintf("  Other annotation pkg/obj: %s\n",
-                          paste(names(object$otherAnnotations),
+                          paste(object$otherAnnotations,
                                 collapse=",\n                            ")))
             cat(sprintf("  All transcripts: %s\n", object$allTranscripts))
           })
@@ -358,7 +359,7 @@ setMethod("soamat", signature(x="VariantFilteringParam"),
     tryCatch({
       annotObj <- get(pkgName)
     }, error=function(err) {
-      stop(sprintf("The gene annotation package %s should automatically load an %s object with the same name as the package.", pkgName, pkgType))
+      stop(sprintf("The annotation package %s should automatically load an %s object with the same name as the package.", pkgName, pkgType))
     })
   } else if (class(pkgName) != pkgType)
     stop(sprintf("argument '%s' should either contain the name of an '%s' annotation package or be an '%s' annotation object itself.",

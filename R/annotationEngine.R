@@ -11,14 +11,14 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     return(variantsVR_annotated)
   }
 
-  bsgenome <- param$bsgenome
-  orgdb <- param$orgdb
-  txdb <- param$txdb
-  snpdb <- param$snpdb
+  bsgenome <- get(param$bsgenome)
+  orgdb <- get(param$orgdb)
+  txdb <- get(param$txdb)
+  snpdb <- sapply(param$snpdb, function(pkg) get(pkg))
   weightMatrices <- param$weightMatrices
   radicalAAchangeMatrix <- param$radicalAAchangeMatrix
   allTranscripts <- param$allTranscripts
-  otherAnnotations <- param$otherAnnotations
+  otherAnnotations <- sapply(param$otherAnnotations, function(pkg) get(pkg))
   codonusageTable <- param$codonusageTable
   geneticCode <- param$geneticCode
 

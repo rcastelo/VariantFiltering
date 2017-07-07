@@ -2,7 +2,7 @@ test_location_annotations <- function() {
   CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
   vfpar <- VariantFilteringParam(CEUvcf,
                                  weightMatricesFilenames=spliceSiteMatricesHuman(),
-                                 snpdb=list(),
+                                 snpdb=character(0),
                                  otherAnnotations=character(0))
 
   uind <- unrelatedIndividuals(vfpar)

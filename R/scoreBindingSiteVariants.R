@@ -3,6 +3,7 @@
 ## the reference and alternative alleles of SNVs. it assumes that the input variantsVR is a VRanges object
 .scoreBindingSiteVariants <- function(variantsVR, weightMatrices, bsgenome, BPPARAM=bpparam("SerialParam")) {
 
+  stopifnot(class(bsgenome) == "BSgenome") ## QC
   ## adapt to sequence style and genome version from the input
   ## BSgenome object, thus assuming positions are based on the same
   ## genome even though might be differently specified (i.e., hg38 vs GRCh38)

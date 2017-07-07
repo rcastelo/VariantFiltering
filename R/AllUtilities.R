@@ -9,6 +9,10 @@
 ## sequence that matches in name (up to the known "styles") and length.
 .matchSeqinfo <- function(variantsGR, txdb, bsgenome) {
 
+  stopifnot(class(variantsGR) == "VRanges") ## QC
+  stopifnot(class(txdb) == "TxDb") ## QC
+  stopifnot(class(bsgenome) == "BSgenome") ## QC
+
   ## set temporarily the sequence style of variants to that of
   ## the genome and discard chromosomes that do not have the same
   ## length. this is basically to handle situations such as with
@@ -167,7 +171,5 @@
 
 .loadPrecomputedVariantFilteringResults <- function(vfpar) {
   uind <- readRDS(system.file("extdata", "uind.rds", package="VariantFiltering"))
-  uind@inputParameters <- vfpar
-  uind@filters <- filters(vfpar)
   uind
 }
