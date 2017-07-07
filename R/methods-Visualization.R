@@ -14,7 +14,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
             if (length(what) == 0)
               stop("The value in the 'what' argument has length zero.")
 
-            bsgenome <- param(x)$bsgenome
+            bsgenome <- get(param(x)$bsgenome)
 
             ## need to adapt to the seqlevelsStyle from the BAM file, when available
             leadseqlevelsstyle <- seqlevelsStyle(bsgenome)
@@ -106,7 +106,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
 
             ## prepare annotations for display, take care of restoring later the
             ## seqlevelsStyle of the TxDb object
-            txdb <- param(x)$txdb
+            txdb <- get(param(x)$txdb)
             seqlevelsstyletxdb <- seqlevelsStyle(txdb)
             seqlevelsStyle(txdb) <- leadseqlevelsstyle
             seqlevels(txdb, pruning.mode="coarse") <- chr2display
