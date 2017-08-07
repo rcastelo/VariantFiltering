@@ -282,7 +282,10 @@ setMethod("mafById", signature="MafDb",
                 assign("rsIDgp", rsIDgp, envir=x@.data_cache)
               }
               rsIDgp <- get("rsIDgp", envir=x@.data_cache)
+              issnvmask <- rsIDgp$isSNV
               rsIDgp <- updateObject(rsIDgp, verbose=FALSE) ## temporary solution until GPos objects are updated
+              rsIDgp$isSNV <- issnvmask
+              rm(issnvmask)
               rng <- rsIDgp[mt[!is.na(mt)]]
               mask <- logical(length(mt))
               mask[!is.na(mt)] <- rng$isSNV
