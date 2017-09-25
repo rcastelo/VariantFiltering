@@ -235,9 +235,17 @@ setMethod("mafById", signature="MafDb",
               stop("argument 'ids' must be a character string vector.")
 
             if (!exists("rsIDs", envir=x@.data_cache)) {
-              message("Loading first time annotations of rs identifiers to variants, produced by data provider.")
-              rsIDs <- readRDS(file.path(x@data_dirpath, "rsIDs.rds"))
-              assign("rsIDs", rsIDs, envir=x@.data_cache)
+              if (file.exists(file.path(x@data_dirpath, "rsIDs.rds"))) {
+                message("Loading first time annotations of rs identifiers to variants, produced by data provider.")
+                rsIDs <- readRDS(file.path(x@data_dirpath, "rsIDs.rds"))
+                assign("rsIDs", rsIDs, envir=x@.data_cache)
+              } else {
+                warning("The data provider did not produce annotations of rs identifiers to variants.")
+                ans <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(ids), ncol=length(pop),
+                                                      dimnames=list(NULL, pop))),
+                                 row.names=ids)
+                return(ans)
+              }
             }
 
             rsIDs <- get("rsIDs", envir=x@.data_cache)
