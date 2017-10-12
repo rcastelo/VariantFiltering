@@ -261,9 +261,6 @@ export(VariantFilteringParam,
        ## for the MafDb class
        MafDb,
 
-       ## for the MafDb2 class
-       MafDb2,
-
        ## for the GenePhylostrata class
        GenePhylostrataDb
       )
