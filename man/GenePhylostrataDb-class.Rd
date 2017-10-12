@@ -3,7 +3,6 @@
 \alias{GenePhylostrataDb-class}
 \alias{GenePhylostrataDb}
 
-\alias{annotateVariants,GenePhylostrataDb-method}
 \alias{genePhylostrata,GenePhylostrataDb-method}
 \alias{genePhylostratum,GenePhylostrataDb,missing-method}
 \alias{genePhylostratum,GenePhylostrataDb,character-method}
@@ -23,7 +22,6 @@ Class for storing gene-level conservation information in the form of levels of p
 \usage{
 \S4method{genePhylostrata}{GenePhylostrataDb}(object)
 \S4method{genePhylostratum}{GenePhylostrataDb}(object, ids)
-\S4method{annotateVariants}{GenePhylostrataDb}(annObj, variantsVR, param ,BPPARAM=bpparam("SerialParam"))
 \S4method{organism}{GenePhylostrataDb}(object)
 }
 \arguments{
@@ -31,12 +29,6 @@ Class for storing gene-level conservation information in the form of levels of p
   \item{ids}{A string character vector with the gene identifiers to fetch their
     phylostrata. These identifiers can be only either Ensembl Gene Identifiers (\code{ENSGXXXXX})
     or Entrez Gene Identifiers.}
-  \item{annObj}{A \code{GenePhylostrataDb} object.}
-  \item{variantsVR}{A \code{VRanges} object with the variants to annotate.}
-  \item{param}{A \code{\link{VariantFilteringParam-class}} object.}
-  \item{BPPARAM}{An object of class \code{BiocParallelParam} specifying parameters related to
-    the parallel execution of this function. See function \code{\link[BiocParallel]{bpparam}()}
-    from the \code{BiocParallel} package.}
 }
 \details{
 The \code{GenePhylostrataDb} class and associated methods serve the purpose of

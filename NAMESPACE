@@ -182,7 +182,6 @@ exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               WeightMatrix)
 
 exportMethods(summary,
-              annotateVariants,
               width,
               conservedPositions,
               wmName,

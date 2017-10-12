@@ -3,15 +3,6 @@
 \alias{MafDb-class}
 \alias{MafDb}
 
-\alias{annotateVariants}
-\alias{annotateVariants,MafDb-method}
-\alias{annotateVariants,OrgDb-method}
-\alias{annotateVariants,PolyPhenDb-method}
-\alias{annotateVariants,PROVEANDb-method}
-\alias{annotateVariants,SNPlocs-method}
-\alias{annotateVariants,XtraSNPlocs-method}
-\alias{annotateVariants,TxDb-method}
-\alias{annotateVariants,GScores-method}
 \alias{mafByOverlaps,MafDb-method}
 \alias{mafByOverlaps}
 \alias{mafById,MafDb-method}
