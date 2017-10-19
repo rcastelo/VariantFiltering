@@ -177,7 +177,7 @@ importFrom(Gviz, GenomeAxisTrack,
                  plotTracks)
 
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
-              MafDb, GenePhylostrataDb,
+              GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,
               WeightMatrix)
 
@@ -236,12 +236,6 @@ exportMethods(summary,
               minScore3ss, "minScore3ss<-",
               minCUFC, "minCUFC<-",
 
-              ## specific for the MafDb class
-              populations,
-              mafByOverlaps,
-              mafById,
-              "$",
-
               ## for the GenePhylostrataDb class
               genePhylostratum,
               genePhylostrata
@@ -256,9 +250,6 @@ export(VariantFilteringParam,
 
        ## for the FiveSpliceSiteVariants and ThreeSpliceSiteVariants
        FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
-
-       ## for the MafDb class
-       MafDb,
 
        ## for the GenePhylostrata class
        GenePhylostrataDb

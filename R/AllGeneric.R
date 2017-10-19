@@ -2,11 +2,6 @@
 setGeneric("minIntronLength", function(x) standardGeneric("minIntronLength"))
 setGeneric("minIntronLength<-", function(x, value) standardGeneric("minIntronLength<-"))
 
-## for MafDb class
-setGeneric("mafByOverlaps", function(x, ...) standardGeneric("mafByOverlaps"))
-setGeneric("mafById", function(x, ...) standardGeneric("mafById"))
-setGeneric("populations", function(x) standardGeneric("populations"))
-
 ## for GenePhylostrataDb class
 setGeneric("genePhylostratum", function(object, ids) standardGeneric("genePhylostratum"))
 setGeneric("genePhylostrata", function(object) standardGeneric("genePhylostrata"))
