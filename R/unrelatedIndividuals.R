@@ -87,8 +87,17 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
     annoGroups <- split(colnames(mcols(annotated_variants))[mask],
                       mcols(mcols(annotated_variants))$TAB[mask])
   }
+  bsgenome <- get(param$bsgenome)
+  genomeDescription <- GenomeDescription(organism=organism(bsgenome),
+                                         common_name=commonName(bsgenome),
+                                         provider=provider(bsgenome),
+                                         provider_version=providerVersion(bsgenome),
+                                         release_date=releaseDate(bsgenome),
+                                         release_name=releaseName(bsgenome),
+                                         seqinfo=seqinfo(bsgenome))
 
-  new("VariantFilteringResults", callObj=callobj, callStr=callstr, inputParameters=param,
+  new("VariantFilteringResults", callObj=callobj, callStr=callstr,
+      genomeDescription=genomeDescription, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
       bamViews=BamViews(), gSO=gSO, filters=filters(param), cutoffs=cutoffs(param), annoGroups=annoGroups,

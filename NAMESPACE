@@ -42,7 +42,9 @@ importMethodsFrom(GenomeInfoDb, "seqinfo<-",
                                 "genome<-",
                                 provider,
                                 providerVersion,
-                                releaseName)
+                                releaseName,
+                                commonName,
+                                releaseDate)
 importMethodsFrom(VariantAnnotation, fixed,
                                      readVcf,
                                      scanVcfHeader,
@@ -140,7 +142,8 @@ importFrom(GenomeInfoDb, seqnames,
                          extractSeqlevelsByGroup,
                          seqlengths,
                          seqinfo,
-                         Seqinfo)
+                         Seqinfo,
+                         GenomeDescription)
 importFrom(BSgenome, snpcount,
                      snplocs)
 importFrom(SummarizedExperiment, rowRanges)

@@ -629,6 +629,8 @@ setMethod("filters", signature(x="VariantFilteringResults"),
             x@filters
           })
 
+setMethod("referenceGenome", signature=(x="VariantFilteringResults"),
+          function(x) x@genomeDescription)
 
 ##
 ## methods for retrieving variants
@@ -850,10 +852,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
   ## function argument 'UCSCorg'
 
   if (is.na(UCSCorg)) {
-    UCSCorg <- organism(param(vfResultsObj)$bsgenome)
+    UCSCorg <- organism(referenceGenome(vfResultsObj))
     UCSCorg <- paste0(substr(UCSCorg, 1, 1), strsplit(UCSCorg, " ")[[1]][2])
   }
-  genomeBuild <- providerVersion(param(vfResultsObj)$bsgenome)
+  genomeBuild <- providerVersion(referenceGenome(vfResultsObj))
 
   annotationObjClasses <- param(vfResultsObj)$otherAnnotationsClass
   mtMafDb <- match("MafDb", annotationObjClasses)

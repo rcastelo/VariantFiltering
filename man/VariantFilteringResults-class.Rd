@@ -113,6 +113,7 @@
 \alias{minCUFC<-}
 \alias{minCUFC,VariantFilteringResults-method}
 \alias{minCUFC<-,VariantFilteringResults,numeric-method}
+\alias{referenceGenome,VariantFilteringResults-method}
 \alias{allVariants,VariantFilteringResults-method}
 \alias{allVariants}
 \alias{filteredVariants,VariantFilteringResults-method}
