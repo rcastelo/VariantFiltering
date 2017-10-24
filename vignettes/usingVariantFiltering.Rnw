@@ -87,7 +87,8 @@ least a character string with the input VCF filename, as follows:
 <<>>=
 library(VariantFiltering)
 
-CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
+CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"),
+                    "CEUtrio.vcf.bgz")
 vfpar <- VariantFilteringParam(CEUvcf)
 class(vfpar)
 vfpar
@@ -115,7 +116,7 @@ that just annotates the variants without filtering out any of them:
 if (VariantFiltering:::.getOS() == "windows") {
   uind <- VariantFiltering:::.loadPrecomputedVariantFilteringResults(vfpar)
 } else
-  uind <- unrelatedIndividuals(vfpar) ## ~90 sec.
+  uind <- unrelatedIndividuals(vfpar) ## ~75 sec.
 
 <<eval=FALSE, echo=TRUE>>=
 uind <- unrelatedIndividuals(vfpar)

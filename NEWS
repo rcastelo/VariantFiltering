@@ -1,3 +1,15 @@
+CHANGES IN VERSION 1.14
+-----------------------
+
+USER VISIBLE CHANGES
+
+    o The 'MafDb' class and methods have been moved to the 'GenomicScores' package.
+
+    o 'VariantFilteringResults' objects also store now a 'GenomeDescription' object that can be fetched using the method 'referenceGenome()'.
+
+    o Changes in the internal storage of 'VariantFilteringResults' objects that allow one to serialize this type of object with 'saveRDS()'.
+
+
 CHANGES IN VERSION 1.12
 -----------------------
 
