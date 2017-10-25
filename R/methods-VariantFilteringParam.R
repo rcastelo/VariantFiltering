@@ -143,7 +143,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   
   ## check that the given annotation packages are installed, can be loaded, and load them
 
-  .loadAnnotationPackageObject(bsgenome, "begenome", "BSgenome")
+  .loadAnnotationPackageObject(bsgenome, "bsgenome", "BSgenome")
 
   .loadAnnotationPackageObject(orgdb, "orgdb", "OrgDb")
 
@@ -273,13 +273,21 @@ setMethod("show", signature(object="VariantFilteringParam"),
             cat(sprintf("\n  Number of individuals: %d (%s)\n", length(object$sampleNames), sampleNames))
             if (!is.na(object$pedFilename) && length(object$pedFilename) > 0)
               cat(sprintf("  PED file: %s\n", basename(object$pedFilename)))
+
+            bsgenomeobj <- .loadAnnotationPackageObject(object$bsgenome,
+                                                        "bsgenome", "BSgenome",
+                                                        verbose=FALSE)
             cat(sprintf("  Genome-centric annotation package: %s (%s %s %s)\n",
-                        object$bsgenome, provider(get(object$bsgenome)),
-                        providerVersion(get(object$bsgenome)), releaseName(get(object$bsgenome))))
+                        object$bsgenome, provider(bsgenomeobj),
+                        providerVersion(bsgenomeobj), releaseName(bsgenomeobj)))
             if (length(object$snpdb) > 0) {
-              for (pkg in object$snpdb)
+              for (pkg in object$snpdb) {
+                snpdbobj <- .loadAnnotationPackageObject(pkg, "snpdb",
+                                                         strsplit(pkg, ".", fixed=TRUE)[[1]][1],
+                                                         verbose=FALSE)
                 cat(sprintf("  Variant-centric annotation package: %s (%s %s)\n",
-                            pkg, provider(get(pkg)), releaseName(get(pkg))), sep="")
+                            pkg, provider(snpdbobj), releaseName(snpdbobj)), sep="")
+              }
             }
             cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb))
             cat(sprintf("  Gene-centric annotation package: %s\n", object$orgdb))
@@ -343,7 +351,7 @@ setMethod("soamat", signature(x="VariantFilteringParam"),
 }
 
 
-.loadAnnotationPackageObject <- function(pkgName, argName, pkgType) {
+.loadAnnotationPackageObject <- function(pkgName, argName, pkgType, verbose=TRUE) {
 
   callobj <- match.call()
   annotObj <- NULL
@@ -352,7 +360,8 @@ setMethod("soamat", signature(x="VariantFilteringParam"),
     if (!pkgName %in% installed.packages(noCache=TRUE)[, "Package"])
       stop(sprintf("please install the Bioconductor package %s.", pkgName))
     if (!.isPkgLoaded(pkgName)) {
-      message("Loading ", pkgType, " annotation package ", pkgName)
+      if (verbose)
+        message("Loading ", pkgType, " annotation package ", pkgName)
       if (!suppressPackageStartupMessages(require(pkgName, character.only=TRUE)))
         stop(sprintf("package %s could not be loaded.", pkgName))
     }
