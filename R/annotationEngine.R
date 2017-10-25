@@ -64,6 +64,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   mt <- match("VARID", colnames(mcols(variantsVR)))
   stopifnot(all(!is.na(mt))) ## QC
   mcols(mcols(variantsVR))$TAB[mt] <- rep("Genome", length(mt))
+  annotationmetadata <- list(filters=NULL, cutoffs=NULL)
 
   ##############################
   ##                          ##
@@ -72,7 +73,12 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   ##############################
   
   message("Annotating variant type (SNV, Insertion, Deletion, MNV, Delins)")
-  mcols(variantsVR) <- cbind(mcols(variantsVR), typeOfVariants(variantsVR))
+  tovannot <- typeOfVariants(variantsVR)
+  mcols(variantsVR) <- cbind(mcols(variantsVR), tovannot)
+  if (!is.null(metadata(tovannot)$filters))
+    annotationmetadata$filters <- c(annotationmetadata$filters, metadata(tovannot)$filters)
+  if (!is.null(metadata(tovannot)$cutoffs))
+    annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(tovannot)$cutoffs)
 
   ##############################
   ##                          ##
@@ -383,9 +389,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
                                                           BPPARAM=BPPARAM))
   }
 
-  ## this seems to be nicely transferred during the coercion to VRanges
-  ## restore the seqinfo data
-  ## seqinfo(variantsVR_annotated) <- seqinfo(variantsVR)
+  metadata(mcols(variantsVR_annotated)) <- annotationmetadata
 
   return(variantsVR_annotated)
 }
@@ -807,6 +811,13 @@ typeOfVariants <- function(variantsVR) {
 
   dtf <- DataFrame(TYPE=type)
   mcols(dtf) <- DataFrame(TAB="Genome")
+  tovfilter <- function(x) {
+                 allowedtypes <- names(VariantFiltering::cutoffs(x)$variantType)[VariantFiltering::cutoffs(x)$variantType]
+                 VariantFiltering::allVariants(x, groupBy="nothing")$TYPE %in% allowedtypes
+               }
+  attr(tovfilter, "description") <- "Type of variant (SVN, Insertion, Deletion, MNV, Delins)"
+  attr(tovfilter, "TAB") <- "Genome"
+  metadata(dtf) <- list(filters=list(variantType=tovfilter))
   dtf
 }
 
