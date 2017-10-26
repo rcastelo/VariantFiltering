@@ -817,7 +817,9 @@ typeOfVariants <- function(variantsVR) {
                }
   attr(tovfilter, "description") <- "Type of variant (SVN, Insertion, Deletion, MNV, Delins)"
   attr(tovfilter, "TAB") <- "Genome"
-  metadata(dtf) <- list(filters=list(variantType=tovfilter))
+  metadata(dtf) <- list(filters=list(variantType=tovfilter),
+                        cutoffs=list(variantType=c(SNV=TRUE, Insertion=TRUE, Deletion=TRUE,
+                                                   MNV=TRUE, DelIns=TRUE)))
   dtf
 }
 
