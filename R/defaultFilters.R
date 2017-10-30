@@ -41,6 +41,6 @@
                                         row.names=c("dbSNP", "OMIM", "variantType", "aaChangetype", "SOterms"))
 
 .defaultCutoffs <- list(variantType=c(SNV=TRUE, Insertion=TRUE, Deletion=TRUE, MNV=TRUE, Delins=TRUE),
-                        aaChangeType="Any",
-                        SOterms=NA
+                        aaChangeType=c("Any", "Conservative", "Radical"),
+                        SOterms="Any"
                         )

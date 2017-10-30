@@ -170,6 +170,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   }
 
   gSO <- annotateSO(annotated_variants, sog(param))
+  annotated_variants <- addSOmetadata(annotated_variants)
   locMask <- conMask <- varTypMask <- logical(0)
 
   if (length(annotated_variants) > 0) {

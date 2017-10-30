@@ -22,11 +22,11 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   codonusageTable <- param$codonusageTable
   geneticCode <- param$geneticCode
 
-  ##############################
-  ##                          ##
-  ## CLEAN UP VARIANT INFO    ##
-  ##                          ##
-  ##############################
+  ###########################
+  ##                       ##
+  ## CLEAN UP VARIANT INFO ##
+  ##                       ##
+  ###########################
 
   ## clean the variant information landed on the 'VARID' slot of the input variantsVR 'GenomicRanges'
   ## object to leave either dbSNP ids given to the input VCF in this field or a maximum of 20
@@ -80,11 +80,11 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   if (!is.null(metadata(tovannot)$cutoffs))
     annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(tovannot)$cutoffs)
 
-  ##############################
-  ##                          ##
-  ##  SNP-CENTRIC ANNOTATIONS ##
-  ##                          ##
-  ##############################
+  #############################
+  ##                         ##
+  ## SNP-CENTRIC ANNOTATIONS ##
+  ##                         ##
+  #############################
 
   ## do this before variants get replicated because of different location annotations
   ## TODO: try to do all these below within annotateVariants()
@@ -101,6 +101,11 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   mcols(dbSNPannot) <- DataFrame(TAB="Genome")
   mcols(variantsVR) <- cbind(mcols(variantsVR), dbSNPannot)
   rm(dbSNPannot)
+  dbsnpfilter <- function(x) !is.na(VariantFiltering::allVariants(x, groupBy="nothing")$dbSNP)
+  attr(dbsnpfilter, "description") <- "Presence in dbSNP"
+  attr(dbsnpfilter, "TAB") <- "Genome"
+  environment(dbsnpfilter) <- baseenv()
+  annotationmetadata$filters <- c(annotationmetadata$filters, list(dbSNP=dbsnpfilter))
 
   #######################
   ##                   ##
@@ -324,61 +329,62 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   ##                                                         ##
   #############################################################
   
-  ## add metadata columns in 'variantsVR_annotated' for cryptic ss annotations
-  ## this should be optional once the shiny app is aware about present/absent annotations
-  ## dummyDF <- DataFrame(SCORE5ssREF=rep(NA_real_, length(variantsVR_annotated)),
-  ##                      SCORE5ssALT=rep(NA_real_, length(variantsVR_annotated)),
-  ##                      SCORE5ssPOS=rep(NA_real_, length(variantsVR_annotated)),
-  ##                      SCORE3ssREF=rep(NA_real_, length(variantsVR_annotated)),
-  ##                      SCORE3ssALT=rep(NA_real_, length(variantsVR_annotated)),
-  ##                      SCORE3ssPOS=rep(NA_real_, length(variantsVR_annotated)))
-
   if (length(weightMatrices) > 0) {
     dummyDF <- .scoreBindingSiteVariants(variantsVR_annotated, weightMatrices, bsgenome, BPPARAM)
 
     mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dummyDF)
   }
 
-  ###############################
-  ##                           ##
-  ##  GENE-CENTRIC ANNOTATIONS ##
-  ##                           ##
-  ###############################
+  ##############################
+  ##                          ##
+  ## GENE-CENTRIC ANNOTATIONS ##
+  ##                          ##
+  ##############################
 
-  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
-                                       annotateVariants(orgdb, variantsVR_annotated, param))
+  genecentricannot <- annotateVariants(orgdb, variantsVR_annotated, param)
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), genecentricannot)
+  if (!is.null(metadata(genecentricannot)$filters))
+    annotationmetadata$filters <- c(annotationmetadata$filters, metadata(genecentricannot)$filters)
+  if (!is.null(metadata(genecentricannot)$cutoffs))
+    annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(genecentricannot)$cutoffs)
+  rm(genecentricannot)
 
-  #####################################
-  ##                                 ##
-  ##  TRANSCRIPT-CENTRIC ANNOTATIONS ##
-  ##                                 ##
-  #####################################
+  ####################################
+  ##                                ##
+  ## TRANSCRIPT-CENTRIC ANNOTATIONS ##
+  ##                                ##
+  ####################################
 
   mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
                                        annotateVariants(txdb, variantsVR_annotated, param))
 
-  ########################
-  ##                    ##
-  ##    DESCRIPTION     ##
-  ##                    ##
-  ########################
+  #################################
+  ##                             ##
+  ## PROTEIN-CENTRIC ANNOTATIONS ##
+  ##                             ##
+  #################################
+
+  aachangesannot <- aminoAcidChanges(variantsVR_annotated, radicalAAchangeMatrix)
+  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), aachangesannot)
+  if (!is.null(metadata(aachangesannot)$filters))
+    annotationmetadata$filters <- c(annotationmetadata$filters, metadata(aachangesannot)$filters)
+  if (!is.null(metadata(aachangesannot)$cutoffs))
+    annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(aachangesannot)$cutoffs)
+  rm(aachangesannot)
+
+  ######################
+  ##                  ##
+  ## HGVS ANNOTATIONS ##
+  ##                  ##
+  ######################
 
   mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), variantHGVS(variantsVR_annotated))
                                       
-  ########################
-  ##                    ##
-  ##     AminoAcid      ##
-  ##                    ##
-  ########################
-
-  mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
-                                       aminoAcidChanges(variantsVR_annotated, radicalAAchangeMatrix))
-
-  ########################
-  ##                    ##
-  ##  OTHER ANNOTATIONS ##
-  ##                    ##
-  ########################
+  #######################
+  ##                   ##
+  ## OTHER ANNOTATIONS ##
+  ##                   ##
+  #######################
   
   for (i in seq_along(otherAnnotations)) {
     message(sprintf("Annotating with %s", names(otherAnnotations)[i]))
@@ -396,9 +402,9 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
 
 
 
-###########
+##
 ## Annotate dbSNP identifiers
-####
+##
 
 setMethod("annotateVariants", signature(annObj="SNPlocs"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
@@ -516,9 +522,9 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
             dtf
           })
 
-###########
+##
 ## Annotate PolyPhen2 predictions
-####
+##
 
 setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
           function(annObj, variantsVR, param, coding=TRUE, BPPARAM=bpparam("SerialParam")) {
@@ -549,9 +555,9 @@ setMethod("annotateVariants", signature(annObj="PolyPhenDb"),
             dtf
           })
 
-############
+##
 ## Annotate PROVEAN predictions (former SIFT)
-#####
+##
 
 ## USE VARID WHERE dbSNP IS MISSING !!!
 setMethod("annotateVariants", signature(annObj="PROVEANDb"),
@@ -580,9 +586,9 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
             dtf
           })
 
-############
+##
 ## Annotate MAF values
-#####
+##
 
 setMethod("annotateVariants", signature(annObj="MafDb"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
@@ -622,13 +628,13 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             mafValues
           })
 
-############
+##
 ## Annotate organism-level gene-centric features
-#####
+##
 
-###########
-## Get HGNC gene symbol
-####
+##
+## Get HGNC gene symbol and other gene-centric annotations
+##
 
 setMethod("annotateVariants", signature(annObj="OrgDb"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
@@ -641,7 +647,6 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
             genelevel_annot <- rep(list(rep(NA_character_, times=0)), length(defgenecols))
             names(genelevel_annot) <- defgenecols
             genelevel_annot <- do.call("DataFrame", genelevel_annot)
-            ## genelevel_annot <- DataFrame(GENE=character(), OMIM=character())
             geneIDs <- variantsVR$GENEID
             geneKeytype <- param$geneKeytype
             maskNAs <- is.na(geneIDs)
@@ -668,14 +673,6 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
                                          })
                     genelevel_annot[[colname]][!maskNAs] <- colxgeneID[geneIDs[!maskNAs]]
                   }
-                  ## symxgeneID <- sapply(split(res$SYMBOL, res[[geneKeytype]]),
-                  ##                      function(x) paste(unique(x), collapse=", "))
-                  ## omimxgeneID <- sapply(split(res$OMIM, res[[geneKeytype]]),
-                  ##                       function(x) {
-                  ##                         if (all(!is.na(x))) x <- paste(unique(x), collapse=", ") ; x
-                  ##                       })
-                  ## genelevel_annot[!maskNAs, ] <- DataFrame(GENE=symxgeneID[geneIDs[!maskNAs]],
-                  ##                                          OMIM=omimxgeneID[geneIDs[!maskNAs]])
                 }, error=function(err) {
                   misk <- ifelse(length(uniqIDs) > 3, sprintf("%s, ...", paste(head(uniqIDs, n=3), collapse=", ")),
                                  paste(uniqIDs, collapse=", "))
@@ -688,6 +685,13 @@ setMethod("annotateVariants", signature(annObj="OrgDb"),
             genelevel_annot$GENE <- genelevel_annot$SYMBOL
             genelevel_annot$SYMBOL <- NULL
             mcols(genelevel_annot) <- DataFrame(TAB=rep("Gene", ncol(genelevel_annot)))
+            if ("OMIM" %in% colnames(genelevel_annot)) {
+              omimfilter <- function(x) !is.na(VariantFiltering::allVariants(x, groupBy="nothing")$OMIM)
+              attr(omimfilter, "description") <- "Presence in OMIM"
+              attr(omimfilter, "TAB") <- "Gene"
+              environment(omimfilter) <- baseenv()
+              metadata(genelevel_annot) <- list(filters=list(OMIM=omimfilter))
+            }
 
             genelevel_annot
           })
@@ -721,9 +725,9 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
             txlevel_annot
           })
 
-############
+##
 ## Annotate with GScores
-#####
+##
 
 setMethod("annotateVariants", signature(annObj="GScores"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
@@ -737,9 +741,9 @@ setMethod("annotateVariants", signature(annObj="GScores"),
             dtf
           })
 
-############
+##
 ## Annotate gene phylostratum
-#####
+##
 
 setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
@@ -755,9 +759,9 @@ setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
           })
 
 
-###########
+##
 ## Read matrix of radical versus conservative amino acid substitutions
-#####
+##
 
 readAAradicalChangeMatrix <- function(file) {
 
@@ -817,6 +821,7 @@ typeOfVariants <- function(variantsVR) {
                }
   attr(tovfilter, "description") <- "Type of variant (SVN, Insertion, Deletion, MNV, Delins)"
   attr(tovfilter, "TAB") <- "Genome"
+  environment(tovfilter) <- baseenv()
   metadata(dtf) <- list(filters=list(variantType=tovfilter),
                         cutoffs=list(variantType=c(SNV=TRUE, Insertion=TRUE, Deletion=TRUE,
                                                    MNV=TRUE, DelIns=TRUE)))
@@ -1131,6 +1136,19 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
 
   dtf <- DataFrame(AAchange=aachange, AAchangeType=aachangetype)
   mcols(dtf) <- DataFrame(TAB=c("Protein", "Protein"))
+  aafilter <- function(x) {
+                mask <- rep(TRUE, length(x))
+                if (VariantFiltering::cutoffs(x)$aaChangeType %in% c("Conservative", "Radical")) {
+                  aachangetype <- VariantFiltering::allVariants(x, groupBy="nothing")$AAchangeType
+                  mask <- is.na(aachangetype) | aachangetype %in% VariantFiltering::cutoffs(x)$aaChangeType
+                }
+                mask
+               }
+  attr(aafilter, "description") <- "Type of amino acid change (Any, Conservative, Radical)"
+  attr(aafilter, "TAB") <- "Protein"
+  environment(aafilter) <- baseenv()
+  metadata(dtf) <- list(filters=list(aaChangeType=aafilter),
+                        cutoffs=list(aaChangeType=c("Any", "Conservative", "Radical")))
   dtf
 }
 

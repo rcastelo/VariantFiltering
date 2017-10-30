@@ -180,6 +180,41 @@ annotateSO <- function(variantsVR, gSO) {
   gSO
 }
 
+## add SO filters and cutoffs metadata to the input variants VRanges object
+addSOmetadata <- function(variantsVR) {
+  sofilter <- function(x) {
+                soterms <- VariantFiltering::cutoffs(x)$SOterms
+                if (is.null(soterms) || all(is.na(soterms)) || soterms[1] == "Any") ## no SO terms specified imply no restriction
+                  soterms <- graph::nodes(VariantFiltering::sog(x))[sapply(graph::nodeData(VariantFiltering::sog(x), graph::nodes(VariantFiltering::sog(x)), "varIdx"), length) > 0]
+                else {
+                  soterms <- VariantFiltering:::.findSOIDs(VariantFiltering::cutoffs(x)$SOterms, VariantFiltering::sog(x))
+                  ## restrict to the given SO terms and all their more
+                  ## specific ancestors with at least one annotated variant
+                  soterms <- unique(c(soterms, VariantFiltering:::.ancestorsSO(VariantFiltering::param(x), soterms)))
+                  soterms <- soterms[sapply(graph::nodeData(VariantFiltering::sog(x), soterms, "varIdx"), length) > 0]
+                }
+
+                mask <- rep(TRUE, length(x))
+                if (length(soterms) > 0) {
+                  varidxinsog <- unique(unlist(graph::nodeData(VariantFiltering::sog(x), soterms, "varIdx"), use.names=FALSE))
+                  mask <- rep(FALSE, length(x))
+                  mask[varidxinsog] <- TRUE
+                }
+
+                mask
+              }
+  attr(sofilter, "description") <- "Sequence Ontology annotations"
+  attr(sofilter, "TAB") <- "Transcript"
+  environment(sofilter) <- baseenv()
+  SOmetadata <- list(filters=list(SOterms=sofilter),
+                     cutoffs=list(SOterms="Any"))
+  metadata(mcols(variantsVR))$filters <- c(metadata(mcols(variantsVR))$filters, SOmetadata$filters)
+  metadata(mcols(variantsVR))$cutoffs <- c(metadata(mcols(variantsVR))$cutoffs, SOmetadata$cutoffs)
+
+  variantsVR
+}
+
+
 ## private functions
 
 ## builds a descendants matrix of an input acyclic digraph 'g'
