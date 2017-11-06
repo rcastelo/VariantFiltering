@@ -178,6 +178,11 @@ setReplaceMethod("filters", signature(x="VariantFilteringResults"),
                    x
                  })
 
+setMethod("filtersMetadata", signature(x="VariantFilteringResults"),
+          function (x) {
+            x@filtersMetadata
+          })
+
 setMethod("cutoffs", signature(x="VariantFilteringResults"),
           function(x) {
             x@cutoffs
@@ -266,116 +271,116 @@ setMethod("annoGroups", signature(x="VariantFilteringResults"),
             x@annoGroups
           })
 
-setMethod("dbSNPpresent", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@dbSNPflag
-          })
-
-setReplaceMethod("dbSNPpresent", signature(x="VariantFilteringResults", value="ANY"),
-                 function(x, value) {
-                   if (!is.na(value) && !is.character(value) && !is.logical(value))
-                     stop("Presence in dbSNP should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-
-                   if (!is.na(value)) {
-                     if (is.character(value)) {
-                       if (tolower(value) == "yes")
-                         value <- "Yes"
-                       else if (tolower(value) == "no")
-                         value <- "No"
-                       else
-                         stop("Presence in dbSNP should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-                     }
-
-                     if (is.logical(value)) {
-                       if (value)
-                         value <- "Yes"
-                       else
-                         value <- "No"
-                     }
-                   }
-
-                   x@dbSNPflag <- as.character(value)
-
-                   x
-                 })
-
-setMethod("OMIMpresent", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@OMIMflag
-          })
-
-setReplaceMethod("OMIMpresent", signature(x="VariantFilteringResults", value="ANY"),
-                 function(x, value) {
-                   if (!is.na(value) && !is.character(value) && !is.logical(value))
-                     stop("Presence in OMIM should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-
-                   if (!is.na(value)) {
-                     if (is.character(value)) {
-                       if (tolower(value) == "yes")
-                         value <- "Yes"
-                       else if (tolower(value) == "no")
-                         value <- "No"
-                       else
-                         stop("Presence in OMIM should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-                     }
-
-                     if (is.logical(value)) {
-                       if (value)
-                         value <- "Yes"
-                       else
-                         value <- "No"
-                     }
-                   }
-
-                   value <- as.character(value)
-                   x@OMIMflag <- value
-
-                   x
-                 })
-
-setMethod("variantType", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@variantTypeMask
-          })
-
-setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="logical"),
-                 function(x, typkey=NA, value) {
-                   if (any(is.na(value)))
-                     stop("The given value(s) must be either TRUE or FALSE.")
-
-                   if (is.na(typkey)) {
-                     typkey <- names(x@variantTypeMask)
-                     if (is.null(names(value))) {
-                       if (length(value) > 1)
-                         stop("When given multiple values they must be a logical vector whose names match the available location keywords.")
-                       value <- do.call("names<-", list(rep(value, length(typkey)), typkey))
-                     } else if (any(is.na(match(names(value), names(x@variantTypeMask)))))
-                       stop(sprintf("Element names %s do not match the available variant type keywords",
-                                    names(value)[is.na(match(names(value), names(x@variantTypeMask)))]))
-                     else
-                       typkey <- names(value)
-                   } else {
-                     if (any(is.na(match(typkey, names(x@variantTypeMask)))))
-                       stop(sprintf("%s does not match the available variant type keywords", typkey))
-                   }
-
-                   x@variantTypeMask[typkey] <- value
-                   cutoffs(x)$variantType <- x@variantTypeMask
-                   x
-                 })
-
-setMethod("aaChangeType", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@aaChangeType
-          })
-
-setReplaceMethod("aaChangeType", signature(x="VariantFilteringResults", value="character"),
-                 function(x, value=c("Any", "Radical", "Conservative")) {
-                   value <- match.arg(value)
-                   x@aaChangeType <- value
-                   cutoffs(x)$aaChangeType <- value
-                   x
-                 })
+## setMethod("dbSNPpresent", signature(x="VariantFilteringResults"),
+##           function(x) {
+##             x@dbSNPflag
+##           })
+## 
+## setReplaceMethod("dbSNPpresent", signature(x="VariantFilteringResults", value="ANY"),
+##                  function(x, value) {
+##                    if (!is.na(value) && !is.character(value) && !is.logical(value))
+##                      stop("Presence in dbSNP should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
+## 
+##                    if (!is.na(value)) {
+##                      if (is.character(value)) {
+##                        if (tolower(value) == "yes")
+##                          value <- "Yes"
+##                        else if (tolower(value) == "no")
+##                          value <- "No"
+##                        else
+##                          stop("Presence in dbSNP should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
+##                      }
+## 
+##                      if (is.logical(value)) {
+##                        if (value)
+##                          value <- "Yes"
+##                        else
+##                          value <- "No"
+##                      }
+##                    }
+## 
+##                    x@dbSNPflag <- as.character(value)
+## 
+##                    x
+##                  })
+## 
+## setMethod("OMIMpresent", signature(x="VariantFilteringResults"),
+##           function(x) {
+##             x@OMIMflag
+##           })
+## 
+## setReplaceMethod("OMIMpresent", signature(x="VariantFilteringResults", value="ANY"),
+##                  function(x, value) {
+##                    if (!is.na(value) && !is.character(value) && !is.logical(value))
+##                      stop("Presence in OMIM should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
+## 
+##                    if (!is.na(value)) {
+##                      if (is.character(value)) {
+##                        if (tolower(value) == "yes")
+##                          value <- "Yes"
+##                        else if (tolower(value) == "no")
+##                          value <- "No"
+##                        else
+##                          stop("Presence in OMIM should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
+##                      }
+## 
+##                      if (is.logical(value)) {
+##                        if (value)
+##                          value <- "Yes"
+##                        else
+##                          value <- "No"
+##                      }
+##                    }
+## 
+##                    value <- as.character(value)
+##                    x@OMIMflag <- value
+## 
+##                    x
+##                  })
+## 
+## setMethod("variantType", signature(x="VariantFilteringResults"),
+##           function(x) {
+##             x@variantTypeMask
+##           })
+## 
+## setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="logical"),
+##                  function(x, typkey=NA, value) {
+##                    if (any(is.na(value)))
+##                      stop("The given value(s) must be either TRUE or FALSE.")
+## 
+##                    if (is.na(typkey)) {
+##                      typkey <- names(x@variantTypeMask)
+##                      if (is.null(names(value))) {
+##                        if (length(value) > 1)
+##                          stop("When given multiple values they must be a logical vector whose names match the available location keywords.")
+##                        value <- do.call("names<-", list(rep(value, length(typkey)), typkey))
+##                      } else if (any(is.na(match(names(value), names(x@variantTypeMask)))))
+##                        stop(sprintf("Element names %s do not match the available variant type keywords",
+##                                     names(value)[is.na(match(names(value), names(x@variantTypeMask)))]))
+##                      else
+##                        typkey <- names(value)
+##                    } else {
+##                      if (any(is.na(match(typkey, names(x@variantTypeMask)))))
+##                        stop(sprintf("%s does not match the available variant type keywords", typkey))
+##                    }
+## 
+##                    x@variantTypeMask[typkey] <- value
+##                    cutoffs(x)$variantType <- x@variantTypeMask
+##                    x
+##                  })
+## 
+## setMethod("aaChangeType", signature(x="VariantFilteringResults"),
+##           function(x) {
+##             x@aaChangeType
+##           })
+## 
+## setReplaceMethod("aaChangeType", signature(x="VariantFilteringResults", value="character"),
+##                  function(x, value=c("Any", "Radical", "Conservative")) {
+##                    value <- match.arg(value)
+##                    x@aaChangeType <- value
+##                    cutoffs(x)$aaChangeType <- value
+##                    x
+##                  })
 
 setMethod("variantLocation", signature(x="VariantFilteringResults"),
           function(x) {
@@ -654,7 +659,7 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
 ## get variants after applying all filters
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample", unusedColumns.rm=FALSE) {
-            if (length(x@filters) > 0)
+            if (length(filters(x)) > 0)
               x <- softFilter(x, filters(x))
             varsxsam <- allVariants(x)
             vars <- varsxsam[[1]]
@@ -673,26 +678,26 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             }
 
             ## presence in dbSNP
-            if (!is.na(dbSNPpresent(x))) {
-              maskNAdbSNP <- is.na(vars$dbSNP)
-              if (dbSNPpresent(x) == "Yes")
-                rowsMask <- rowsMask & !maskNAdbSNP
-              else
-                rowsMask <- rowsMask & maskNAdbSNP
-            }
+            ## if (!is.na(dbSNPpresent(x))) {
+            ##   maskNAdbSNP <- is.na(vars$dbSNP)
+            ##   if (dbSNPpresent(x) == "Yes")
+            ##     rowsMask <- rowsMask & !maskNAdbSNP
+            ##   else
+            ##     rowsMask <- rowsMask & maskNAdbSNP
+            ## }
 
             ## presence in OMIM
-            if (!is.na(OMIMpresent(x))) {
-              maskNAomim <- is.na(vars$OMIM)
-              if (OMIMpresent(x) == "Yes")
-                rowsMask <- rowsMask & !maskNAomim
-              else
-                rowsMask <- rowsMask & maskNAomim
-            }
+            ## if (!is.na(OMIMpresent(x))) {
+            ##   maskNAomim <- is.na(vars$OMIM)
+            ##   if (OMIMpresent(x) == "Yes")
+            ##     rowsMask <- rowsMask & !maskNAomim
+            ##   else
+            ##     rowsMask <- rowsMask & maskNAomim
+            ## }
 
             ## type of variant
-            if (!all(variantType(x)))
-              rowsMask <- rowsMask & vars$TYPE %in% names(variantType(x))[variantType(x)]
+            ## if (!all(variantType(x)))
+            ##   rowsMask <- rowsMask & vars$TYPE %in% names(variantType(x))[variantType(x)]
 
             ## location of variant
             if (!all(variantLocation(x)))
@@ -703,8 +708,8 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               rowsMask <- rowsMask & vars$CONSEQUENCE %in% names(variantConsequence(x))[variantConsequence(x)]
 
             ## type of amino acid change
-            if (aaChangeType(x) != "Any")
-              rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
+            ## if (aaChangeType(x) != "Any")
+            ##   rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
 
             ## minimum allele frequency
             mtNoMAF <- NULL
@@ -972,22 +977,22 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         return()
       isolate({
         ## presence in dbSNP
-        if (input$dbSNPpresentFlag)
-          dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
-        else
-          dbSNPpresent(vfResultsObj) <- NA_character_
+        ## if (input$dbSNPpresentFlag)
+        ##   dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
+        ## else
+        ##   dbSNPpresent(vfResultsObj) <- NA_character_
 
         ## presence in OMIM
-        if (input$OMIMpresentFlag)
-          OMIMpresent(vfResultsObj) <- input$OMIMpresent
-        else
-          OMIMpresent(vfResultsObj) <- NA_character_
+        ## if (input$OMIMpresentFlag)
+        ##   OMIMpresent(vfResultsObj) <- input$OMIMpresent
+        ## else
+        ##   OMIMpresent(vfResultsObj) <- NA_character_
 
         ## type of variant
-        varTypMask <- variantType(vfResultsObj)
-        for (i in names(varTypMask))
-          varTypMask[i] <- input[[i]]
-        variantType(vfResultsObj) <- varTypMask
+        ## varTypMask <- variantType(vfResultsObj)
+        ## for (i in names(varTypMask))
+        ##   varTypMask[i] <- input[[i]]
+        ## variantType(vfResultsObj) <- varTypMask
 
         ## variant location
         locMask <- variantLocation(vfResultsObj)
@@ -1002,7 +1007,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         variantConsequence(vfResultsObj) <- conMask
 
         ## type of amino acid change
-        aaChangeType(vfResultsObj) <- input$aaChangeType
+        ## aaChangeType(vfResultsObj) <- input$aaChangeType
 
         ## minimum allele frequency
         if (!is.na(mtMafDb)) {
@@ -1282,22 +1287,22 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       filename = function() { "vfResultsObj.tsv" },
       content = function(file) {
         ## presence in dbSNP
-        if (input$dbSNPpresentFlag)
-          dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
-        else
-          dbSNPpresent(vfResultsObj) <- NA_character_
+        ## if (input$dbSNPpresentFlag)
+        ##   dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
+        ## else
+        ##   dbSNPpresent(vfResultsObj) <- NA_character_
 
         ## presence in OMIM
-        if (input$OMIMpresentFlag)
-          OMIMpresent(vfResultsObj) <- input$OMIMpresent
-        else
-          OMIMpresent(vfResultsObj) <- NA_character_
+        ## if (input$OMIMpresentFlag)
+        ##   OMIMpresent(vfResultsObj) <- input$OMIMpresent
+        ## else
+        ##   OMIMpresent(vfResultsObj) <- NA_character_
 
         ## type of variant
-        varTypMask <- variantType(vfResultsObj)
-        for (i in names(varTypMask))
-          varTypMask[i] <- input[[i]]
-        variantType(vfResultsObj) <- varTypMask
+        ## varTypMask <- variantType(vfResultsObj)
+        ## for (i in names(varTypMask))
+        ##   varTypMask[i] <- input[[i]]
+        ## variantType(vfResultsObj) <- varTypMask
  
         ## variant location
         locMask <- variantLocation(vfResultsObj)
@@ -1312,7 +1317,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         variantConsequence(vfResultsObj) <- conMask
 
         ## type of amino acid change
-        aaChangeType(vfResultsObj) <- input$aaChangeType
+        ## aaChangeType(vfResultsObj) <- input$aaChangeType
 
         ## minimum allele frequency
         if (!is.na(mtMafDb)) {
@@ -1378,22 +1383,22 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
       filename = function() { "report.txt" },
       content = function(file) {
         ## presence in dbSNP
-        if (input$dbSNPpresentFlag)
-          dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
-        else
-          dbSNPpresent(vfResultsObj) <- NA_character_
+        ## if (input$dbSNPpresentFlag)
+        ##   dbSNPpresent(vfResultsObj) <- input$dbSNPpresent
+        ## else
+        ##   dbSNPpresent(vfResultsObj) <- NA_character_
 
         ## presence in OMIM
-        if (input$OMIMpresentFlag)
-          OMIMpresent(vfResultsObj) <- input$OMIMpresent
-        else
-          OMIMpresent(vfResultsObj) <- NA_character_
+        ## if (input$OMIMpresentFlag)
+        ##   OMIMpresent(vfResultsObj) <- input$OMIMpresent
+        ## else
+        ##   OMIMpresent(vfResultsObj) <- NA_character_
 
         ## type of variant
-        varTypMask <- variantType(vfResultsObj)
-        for (i in names(varTypMask))
-          varTypMask[i] <- input[[i]]
-        variantType(vfResultsObj) <- varTypMask
+        ## varTypMask <- variantType(vfResultsObj)
+        ## for (i in names(varTypMask))
+        ##   varTypMask[i] <- input[[i]]
+        ## variantType(vfResultsObj) <- varTypMask
 
         ## variant location
         locMask <- variantLocation(vfResultsObj)
@@ -1408,7 +1413,7 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         variantConsequence(vfResultsObj) <- conMask
 
         ## type of amino acid change
-        aaChangeType(vfResultsObj) <- input$aaChangeType
+        ## aaChangeType(vfResultsObj) <- input$aaChangeType
 
         ## minimum allele frequency
         if (!is.na(mtMafDb)) {
@@ -1459,18 +1464,18 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         cat("> library(VariantFiltering)\n\n")
         cat(sprintf("> %s <- %s\n", gettext(vfResultsObj@callObj)[2], param(vfResultsObj)$callStr))
         cat(sprintf("> res <- %s\n", deparse(vfResultsObj@callObj)))
-        if (!is.na(dbSNPpresent(vfResultsObj)))
-          cat(sprintf("> dbSNPpresent(res) <- \"%s\"\n", dbSNPpresent(vfResultsObj)))
-        if (!is.na(OMIMpresent(vfResultsObj)))
-          cat(sprintf("> OMIMpresent(res) <- \"%s\"\n", OMIMpresent(vfResultsObj)))
-        if (!all(variantType(vfResultsObj)))
-            cat(sprintf("> variantType(res) <- c(%s)\n", paste(paste(names(variantType(vfResultsObj)), as.character(variantType(vfResultsObj)), sep="="), collapse=", ")))
+        ## if (!is.na(dbSNPpresent(vfResultsObj)))
+        ##   cat(sprintf("> dbSNPpresent(res) <- \"%s\"\n", dbSNPpresent(vfResultsObj)))
+        ## if (!is.na(OMIMpresent(vfResultsObj)))
+        ##   cat(sprintf("> OMIMpresent(res) <- \"%s\"\n", OMIMpresent(vfResultsObj)))
+        ## if (!all(variantType(vfResultsObj)))
+        ##     cat(sprintf("> variantType(res) <- c(%s)\n", paste(paste(names(variantType(vfResultsObj)), as.character(variantType(vfResultsObj)), sep="="), collapse=", ")))
         if (!all(variantLocation(vfResultsObj)))
             cat(sprintf("> variantLocation(res) <- c(%s)\n", paste(paste(names(variantLocation(vfResultsObj)), as.character(variantLocation(vfResultsObj)), sep="="), collapse=", ")))
         if (!all(variantConsequence(vfResultsObj)))
             cat(sprintf("> variantConsequence(res) <- c(%s)\n", paste(paste(names(variantConsequence(vfResultsObj)), as.character(variantConsequence(vfResultsObj)), sep="="), collapse=", ")))
-        if (aaChangeType(vfResultsObj) != "Any")
-          cat(sprintf("> aaChangeType(res) <- \"%s\"\n", aaChangeType(vfResultsObj)))
+        ## if (aaChangeType(vfResultsObj) != "Any")
+        ##   cat(sprintf("> aaChangeType(res) <- \"%s\"\n", aaChangeType(vfResultsObj)))
         if (minCUFC(vfResultsObj) > 0)
           cat(sprintf("> minCUFC(res) <- %.2f\n", minCUFC(vfResultsObj)))
         if (!is.na(mtMafDb)) {

@@ -208,9 +208,10 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   ## do not show up in the softFilterMatrix of the VRanges object
   ## to deal with this we check whether the column exists and if not
   ## just return a mask of truth logical values
-  qualityFilterDescriptions <- fixed(scanVcfHeader(tfl[[1]]))$FILTER
-  qualityFilterNames <- make.names(rownames(qualityFilterDescriptions), unique=TRUE)
-  rownames(qualityFilterDescriptions) <- qualityFilterNames
+  qualityFilterMetadata <- fixed(scanVcfHeader(tfl[[1]]))$FILTER
+  qualityFilterNames <- make.names(rownames(qualityFilterMetadata), unique=TRUE)
+  rownames(qualityFilterMetadata) <- qualityFilterNames
+  qualityFilterMetadata$AnnoGroup <- rep(NA_character_, nrow(qualityFilterMetadata))
   qfilters <- sapply(qualityFilterNames,
                      function(qfname) {
                        f <- sprintf("function(x) { sfm <- VariantAnnotation::softFilterMatrix(VariantFiltering::allVariants(x, groupBy=\"nothing\")) ; mask <- rep(TRUE, nrow(sfm)) ; if (!is.na(match(\"%s\", colnames(sfm)))) mask <- sfm[, \"%s\"] ; mask }", qfname, qfname)
@@ -219,16 +220,6 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   qfilters <- lapply(qfilters, function(f) { environment(f) <- baseenv() ; f})
   qualityFR <- FilterRules(qfilters)
 
-  ## add default functional annotation filters
-  .defaultFilters <- lapply(.defaultFilters, function(f) { environment(f) <- baseenv() ; f})
-  defaultFR <- FilterRules(.defaultFilters)
-
-  ## initially default functional annotation filters are not active
-  active(defaultFR) <- FALSE
-
-  defaultFR <- c(qualityFR, defaultFR)
-  defaultFilterDesc <- rbind(qualityFilterDescriptions, .defaultFilterDescriptions)
-
   new("VariantFilteringParam", callObj=callobj, callStr=callstr, vcfFiles=tfl, seqInfos=seqinfos,
       sampleNames=sampleNames, pedFilename=pedFilename, bsgenome=bsgenome, orgdb=orgdb, txdb=txdb,
       snpdb=snpdb, gSO=gSO, gSOdmat=gSOdmat, gSOamat=gSOamat, weightMatrices=weightMatrices,
@@ -236,8 +227,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
       codonusageFilename=codonusageFilename, codonusageTable=codonusageTable, geneticCode=geneticCode,
       regionAnnotations=regionAnnotations, otherAnnotations=otherAnnotations,
       otherAnnotationsClass=otherAnnotationsClass, allTranscripts=allTranscripts,
-      filters=defaultFR, filterDescriptions=defaultFilterDesc, qualityFilterNames=qualityFilterNames,
-      cutoffs=.defaultCutoffs, geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
+      filters=qualityFR, filtersMetadata=qualityFilterMetadata, qualityFilterNames=qualityFilterNames,
+      geneKeytype=geneKeytype, yieldSize=as.integer(yieldSize))
 }
 
 ## functions with default parameters
@@ -322,6 +313,11 @@ setMethod("$", signature(x="VariantFilteringParam"),
 setMethod("filters", signature(x="VariantFilteringParam"),
           function (x) {
             x@filters
+          })
+
+setMethod("filtersMetadata", signature(x="VariantFilteringParam"),
+          function (x) {
+            x@filtersMetadata
           })
 
 setMethod("cutoffs", signature(x="VariantFilteringParam"),

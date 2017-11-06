@@ -1138,9 +1138,12 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   mcols(dtf) <- DataFrame(TAB=c("Protein", "Protein"))
   aafilter <- function(x) {
                 mask <- rep(TRUE, length(x))
-                if (VariantFiltering::cutoffs(x)$aaChangeType %in% c("Conservative", "Radical")) {
-                  aachangetype <- VariantFiltering::allVariants(x, groupBy="nothing")$AAchangeType
-                  mask <- is.na(aachangetype) | aachangetype %in% VariantFiltering::cutoffs(x)$aaChangeType
+                ctf <- VariantFiltering::cutoffs(x)$aaChangeType
+                if (!is.null(ctf)) {
+                  if (ctf$selected %in% ctf$values) {
+                    aachangetype <- VariantFiltering::allVariants(x, groupBy="nothing")$AAchangeType
+                    mask <- is.na(aachangetype) | (aachangetype %in% ctf$selected)
+                  }
                 }
                 mask
                }
@@ -1148,7 +1151,8 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   attr(aafilter, "TAB") <- "Protein"
   environment(aafilter) <- baseenv()
   metadata(dtf) <- list(filters=list(aaChangeType=aafilter),
-                        cutoffs=list(aaChangeType=c("Any", "Conservative", "Radical")))
+                        cutoffs=list(aaChangeType=list(values=c("Conservative", "Radical"),
+                                                       selected="Conservative")))
   dtf
 }
 
