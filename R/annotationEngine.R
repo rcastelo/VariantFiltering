@@ -388,11 +388,13 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   
   for (i in seq_along(otherAnnotations)) {
     message(sprintf("Annotating with %s", names(otherAnnotations)[i]))
-    mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated),
-                                         annotateVariants(otherAnnotations[[i]],
-                                                          variantsVR_annotated,
-                                                          param,
-                                                          BPPARAM=BPPARAM))
+    ann <- annotateVariants(otherAnnotations[[i]], variantsVR_annotated,
+                            param, BPPARAM=BPPARAM)
+    if (!is.null(metadata(ann)$filters))
+      annotationmetadata$filters <- c(annotationmetadata$filters, metadata(ann)$filters)
+    if (!is.null(metadata(ann)$cutoffs))
+      annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(ann)$cutoffs)
+    mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), ann)
   }
 
   metadata(mcols(variantsVR_annotated)) <- annotationmetadata
@@ -624,6 +626,28 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
 
             colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
             mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
+            maffilter <- function(x) {
+                           maxMAFannot <- rep(NA_real_, length(x))
+                           mask <- rep(TRUE, length(x))
+                           mafpopmask <- VariantFiltering::cutoffs(x)$MAFpopMask
+                           if (any(mafpopmask)) {
+                             mtNoMAF <- NULL
+                             maxMAFannot <- do.call(pmax,
+                                                    c(as.list(S4Vectors::mcols(VariantFiltering::allVariants(x, groupBy="nothing"))[, names(mafpopmask[mafpopmask]), drop=FALSE]), na.rm=TRUE))
+                             maxMAFannot[is.na(maxMAFannot)] <- -Inf
+                             mask <- maxMAFannot <= VariantFiltering::cutoffs(x)$maxMAF
+                             mask[is.na(mask)] <- FALSE
+                           }
+                           mask
+                         }
+            attr(maffilter, "description") <- "Maximum minor allele frequency"
+            attr(maffilter, "TAB") <- "Genome"
+            environment(maffilter) <- baseenv()
+            cnAF <- rep(TRUE, ncol(mafValues))
+            names(cnAF) <- colnames(mafValues)
+            metadata(mafValues) <- list(filters=list(maxMAF=maffilter),
+                                        cutoffs=list(MAFpopMask=cnAF,
+                                                     maxMAF=1))
 
             mafValues
           })
