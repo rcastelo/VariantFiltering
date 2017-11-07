@@ -641,13 +641,13 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
                            mask
                          }
             attr(maffilter, "description") <- "Maximum minor allele frequency"
-            attr(maffilter, "TAB") <- "Genome"
+            attr(maffilter, "TAB") <- "MAF"
             environment(maffilter) <- baseenv()
             cnAF <- rep(TRUE, ncol(mafValues))
             names(cnAF) <- colnames(mafValues)
             metadata(mafValues) <- list(filters=list(maxMAF=maffilter),
-                                        cutoffs=list(MAFpopMask=cnAF,
-                                                     maxMAF=1))
+                                        cutoffs=list(maxMAF=list(popmask=cnAF,
+                                                                 maxvalue=0.5)))
 
             mafValues
           })
