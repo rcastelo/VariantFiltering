@@ -778,7 +778,16 @@ setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
                              GenePhylostratumIndex=gps$OldestPhylostratum,
                              GenePhylostratum=gps$Description)
             mcols(dtf) <- DataFrame(TAB=rep("Gene", ncol(dtf)))
-
+            gpsfilter <- function(x) {
+              VariantFiltering::allVariants(x, groupBy="nothing")$GenePhylostratumIndex <= as.integer(names(VariantFiltering::cutoffs(x)$genePhyloStratum[1]))
+            }
+            attr(gpsfilter, "description") <- "Gene phylostratum"
+            attr(gpsfilter, "TAB") <- "Gene"
+            environment(gpsfilter) <- baseenv()
+            allowedgps <- VariantFiltering::genePhylostrata(annObj)$Description
+            names(allowedgps) <- rownames(VariantFiltering::genePhylostrata(annObj))
+            metadata(dtf) <- list(filters=list(genePhyloStratum=gpsfilter),
+                                  cutoffs=list(genePhyloStratum=allowedgps))
             dtf
           })
 
@@ -1162,21 +1171,17 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   mcols(dtf) <- DataFrame(TAB=c("Protein", "Protein"))
   aafilter <- function(x) {
                 mask <- rep(TRUE, length(x))
-                ctf <- VariantFiltering::cutoffs(x)$aaChangeType
-                if (!is.null(ctf)) {
-                  if (ctf$selected %in% ctf$values) {
-                    aachangetype <- VariantFiltering::allVariants(x, groupBy="nothing")$AAchangeType
-                    mask <- is.na(aachangetype) | (aachangetype %in% ctf$selected)
-                  }
+                if (!is.null(VariantFiltering::cutoffs(x)$aaChangeType)) {
+                  aachangetype <- VariantFiltering::allVariants(x, groupBy="nothing")$AAchangeType
+                  mask <- is.na(aachangetype) | (aachangetype %in% VariantFiltering::cutoffs(x)$aaChangeType[1])
                 }
                 mask
                }
-  attr(aafilter, "description") <- "Type of amino acid change (Any, Conservative, Radical)"
+  attr(aafilter, "description") <- "Type of amino acid change (Conservative, Radical)"
   attr(aafilter, "TAB") <- "Protein"
   environment(aafilter) <- baseenv()
   metadata(dtf) <- list(filters=list(aaChangeType=aafilter),
-                        cutoffs=list(aaChangeType=list(values=c("Conservative", "Radical"),
-                                                       selected="Conservative")))
+                        cutoffs=list(aaChangeType=c("Conservative", "Radical")))
   dtf
 }
 
