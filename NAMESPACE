@@ -182,7 +182,8 @@ importFrom(Gviz, GenomeAxisTrack,
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,
-              WeightMatrix)
+              WeightMatrix,
+              CutoffsList)
 
 exportMethods(summary,
               width,
@@ -206,6 +207,7 @@ exportMethods(summary,
               filtersMetadata,
               cutoffs,
               "cutoffs<-",
+              "change<-",
 
               ## for FiveSpliceSiteVariants and ThreeSpliceSiteVariants
               minIntronLength, "minIntronLength<-",

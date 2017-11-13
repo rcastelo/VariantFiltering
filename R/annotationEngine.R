@@ -314,9 +314,10 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
                       misk, txdb$packageName))
   })
 
-  mt <- match(c("CDSLOC", "PROTEINLOC", "REFCODON", "VARCODON", "REFAA", "VARAA",
-                "varAllele", "CONSEQUENCE", "CDSSTART", "CDSEND", "CUREF", "CUALT"),
-              colnames(mcols(variantsVR_annotated)))
+  ## mt <- match(c("CDSLOC", "PROTEINLOC", "REFCODON", "VARCODON", "REFAA", "VARAA",
+  ##               "varAllele", "CONSEQUENCE", "CDSSTART", "CDSEND", "CUREF", "CUALT"),
+  ##             colnames(mcols(variantsVR_annotated)))
+  mt <- match(c("CONSEQUENCE", "CUREF", "CUALT"), colnames(mcols(variantsVR_annotated)))
   stopifnot(all(!is.na(mt))) ## QC
   mcols(mcols(variantsVR_annotated))$TAB[mt] <- rep("Protein", length(mt))
   mt <- match(c("TXSTART", "TXEND"), colnames(mcols(variantsVR_annotated)))
@@ -779,15 +780,14 @@ setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
                              GenePhylostratum=gps$Description)
             mcols(dtf) <- DataFrame(TAB=rep("Gene", ncol(dtf)))
             gpsfilter <- function(x) {
-              VariantFiltering::allVariants(x, groupBy="nothing")$GenePhylostratumIndex <= as.integer(names(VariantFiltering::cutoffs(x)$genePhyloStratum[1]))
+              VariantFiltering::allVariants(x, groupBy="nothing")$GenePhylostratumIndex <= as.integer(VariantFiltering::cutoffs(x)$genePhyloStratum[1])
             }
             attr(gpsfilter, "description") <- "Gene phylostratum"
             attr(gpsfilter, "TAB") <- "Gene"
             environment(gpsfilter) <- baseenv()
             allowedgps <- VariantFiltering::genePhylostrata(annObj)$Description
-            names(allowedgps) <- rownames(VariantFiltering::genePhylostrata(annObj))
             metadata(dtf) <- list(filters=list(genePhyloStratum=gpsfilter),
-                                  cutoffs=list(genePhyloStratum=allowedgps))
+                                  cutoffs=list(genePhyloStratum=factor(allowedgps[length(allowedgps)], levels=allowedgps)))
             dtf
           })
 
@@ -1181,7 +1181,7 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   attr(aafilter, "TAB") <- "Protein"
   environment(aafilter) <- baseenv()
   metadata(dtf) <- list(filters=list(aaChangeType=aafilter),
-                        cutoffs=list(aaChangeType=c("Conservative", "Radical")))
+                        cutoffs=list(aaChangeType=factor("Conservative", levels=c("Conservative", "Radical"))))
   dtf
 }
 

@@ -60,6 +60,9 @@ setClass("VariantFilteringParam",
                                        qualityFilterNames="character",
                                        yieldSize="integer"))
 
+setClass("CutoffsList", contains="SimpleList",
+         prototype=prototype(elementType="ANY"))
+
 setClass("VariantFilteringResults",
          representation=representation(callObj="call",
                                        callStr="character",
@@ -73,7 +76,7 @@ setClass("VariantFilteringResults",
                                        gSO="graphNEL",
                                        filters="FilterRules",
                                        filtersMetadata="DataFrame",
-                                       cutoffs="list",
+                                       cutoffs="CutoffsList",
                                        annoGroups="list",
                                        dbSNPflag="character",
                                        OMIMflag="character",
@@ -95,3 +98,4 @@ setClass("WeightMatrix",
                         filename="character",
                         locations="character",
                         strictLocations="logical"))
+

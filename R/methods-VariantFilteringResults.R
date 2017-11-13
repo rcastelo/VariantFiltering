@@ -188,7 +188,7 @@ setMethod("cutoffs", signature(x="VariantFilteringResults"),
             x@cutoffs
           })
 
-setReplaceMethod("cutoffs", signature(x="VariantFilteringResults"),
+setReplaceMethod("cutoffs", signature(x="VariantFilteringResults", value="logical"),
                  function(x, value) {
                    x@cutoffs <- value
                    x

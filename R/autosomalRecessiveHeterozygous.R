@@ -224,7 +224,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
       genomeDescription=genomeDescription, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="autosomal recessive heterozygous",
       variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=filters(param),
-      filtersMetadata=fltMd, cutoffs=cutoffs, annoGroups=annoGroups,
+      filtersMetadata=fltMd, cutoffs=CutoffsList(cutoffs), annoGroups=annoGroups,
       dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
