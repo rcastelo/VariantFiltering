@@ -36,13 +36,13 @@ setMethod("show", signature(object="VariantFilteringResults"),
             }
             cat("  Functional annotation filters\n")
             print(active(filters(object))[setdiff(names(filters(object)), param(object)@qualityFilterNames)])
-            if (minCUFC(object) > 0)
-              cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
+            ## if (minCUFC(object) > 0)
+            ##   cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
             ## cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
-            if (!all(variantLocation(object)))
-              cat(sprintf("    Location restricted to: %s\n", paste(names(variantLocation(object))[variantLocation(object)], collapse=", ")))
-            if (!all(variantConsequence(object)))
-              cat(sprintf("    Consequence restricted to: %s\n", paste(names(variantConsequence(object))[variantConsequence(object)], collapse=", ")))
+            ## if (!all(variantLocation(object)))
+            ##   cat(sprintf("    Location restricted to: %s\n", paste(names(variantLocation(object))[variantLocation(object)], collapse=", ")))
+            ## if (!all(variantConsequence(object)))
+            ##   cat(sprintf("    Consequence restricted to: %s\n", paste(names(variantConsequence(object))[variantConsequence(object)], collapse=", ")))
             ## if ("MafDb" %in% sapply(param(object)$otherAnnotations, class)) {
             ##   cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
             ##   cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
@@ -700,60 +700,60 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             ##   rowsMask <- rowsMask & vars$TYPE %in% names(variantType(x))[variantType(x)]
 
             ## location of variant
-            if (!all(variantLocation(x)))
-              rowsMask <- rowsMask & vars$LOCATION %in% names(variantLocation(x))[variantLocation(x)]
+            ## if (!all(variantLocation(x)))
+            ##   rowsMask <- rowsMask & vars$LOCATION %in% names(variantLocation(x))[variantLocation(x)]
 
             ## consquence of variant
-            if (!all(variantConsequence(x)))
-              rowsMask <- rowsMask & vars$CONSEQUENCE %in% names(variantConsequence(x))[variantConsequence(x)]
+            ## if (!all(variantConsequence(x)))
+            ##   rowsMask <- rowsMask & vars$CONSEQUENCE %in% names(variantConsequence(x))[variantConsequence(x)]
 
             ## type of amino acid change
             ## if (aaChangeType(x) != "Any")
             ##   rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
 
             ## minimum allele frequency
-            mtNoMAF <- NULL
-            if ("MafDb" %in% param(x)$otherAnnotationsClass) {
-              mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
-              maxMAFannot <- rep(NA_real_, length(vars))
-              if (any(MAFpop(x))) {
-                mtNoMAF <- NULL
-                maxMAFannot <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
-                if (naMAF(x))
-                  maxMAFannot[is.na(maxMAFannot)] <- -Inf
-                else
-                  maxMAFannot[is.na(maxMAFannot)] <- Inf
-
-                rowsMask <- rowsMask & maxMAFannot <= maxMAF(x)
-                rowsMask[is.na(rowsMask)] <- FALSE
-
-                maxMAFannot[!is.finite(maxMAFannot)] <- NA_real_
-                if (any(!MAFpop(x)))
-                  mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
-              }
-            }
+            ## mtNoMAF <- NULL
+            ## if ("MafDb" %in% param(x)$otherAnnotationsClass) {
+            ##   mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
+            ##   maxMAFannot <- rep(NA_real_, length(vars))
+            ##   if (any(MAFpop(x))) {
+            ##     mtNoMAF <- NULL
+            ##     maxMAFannot <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
+            ##     if (naMAF(x))
+            ##       maxMAFannot[is.na(maxMAFannot)] <- -Inf
+            ##     else
+            ##       maxMAFannot[is.na(maxMAFannot)] <- Inf
+            ##
+            ##     rowsMask <- rowsMask & maxMAFannot <= maxMAF(x)
+            ##     rowsMask[is.na(rowsMask)] <- FALSE
+            ##
+            ##     maxMAFannot[!is.finite(maxMAFannot)] <- NA_real_
+            ##     if (any(!MAFpop(x)))
+            ##       mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
+            ##   }
+            ## }
 
             ## nucleotide conservation
-            mtNoMinPhastCons <- NULL
-            if (!is.na(match("GScores", param(x)$otherAnnotationsClass))) {
-              if (is.na(minPhastCons(x)))
-                mtNoMinPhastCons <- match("phastCons", colnames(mcols(vars)))
-              else {
-                rowsMask <- rowsMask & vars$phastCons >= minPhastCons(x)
-                rowsMask[is.na(rowsMask)] <- FALSE
-              }
-            }
+            ## mtNoMinPhastCons <- NULL
+            ## if (!is.na(match("GScores", param(x)$otherAnnotationsClass))) {
+            ##   if (is.na(minPhastCons(x)))
+            ##     mtNoMinPhastCons <- match("phastCons", colnames(mcols(vars)))
+            ##   else {
+            ##     rowsMask <- rowsMask & vars$phastCons >= minPhastCons(x)
+            ##     rowsMask[is.na(rowsMask)] <- FALSE
+            ##   }
+            ## }
 
             ## gene conservation
-            mtNoMinPhylostratum <- NULL
-            if (!is.na(match("GenePhylostrataDb", param(x)$otherAnnotationsClass))) {
-              if (is.na(minPhylostratum(x)))
-                mtNoMinPhylostratum <- grep("GenePhylostratum", colnames(mcols(vars)))
-              else {
-                rowsMask <- rowsMask & vars$GenePhylostratumIndex <= minPhylostratum(x)
-                rowsMask[is.na(rowsMask)] <- FALSE
-              }
-            }
+            ## mtNoMinPhylostratum <- NULL
+            ## if (!is.na(match("GenePhylostrataDb", param(x)$otherAnnotationsClass))) {
+            ##   if (is.na(minPhylostratum(x)))
+            ##     mtNoMinPhylostratum <- grep("GenePhylostratum", colnames(mcols(vars)))
+            ##   else {
+            ##     rowsMask <- rowsMask & vars$GenePhylostratumIndex <= minPhylostratum(x)
+            ##     rowsMask[is.na(rowsMask)] <- FALSE
+            ##   }
+            ## }
 
             ## if any of the 5' cryptic ss or 3' cryptic ss meet the cutoff, select the row
             ## mtNoSCORE5ss <- mtNoSCORE3ss <- NULL
@@ -781,19 +781,19 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             ## }
 
             ## codon-usage fold-change
-            minCUFCannot <- log2(vars$CUALT) - log2(vars$CUREF)
-            naCUFCmask <- rep(TRUE, length(vars))
-            minCUFCannot[is.na(minCUFCannot)] <- Inf
-
-            rowsMask <- rowsMask & abs(minCUFCannot) >= minCUFC(x)
-            rowsMask[is.na(rowsMask)] <- FALSE
-
-            minCUFCannot[!is.finite(minCUFCannot)] <- NA_real_
+            ## minCUFCannot <- log2(vars$CUALT) - log2(vars$CUREF)
+            ## naCUFCmask <- rep(TRUE, length(vars))
+            ## minCUFCannot[is.na(minCUFCannot)] <- Inf
+            ##
+            ## rowsMask <- rowsMask & abs(minCUFCannot) >= minCUFC(x)
+            ## rowsMask[is.na(rowsMask)] <- FALSE
+            ##
+            ## minCUFCannot[!is.finite(minCUFCannot)] <- NA_real_
 
             ## select variant annotations using the logical mask of the filters
-            colsIdx <- setdiff(1:ncol(mcols(vars)), mtNoMAF)
-            if (unusedColumns.rm) ## remove data columns that are not used for filtering
-              colsIdx <- setdiff(colsIdx, c(mtNoMinPhastCons, mtNoMinPhylostratum))## , mtNoSCORE5ss, mtNoSCORE3ss))
+            colsIdx <- 1:ncol(mcols(vars))
+            ## if (unusedColumns.rm) ## remove data columns that are not used for filtering
+            ##   colsIdx <- setdiff(colsIdx, c(mtNoMAF, mtNoMinPhastCons, mtNoMinPhylostratum, mtNoSCORE5ss, mtNoSCORE3ss))
 
             colsMask <- rep(FALSE, ncol(mcols(vars)))
             colsMask[colsIdx] <- TRUE
@@ -801,9 +801,9 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             vars <- unlist(varsxsam, use.names=FALSE)
             sampleNames(vars) <- Rle(names(varsxsam), elementNROWS(varsxsam))
             rowsMask <- rep(rowsMask, length(varsxsam))
-            if ("MafDb" %in% param(x)$otherAnnotationsClass)
-              vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
-            vars$CUFC <- rep(minCUFCannot, length(varsxsam))
+            ## if ("MafDb" %in% param(x)$otherAnnotationsClass)
+            ##   vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
+            ## vars$CUFC <- rep(minCUFCannot, length(varsxsam))
 
             vars <- vars[rowsMask, colsMask]
 

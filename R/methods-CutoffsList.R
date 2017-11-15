@@ -18,6 +18,14 @@ setGeneric("change<-", function(x, value, ...) standardGeneric("change<-"))
     stop(sprintf("'%s' does not form part of the available cutoffs.", cutoff))
 }
 
+setReplaceMethod("change", signature(x="CutoffsList", value="numeric"),
+                 function(x, value, cutoff) {
+                   .checkValueCutoffArgs(x, value, cutoff)
+
+                   x@listData[[cutoff]][1] <- value
+                   x
+                 })
+
 setReplaceMethod("change", signature(x="CutoffsList", value="logical"),
                  function(x, value, cutoff) {
                    .checkValueCutoffArgs(x, value, cutoff)
@@ -50,7 +58,7 @@ setReplaceMethod("change", signature(x="CutoffsList", value="character"),
                        stop(sprintf("invalid value for cutoff '%s'", cutoff))
                    }
 
-                   x@listData[[cutoff]] <- value
+                   x@listData[[cutoff]][1] <- value
                    x
                  })
 

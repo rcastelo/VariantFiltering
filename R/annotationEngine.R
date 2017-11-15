@@ -64,7 +64,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   mt <- match("VARID", colnames(mcols(variantsVR)))
   stopifnot(all(!is.na(mt))) ## QC
   mcols(mcols(variantsVR))$TAB[mt] <- rep("Genome", length(mt))
-  annotationmetadata <- list(filters=NULL, cutoffs=NULL)
+  annotationmetadata <- list(filters=NULL, cutoffs=CutoffsList(list()))
 
   ##############################
   ##                          ##
@@ -127,10 +127,24 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
                    TXID=located_variantsGR$TXID,
                    CDSID=located_variantsGR$CDSID,
                    GENEID=located_variantsGR$GENEID)
+  rm(located_variantsGR)
   mcols(dtf) <- DataFrame(TAB=c("Gene", "Transcript", "Transcript", "Transcript", NA, "Transcript", "Transcript", "Gene"))
+  locfilter <- function(x) {
+                 allowedlocations <- names(VariantFiltering::cutoffs(x)$location)[VariantFiltering::cutoffs(x)$location]
+                 VariantFiltering::allVariants(x, groupBy="nothing")$LOCATION %in% allowedlocations
+               }
+  attr(locfilter, "description") <- "Variant location (intergenic, promoter, coding, intron, etc.)"
+  attr(locfilter, "TAB") <- "Transcript"
+  environment(locfilter) <- baseenv()
+  locmask <- do.call("names<-", list(rep(TRUE, nlevels(dtf$LOCATION)), levels(dtf$LOCATION)))
+  metadata(dtf) <- list(filters=list(location=locfilter),
+                        cutoffs=CutoffsList(location=locmask))
   mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), dtf)
+  if (!is.null(metadata(dtf)$filters))
+    annotationmetadata$filters <- c(annotationmetadata$filters, metadata(dtf)$filters)
+  if (!is.null(metadata(dtf)$cutoffs))
+    annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(dtf)$cutoffs)
   rm(dtf)
-  rm(located_variantsGR) ## allow R to free some memory
 
   ## if the argument 'allTranscripts' is set to 'FALSE' then keep only once identical variants
   ## annotated with the same type of region from the same gene but in different tx
@@ -324,6 +338,35 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   stopifnot(all(!is.na(mt))) ## QC
   mcols(mcols(variantsVR_annotated))$TAB[mt] <- rep("Transcript", length(mt))
   
+  confilter <- function(x) {
+                 allowedconseq <- names(VariantFiltering::cutoffs(x)$consequence)[VariantFiltering::cutoffs(x)$consequence]
+                 VariantFiltering::allVariants(x, groupBy="nothing")$CONSEQUENCE %in% allowedconseq
+               }
+  attr(confilter, "description") <- "Variant consequence (frameshift, nonsense, nonsynonymous, synonymous)"
+  attr(confilter, "TAB") <- "Protein"
+  environment(confilter) <- baseenv()
+  conmask <- do.call("names<-", list(rep(TRUE, nlevels(mcols(variantsVR_annotated)$CONSEQUENCE)),
+                                         levels(mcols(variantsVR_annotated)$CONSEQUENCE)))
+  conmetadata <- list(filters=list(consequence=confilter),
+                      cutoffs=CutoffsList(consequence=conmask))
+  annotationmetadata$filters <- c(annotationmetadata$filters, conmetadata$filters)
+  annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, conmetadata$cutoffs)
+
+  cufilter <- function(x) {
+                cuFC <- log2(VariantFiltering::allVariants(x, groupBy="nothing")$CUALT) -
+                        log2(VariantFiltering::allVariants(x, groupBy="nothing")$CUREF)
+                mask <- cuFC >= VariantFiltering::cutoffs(x)$codonusageFC[1]
+                mask[is.na(mask)] <- FALSE
+                mask
+              }
+  attr(cufilter, "description") <- "Codon usage fold change"
+  attr(cufilter, "TAB") <- "Protein"
+  environment(cufilter) <- baseenv()
+  cumetadata <- list(filters=list(condonusageFC=cufilter),
+                     cutoffs=CutoffsList(codonusageFC=0))
+  annotationmetadata$filters <- c(annotationmetadata$filters, cumetadata$filters)
+  annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, cumetadata$cutoffs)
+
   #############################################################
   ##                                                         ##
   ## ANNOTATE SPLICE SITES IN SYNONYMOUS & INTRONIC VARIANTS ##
@@ -630,13 +673,13 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             maffilter <- function(x) {
                            maxMAFannot <- rep(NA_real_, length(x))
                            mask <- rep(TRUE, length(x))
-                           mafpopmask <- VariantFiltering::cutoffs(x)$MAFpopMask
+                           mafpopmask <- VariantFiltering::cutoffs(x)$maxMAF$popmask
                            if (any(mafpopmask)) {
                              mtNoMAF <- NULL
                              maxMAFannot <- do.call(pmax,
                                                     c(as.list(S4Vectors::mcols(VariantFiltering::allVariants(x, groupBy="nothing"))[, names(mafpopmask[mafpopmask]), drop=FALSE]), na.rm=TRUE))
                              maxMAFannot[is.na(maxMAFannot)] <- -Inf
-                             mask <- maxMAFannot <= VariantFiltering::cutoffs(x)$maxMAF
+                             mask <- maxMAFannot <= VariantFiltering::cutoffs(x)$maxMAF$maxvalue
                              mask[is.na(mask)] <- FALSE
                            }
                            mask
@@ -647,8 +690,7 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
             cnAF <- rep(TRUE, ncol(mafValues))
             names(cnAF) <- colnames(mafValues)
             metadata(mafValues) <- list(filters=list(maxMAF=maffilter),
-                                        cutoffs=list(maxMAF=list(popmask=cnAF,
-                                                                 maxvalue=0.5)))
+                                        cutoffs=CutoffsList(maxMAF=CutoffsList(popmask=cnAF, maxvalue=0.5)))
 
             mafValues
           })
@@ -762,6 +804,14 @@ setMethod("annotateVariants", signature(annObj="GScores"),
             dtf <- DataFrame(sco)
             colnames(dtf) <- type(annObj)
             mcols(dtf) <- DataFrame(TAB="Genome")
+            fstr <- sprintf("gscfilter <- function(x) { opf <- get(as.character(VariantFiltering::cutoffs(x)$%s$op[1])) ; opf(VariantFiltering::allVariants(x, groupBy=\"nothing\")$%s, VariantFiltering::cutoffs(x)$%s$value[1]) }", type(annObj), type(annObj), type(annObj))
+            eval(parse(text=fstr))
+            attr(gscfilter, "description") <- sprintf("%s genomic scores", type(annObj))
+            attr(gscfilter, "TAB") <- "Genome"
+            environment(gscfilter) <- baseenv()
+            eval(parse(text=sprintf("flt <- list(%s=gscfilter)", type(annObj))))
+            eval(parse(text=sprintf("ctf <- CutoffsList(%s=CutoffsList(op=factor(\">=\", levels=c(\"==\", \"!=\", \">\", \"<\", \">=\", \"<=\")), value=0))", type(annObj))))
+            metadata(dtf) <- list(filters=flt, cutoffs=ctf)
 
             dtf
           })
@@ -786,8 +836,10 @@ setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
             attr(gpsfilter, "TAB") <- "Gene"
             environment(gpsfilter) <- baseenv()
             allowedgps <- VariantFiltering::genePhylostrata(annObj)$Description
+            ctf <- CutoffsList(genePhyloStratum=factor(allowedgps[length(allowedgps)],
+                                                       levels=allowedgps))
             metadata(dtf) <- list(filters=list(genePhyloStratum=gpsfilter),
-                                  cutoffs=list(genePhyloStratum=factor(allowedgps[length(allowedgps)], levels=allowedgps)))
+                                  cutoffs=ctf)
             dtf
           })
 
@@ -855,9 +907,9 @@ typeOfVariants <- function(variantsVR) {
   attr(tovfilter, "description") <- "Type of variant (SVN, Insertion, Deletion, MNV, Delins)"
   attr(tovfilter, "TAB") <- "Genome"
   environment(tovfilter) <- baseenv()
+  vtmask <- do.call("names<-", list(rep(TRUE, nlevels(type)), levels(type)))
   metadata(dtf) <- list(filters=list(variantType=tovfilter),
-                        cutoffs=list(variantType=c(SNV=TRUE, Insertion=TRUE, Deletion=TRUE,
-                                                   MNV=TRUE, DelIns=TRUE)))
+                        cutoffs=CutoffsList(variantType=vtmask))
   dtf
 }
 
@@ -1181,7 +1233,8 @@ aminoAcidChanges <- function(variantsVR, rAAch) {
   attr(aafilter, "TAB") <- "Protein"
   environment(aafilter) <- baseenv()
   metadata(dtf) <- list(filters=list(aaChangeType=aafilter),
-                        cutoffs=list(aaChangeType=factor("Conservative", levels=c("Conservative", "Radical"))))
+                        cutoffs=CutoffsList(aaChangeType=factor("Conservative",
+                                                                levels=c("Conservative", "Radical"))))
   dtf
 }
 

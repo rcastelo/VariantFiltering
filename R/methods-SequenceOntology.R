@@ -207,7 +207,7 @@ addSOmetadata <- function(variantsVR) {
   attr(sofilter, "TAB") <- "Transcript"
   environment(sofilter) <- baseenv()
   SOmetadata <- list(filters=list(SOterms=sofilter),
-                     cutoffs=list(SOterms="Any"))
+                     cutoffs=CutoffsList(SOterms="Any"))
   metadata(mcols(variantsVR))$filters <- c(metadata(mcols(variantsVR))$filters, SOmetadata$filters)
   metadata(mcols(variantsVR))$cutoffs <- c(metadata(mcols(variantsVR))$cutoffs, SOmetadata$cutoffs)
 
