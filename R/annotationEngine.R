@@ -362,7 +362,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   attr(cufilter, "description") <- "Codon usage fold change"
   attr(cufilter, "TAB") <- "Protein"
   environment(cufilter) <- baseenv()
-  cumetadata <- list(filters=list(condonusageFC=cufilter),
+  cumetadata <- list(filters=list(codonusageFC=cufilter),
                      cutoffs=CutoffsList(codonusageFC=0))
   annotationmetadata$filters <- c(annotationmetadata$filters, cumetadata$filters)
   annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, cumetadata$cutoffs)
