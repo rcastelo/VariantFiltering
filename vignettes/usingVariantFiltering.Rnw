@@ -301,18 +301,20 @@ from an alternative CDS.
 
 Properly updating cutoff values may be problematic if we do not know how exactly
 are they employed by the corresponding filters. To facilitate setting the right cutoff
-values the help page of the \Rclass{VariantFilteringResults} class contains a list of
-available accessor methods to update them. Here we illustrate the use of one of them,
-the one controlling minor allele frequency (MAF) values:
+values we use the \Rfunction{change()} method and we illustrate it on the filter
+of minor allele frequency (MAF) values:
 
 <<>>=
 active(filters(uind)) <- FALSE
-MAFmask <- MAFpop(uind)
-MAFmask
-MAFpop(uind) <- !MAFmask
-MAFpop(uind, "AFKGp1") <- TRUE
-MAFpop(uind)
-maxMAF(uind) <- 0.01
+active(filters(uind))["maxMAF"] <- TRUE
+cutoffs(uind)$maxMAF
+cutoffs(uind)$maxMAF$popmask
+cutoffs(uind)$maxMAF$maxvalue
+change(cutoffs(uind)$maxMAF, "popmask") <- FALSE
+cutoffs(uind)$maxMAF$popmask
+change(cutoffs(uind)$maxMAF, "popmask") <- c(AFKGp1=TRUE)
+cutoffs(uind)$maxMAF$popmask
+change(cutoffs(uind)$maxMAF, "maxvalue") <- 0.01
 summary(uind)
 @
 In this case we selected variants with MAF$< 0.01$ in the global population of the

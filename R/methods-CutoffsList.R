@@ -18,9 +18,17 @@ setGeneric("change<-", function(x, value, ...) standardGeneric("change<-"))
     stop(sprintf("'%s' does not form part of the available cutoffs.", cutoff))
 }
 
+setReplaceMethod("change", signature(x="CutoffsList", value="integer"),
+                 function(x, value, cutoff) {
+                   change(x, cutoff) <- as.numeric(value)
+                 })
+
 setReplaceMethod("change", signature(x="CutoffsList", value="numeric"),
                  function(x, value, cutoff) {
                    .checkValueCutoffArgs(x, value, cutoff)
+
+                   if (!is.numeric(x[[cutoff]]) && !is.integer(x[[cutoff]]))
+                       stop("this cutoff does not take numeric values.")
 
                    x@listData[[cutoff]][1] <- value
                    x
@@ -30,9 +38,12 @@ setReplaceMethod("change", signature(x="CutoffsList", value="logical"),
                  function(x, value, cutoff) {
                    .checkValueCutoffArgs(x, value, cutoff)
 
+                   if (!is.logical(x[[cutoff]]))
+                     stop("this cutoff does not take a logical values.")
+
                    if (is.null(names(value))) {
                      if (length(value) > 1)
-                       stop("Multiple values must have names.")
+                       stop("multiple values must have names.")
                      value <- do.call("names<-", list(rep(value, length(x[[cutoff]])), names(x[[cutoff]])))
                    } else {
                      mask <- !names(value) %in% names(x[[cutoff]])
@@ -48,6 +59,9 @@ setReplaceMethod("change", signature(x="CutoffsList", value="logical"),
 setReplaceMethod("change", signature(x="CutoffsList", value="character"),
                  function(x, value, cutoff) {
                    .checkValueCutoffArgs(x, value, cutoff)
+
+                   if (!is.character(x[[cutoff]]) && !is.factor(x[[cutoff]]))
+                     stop("this cutoff does not take character string values.")
 
                    if (length(value) > 1)
                      stop("a string value for a cutoff must be a singleton.")
@@ -65,5 +79,11 @@ setReplaceMethod("change", signature(x="CutoffsList", value="character"),
 setReplaceMethod("cutoffs", signature(x="VariantFilteringResults", value="CutoffsList"),
                  function(x, value) {
                    x@cutoffs <- value
+                   x
+                 })
+
+setReplaceMethod("sortings", signature(x="VariantFilteringResults", value="CutoffsList"),
+                 function(x, value) {
+                   x@sortings <- value
                    x
                  })

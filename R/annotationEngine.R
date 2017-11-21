@@ -64,7 +64,12 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   mt <- match("VARID", colnames(mcols(variantsVR)))
   stopifnot(all(!is.na(mt))) ## QC
   mcols(mcols(variantsVR))$TAB[mt] <- rep("Genome", length(mt))
-  annotationmetadata <- list(filters=NULL, cutoffs=CutoffsList(list()))
+
+  ## initialize annotation metadata
+  annotationmetadata <- list(filters=list(),
+                             cutoffs=CutoffsList(list()),
+                             sortings=CutoffsList(criterion=factor("position", levels="position"),
+                                                  decreasing=FALSE))
 
   ##############################
   ##                          ##
@@ -438,6 +443,9 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
       annotationmetadata$filters <- c(annotationmetadata$filters, metadata(ann)$filters)
     if (!is.null(metadata(ann)$cutoffs))
       annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, metadata(ann)$cutoffs)
+    if (!is.null(metadata(ann)$sortings))
+      annotationmetadata$sortings$criterion <- factor(annotationmetadata$sortings$criterion[1],
+                                                     levels=c(as.character(annotationmetadata$sortings$criterion), metadata(ann)$sortings))
     mcols(variantsVR_annotated) <- cbind(mcols(variantsVR_annotated), ann)
   }
 
@@ -811,7 +819,7 @@ setMethod("annotateVariants", signature(annObj="GScores"),
             environment(gscfilter) <- baseenv()
             eval(parse(text=sprintf("flt <- list(%s=gscfilter)", type(annObj))))
             eval(parse(text=sprintf("ctf <- CutoffsList(%s=CutoffsList(op=factor(\">=\", levels=c(\"==\", \"!=\", \">\", \"<\", \">=\", \"<=\")), value=0))", type(annObj))))
-            metadata(dtf) <- list(filters=flt, cutoffs=ctf)
+            metadata(dtf) <- list(filters=get("flt"), cutoffs=get("ctf"), sortings=type(annObj))
 
             dtf
           })

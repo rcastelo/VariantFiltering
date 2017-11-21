@@ -128,12 +128,13 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
                            AnnoGroup=sapply(metadata(mcols(annotated_variants))$filters,
                                             attr, "TAB")))
   cutoffs <- metadata(mcols(annotated_variants))$cutoffs
+  sortings <- metadata(mcols(annotated_variants))$sortings
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr,
       genomeDescription=genomeDescription, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="X-linked", variants=annotated_variants,
-      bamViews=BamViews(), gSO=gSO, filters=filters(param), filtersMetadata=fltMd, cutoffs=CutoffsList(cutoffs),
-      annoGroups=annoGroups, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      bamViews=BamViews(), gSO=gSO, filters=filters(param), filtersMetadata=fltMd, cutoffs=cutoffs,
+      sortings=sortings, annoGroups=annoGroups, dbSNPflag=NA_character_, OMIMflag=NA_character_,
       variantTypeMask=varTypMask, locationMask=locMask, consequenceMask=conMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,

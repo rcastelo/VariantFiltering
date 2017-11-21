@@ -108,13 +108,14 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
                            AnnoGroup=sapply(metadata(mcols(annotated_variants))$filters,
                                             attr, "TAB")))
   cutoffs <- metadata(mcols(annotated_variants))$cutoffs
+  sortings <- metadata(mcols(annotated_variants))$sortings
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr,
       genomeDescription=genomeDescription, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
       bamViews=BamViews(), gSO=gSO, filters=flt, filtersMetadata=fltMd, cutoffs=cutoffs,
-      annoGroups=annoGroups, dbSNPflag=NA_character_, OMIMflag=NA_character_,
+      sortings=sortings, annoGroups=annoGroups, dbSNPflag=NA_character_, OMIMflag=NA_character_,
       locationMask=locMask, consequenceMask=conMask, variantTypeMask=varTypMask, aaChangeType="Any",
       MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
       minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,

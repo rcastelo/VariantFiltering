@@ -23,10 +23,21 @@
 \alias{filters<-}
 \alias{filters,VariantFilteringResults-method}
 \alias{filters<-,VariantFilteringResults-method}
+\alias{filtersMetaData}
+\alias{filtersMetaData,VariantFilteringParam-method}
+\alias{filtersMetaData,VariantFilteringResults-method}
 \alias{cutoffs}
 \alias{cutoffs<-}
 \alias{cutoffs,VariantFilteringResults-method}
 \alias{cutoffs<-,VariantFilteringResults-method}
+\alias{cutoffs<-,VariantFilteringResults,CutoffsList-method}
+\alias{cutoffs<-,VariantFilteringResults,logical-method}
+\alias{change<-,CutoffsList,integer-method}
+\alias{change<-,CutoffsList,numeric-method}
+\alias{change<-,CutoffsList,character-method}
+\alias{change<-,CutoffsList,logical-method}
+\alias{sortings,VariantFilteringResults-method}
+\alias{sortings<-,VariantFilteringResults,CutoffsList-method}
 \alias{softFilterMatrix,VariantFilteringResults-method}
 \alias{softFilterMatrix<-,VariantFilteringResults-method}
 \alias{samples}
@@ -289,7 +300,15 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
       \code{filteredVariants()}.
     }
     \item{}{
-      \code{cutoffs(x)}: get and update cutoffs from the available filters.
+      \code{filtersMetadata(x)}: metadata about the available filters.
+    }
+    \item{}{
+      \code{cutoffs(x)}: get cutoffs from the available filters.
+    }
+    \item{}{
+      \code{change(x, cutoff)<-}: change cutoffs from the available filters. Here, argument \code{x}
+      is a \code{CutoffsList} object given by the method \code{cutoffs()}, and argument \code{cutoff}
+      is a character string with the name of the cutoff.
     }
     \item{}{
       \code{softFilterMatrix(x)}: get and update the variant by filter matrix; see
@@ -308,7 +327,7 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
       \code{variantConsequence(x)}: filter by variant consequence (\code{"snynonymous"}, \code{"nonsynonymous"}, \code{"frameshift"}, \code{"nonsense"}, \code{"not translated"}).
     }
     \item{}{
-      \code{aaChangeType(x)}: filter by type of change of amino acid (\code{"Any"}, \code{"Radical"}, \code{"Conservative"}).
+      \code{aaChangeType(x)}: filter by type of change of amino acid (\code{"Radical"}, \code{"Conservative"}).
     }
     \item{}{
       \code{OMIMpresent(x)}: flag whether to filter variants whose associated genes are present or absent from OMIM (\code{NA} -do not filter-, \code{"Yes"}, \code{"No"}).

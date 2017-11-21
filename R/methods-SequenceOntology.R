@@ -272,6 +272,9 @@ addSOmetadata <- function(variantsVR) {
 ## returns SO IDs from the SO IDs or SO descriptions given in 'soterms'
 ## that are present in the SO graph 'gSO'
 .findSOIDs <- function(soterms, gSO) {
+  if (soterms[1] == "Any")
+    return(nodes(gSO))
+
   mask <- soterms %in% nodes(gSO)
   if (any(!mask)) {
     solabels <- unlist(nodeData(gSO, nodes(gSO), "label"))

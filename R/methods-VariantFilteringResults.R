@@ -194,6 +194,11 @@ setReplaceMethod("cutoffs", signature(x="VariantFilteringResults", value="logica
                    x
                  })
 
+setMethod("sortings", signature(x="VariantFilteringResults"),
+          function(x) {
+            x@sortings
+          })
+
 setMethod("softFilterMatrix", signature(x="VariantFilteringResults"),
           function(x) {
             softFilterMatrix(allVariants(x, groupBy="nothing"))
@@ -658,7 +663,9 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
 
 ## get variants after applying all filters
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
-          function(x, groupBy="sample", unusedColumns.rm=FALSE) {
+          function(x, groupBy=c("sample", "nothing"), unusedColumns.rm=FALSE) {
+            groupBy <- match.arg(groupBy)
+
             if (length(filters(x)) > 0)
               x <- softFilter(x, filters(x))
             varsxsam <- allVariants(x)
@@ -676,84 +683,6 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
               gt <- gsub("0+", "0", gt)
               rowsMask <- rowsMask & !gt %in% "0"
             }
-
-            ## presence in dbSNP
-            ## if (!is.na(dbSNPpresent(x))) {
-            ##   maskNAdbSNP <- is.na(vars$dbSNP)
-            ##   if (dbSNPpresent(x) == "Yes")
-            ##     rowsMask <- rowsMask & !maskNAdbSNP
-            ##   else
-            ##     rowsMask <- rowsMask & maskNAdbSNP
-            ## }
-
-            ## presence in OMIM
-            ## if (!is.na(OMIMpresent(x))) {
-            ##   maskNAomim <- is.na(vars$OMIM)
-            ##   if (OMIMpresent(x) == "Yes")
-            ##     rowsMask <- rowsMask & !maskNAomim
-            ##   else
-            ##     rowsMask <- rowsMask & maskNAomim
-            ## }
-
-            ## type of variant
-            ## if (!all(variantType(x)))
-            ##   rowsMask <- rowsMask & vars$TYPE %in% names(variantType(x))[variantType(x)]
-
-            ## location of variant
-            ## if (!all(variantLocation(x)))
-            ##   rowsMask <- rowsMask & vars$LOCATION %in% names(variantLocation(x))[variantLocation(x)]
-
-            ## consquence of variant
-            ## if (!all(variantConsequence(x)))
-            ##   rowsMask <- rowsMask & vars$CONSEQUENCE %in% names(variantConsequence(x))[variantConsequence(x)]
-
-            ## type of amino acid change
-            ## if (aaChangeType(x) != "Any")
-            ##   rowsMask <- rowsMask & vars$AAchangeType == aaChangeType(x)
-
-            ## minimum allele frequency
-            ## mtNoMAF <- NULL
-            ## if ("MafDb" %in% param(x)$otherAnnotationsClass) {
-            ##   mtNoMAF <- match(names(MAFpop(x)), colnames(mcols(vars)))
-            ##   maxMAFannot <- rep(NA_real_, length(vars))
-            ##   if (any(MAFpop(x))) {
-            ##     mtNoMAF <- NULL
-            ##     maxMAFannot <- do.call(pmax, c(as.list(mcols(vars[, names(MAFpop(x))[MAFpop(x)]])), na.rm=TRUE))
-            ##     if (naMAF(x))
-            ##       maxMAFannot[is.na(maxMAFannot)] <- -Inf
-            ##     else
-            ##       maxMAFannot[is.na(maxMAFannot)] <- Inf
-            ##
-            ##     rowsMask <- rowsMask & maxMAFannot <= maxMAF(x)
-            ##     rowsMask[is.na(rowsMask)] <- FALSE
-            ##
-            ##     maxMAFannot[!is.finite(maxMAFannot)] <- NA_real_
-            ##     if (any(!MAFpop(x)))
-            ##       mtNoMAF <- match(names(MAFpop(x))[!MAFpop(x)], colnames(mcols(vars)))
-            ##   }
-            ## }
-
-            ## nucleotide conservation
-            ## mtNoMinPhastCons <- NULL
-            ## if (!is.na(match("GScores", param(x)$otherAnnotationsClass))) {
-            ##   if (is.na(minPhastCons(x)))
-            ##     mtNoMinPhastCons <- match("phastCons", colnames(mcols(vars)))
-            ##   else {
-            ##     rowsMask <- rowsMask & vars$phastCons >= minPhastCons(x)
-            ##     rowsMask[is.na(rowsMask)] <- FALSE
-            ##   }
-            ## }
-
-            ## gene conservation
-            ## mtNoMinPhylostratum <- NULL
-            ## if (!is.na(match("GenePhylostrataDb", param(x)$otherAnnotationsClass))) {
-            ##   if (is.na(minPhylostratum(x)))
-            ##     mtNoMinPhylostratum <- grep("GenePhylostratum", colnames(mcols(vars)))
-            ##   else {
-            ##     rowsMask <- rowsMask & vars$GenePhylostratumIndex <= minPhylostratum(x)
-            ##     rowsMask[is.na(rowsMask)] <- FALSE
-            ##   }
-            ## }
 
             ## if any of the 5' cryptic ss or 3' cryptic ss meet the cutoff, select the row
             ## mtNoSCORE5ss <- mtNoSCORE3ss <- NULL
@@ -780,16 +709,6 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             ##   rowsMask <- rowsMask & crypssMask
             ## }
 
-            ## codon-usage fold-change
-            ## minCUFCannot <- log2(vars$CUALT) - log2(vars$CUREF)
-            ## naCUFCmask <- rep(TRUE, length(vars))
-            ## minCUFCannot[is.na(minCUFCannot)] <- Inf
-            ##
-            ## rowsMask <- rowsMask & abs(minCUFCannot) >= minCUFC(x)
-            ## rowsMask[is.na(rowsMask)] <- FALSE
-            ##
-            ## minCUFCannot[!is.finite(minCUFCannot)] <- NA_real_
-
             ## select variant annotations using the logical mask of the filters
             colsIdx <- 1:ncol(mcols(vars))
             ## if (unusedColumns.rm) ## remove data columns that are not used for filtering
@@ -801,11 +720,13 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             vars <- unlist(varsxsam, use.names=FALSE)
             sampleNames(vars) <- Rle(names(varsxsam), elementNROWS(varsxsam))
             rowsMask <- rep(rowsMask, length(varsxsam))
-            ## if ("MafDb" %in% param(x)$otherAnnotationsClass)
-            ##   vars$maxMAF <- rep(maxMAFannot, length(varsxsam))
-            ## vars$CUFC <- rep(minCUFCannot, length(varsxsam))
 
             vars <- vars[rowsMask, colsMask]
+
+            if (sortings(x)$criterion != "position")
+              vars <- vars[order(mcols(vars)[[sortings(x)$criterion]], decreasing=sortings(x)$decreasing), ]
+            else if (sortings(x)$decreasing)
+              vars <- rev(vars)
 
             if (groupBy[1] %in% "sample")
               vars <- split(vars, sampleNames(vars))
