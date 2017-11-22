@@ -41,18 +41,25 @@ setReplaceMethod("change", signature(x="CutoffsList", value="logical"),
                    if (!is.logical(x[[cutoff]]))
                      stop("this cutoff does not take a logical values.")
 
+                   mtvalue <- integer(0)
                    if (is.null(names(value))) {
                      if (length(value) > 1)
                        stop("multiple values must have names.")
-                     value <- do.call("names<-", list(rep(value, length(x[[cutoff]])), names(x[[cutoff]])))
+                     if (is.null(names(x[[cutoff]])))
+                       mtvalue <- 1:length(value)
+                     else {
+                       value <- do.call("names<-", list(rep(value, length(x[[cutoff]])), names(x[[cutoff]])))
+                       mtvalue <- match(names(value), names(x[[cutoff]]))
+                     }
                    } else {
                      mask <- !names(value) %in% names(x[[cutoff]])
                      if (any(mask))
                        stop(sprintf("value names %s do not exist for cutoff '%s'",
                                     paste(names(value)[mask], collapse=", "), cutoff))
+                     mtvalue <- match(names(value), names(x[[cutoff]]))
                    }
 
-                   x@listData[[cutoff]][names(value)] <- value
+                   x@listData[[cutoff]][mtvalue] <- value
                    x
                  })
   

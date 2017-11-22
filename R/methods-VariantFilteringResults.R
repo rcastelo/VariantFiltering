@@ -724,7 +724,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             vars <- vars[rowsMask, colsMask]
 
             if (sortings(x)$criterion != "position")
-              vars <- vars[order(mcols(vars)[[sortings(x)$criterion]], decreasing=sortings(x)$decreasing), ]
+              vars <- vars[order(mcols(vars)[[as.character(sortings(x)$criterion)]], decreasing=sortings(x)$decreasing), ]
             else if (sortings(x)$decreasing)
               vars <- rev(vars)
 
