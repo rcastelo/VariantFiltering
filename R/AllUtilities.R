@@ -169,7 +169,7 @@
 ## this is useful to meet building times in
 ## the windows build machines
 
-.loadPrecomputedVariantFilteringResults <- function(vfpar) {
+.loadPrecomputedVariantFilteringResults <- function() {
   uind <- readRDS(system.file("extdata", "uind.rds", package="VariantFiltering"))
   uind
 }

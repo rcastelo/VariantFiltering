@@ -114,7 +114,7 @@ that just annotates the variants without filtering out any of them:
 
 <<echo=FALSE>>=
 if (VariantFiltering:::.getOS() == "windows") {
-  uind <- VariantFiltering:::.loadPrecomputedVariantFilteringResults(vfpar)
+  uind <- VariantFiltering:::.loadPrecomputedVariantFilteringResults()
 } else
   uind <- unrelatedIndividuals(vfpar) ## ~75 sec.
 

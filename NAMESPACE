@@ -122,6 +122,8 @@ importFrom(utils, capture.output,
                   write.csv,
                   write.table)
 
+importFrom(stats, setNames)
+
 importFrom(RBGL, tsort,
                  dijkstra.sp)
 importFrom(Rsamtools, TabixFile,
@@ -178,6 +180,15 @@ importFrom(Gviz, GenomeAxisTrack,
                  SequenceTrack,
                  AlignmentsTrack,
                  plotTracks)
+
+importFrom(shinythemes, shinytheme)
+
+importFrom(shinyjs, hide,
+                    hidden,
+                    onevent)
+
+importFrom(DT, dataTableProxy,
+               selectPage)
 
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               GenePhylostrataDb,
@@ -260,5 +271,7 @@ export(VariantFilteringParam,
        FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
 
        ## for the GenePhylostrata class
-       GenePhylostrataDb
+       GenePhylostrataDb,
+
+       browseVariants
       )

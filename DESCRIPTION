@@ -5,16 +5,18 @@ Description: Filter genetic variants using different criteria such as
              inheritance model, amino acid change consequence, minor
              allele frequencies across human populations, splice site
              strength, conservation, etc.
-Version: 1.15.9
+Version: 1.15.10
 Authors@R: c(person("Robert", "Castelo", role=c("aut", "cre"), email="robert.castelo@upf.edu"),
              person("Dei", "Martinez Elurbe", role="ctb"),
-             person("Pau", "Puigdevall", role="ctb"))
+             person("Pau", "Puigdevall", role="ctb"),
+             person("Joan", "Fernandez", role="ctb"))
 License: Artistic-2.0
 Depends: R (>= 3.0.0), methods, BiocGenerics (>= 0.13.8), VariantAnnotation (>= 1.13.29)
-Imports: utils, Biobase, S4Vectors (>= 0.9.25),
+Imports: utils, stats, Biobase, S4Vectors (>= 0.9.25),
          IRanges (>= 2.3.23), RBGL, graph, AnnotationDbi, BiocParallel, Biostrings (>= 2.33.11),
          GenomeInfoDb (>= 1.3.6), GenomicRanges (>= 1.19.13), SummarizedExperiment,
-         GenomicFeatures, Rsamtools (>= 1.17.8), BSgenome, Gviz, shiny, GenomicScores (>= 1.0.0)
+         GenomicFeatures, Rsamtools (>= 1.17.8), BSgenome, GenomicScores (>= 1.0.0),
+         Gviz, shiny, shinythemes, shinyjs, DT
 Suggests: RUnit, BiocStyle, org.Hs.eg.db, BSgenome.Hsapiens.1000genomes.hs37d5,
           TxDb.Hsapiens.UCSC.hg19.knownGene, SNPlocs.Hsapiens.dbSNP144.GRCh37,
           MafDb.1Kgenomes.phase1.hs37d5, phastCons100way.UCSC.hg19,
