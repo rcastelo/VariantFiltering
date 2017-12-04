@@ -133,7 +133,7 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
                    CDSID=located_variantsGR$CDSID,
                    GENEID=located_variantsGR$GENEID)
   rm(located_variantsGR)
-  mcols(dtf) <- DataFrame(TAB=c("Gene", "Transcript", "Transcript", "Transcript", NA, "Transcript", "Transcript", "Gene"))
+  mcols(dtf) <- DataFrame(TAB=c("Transcript", "Transcript", "Transcript", "Transcript", NA, "Transcript", "Transcript", "Gene"))
   locfilter <- function(x) {
                  allowedlocations <- names(VariantFiltering::cutoffs(x)$location)[VariantFiltering::cutoffs(x)$location]
                  VariantFiltering::allVariants(x, groupBy="nothing")$LOCATION %in% allowedlocations
@@ -836,7 +836,7 @@ setMethod("annotateVariants", signature(annObj="GenePhylostrataDb"),
             dtf <- DataFrame(GenePhylostratumTaxID=gps$TaxID,
                              GenePhylostratumIndex=gps$OldestPhylostratum,
                              GenePhylostratum=gps$Description)
-            mcols(dtf) <- DataFrame(TAB=rep("Gene", ncol(dtf)))
+            mcols(dtf) <- DataFrame(TAB=c(NA, NA, "Gene"))
             gpsfilter <- function(x) {
               VariantFiltering::allVariants(x, groupBy="nothing")$GenePhylostratumIndex <= as.integer(VariantFiltering::cutoffs(x)$genePhyloStratum[1])
             }

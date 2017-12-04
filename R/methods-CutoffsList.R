@@ -5,8 +5,6 @@ CutoffsList <- function(...) {
   new("CutoffsList", listData=arg)
 }
 
-setGeneric("change<-", function(x, value, ...) standardGeneric("change<-"))
-
 .checkValueCutoffArgs <- function(x, value, cutoff) {
   if (missing(cutoff))
     stop("please specify a 'cutoff' name as a second argument.")

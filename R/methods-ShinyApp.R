@@ -168,7 +168,7 @@ inputData <- function(id, vfrobj) {
         column(
           12,
           selectInput("sort", "Select column to sort by:",levels(sortings(vfResultsObj)[["criterion"]]), selected = as.character(sortings(vfResultsObj)[["criterion"]])),
-          radioButtons("order","",choiceNames = list("Ascending", "Descending"), choiceValues = list(TRUE, FALSE), selected = sortings(vfResultsObj)[["decreasing"]]),
+          radioButtons("order","",choiceNames = list("Decreasing", "Increasing"), choiceValues = list(FALSE, TRUE), selected = sortings(vfResultsObj)[["decreasing"]]),
           generateFiltering(vfResultsObj),
           actionButton("closeSave", "Save and Close")
         )

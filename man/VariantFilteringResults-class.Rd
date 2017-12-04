@@ -5,6 +5,9 @@
 \alias{class:VariantFilteringResults}
 \alias{VariantFilteringResults}
 \alias{VariantFilteringResults-class}
+\alias{class:CutoffsList}
+\alias{CutoffsList}
+\alias{CutoffsList-class}
 
 % Methods:
 \alias{show,CompressedVRangesList-method}
@@ -23,19 +26,22 @@
 \alias{filters<-}
 \alias{filters,VariantFilteringResults-method}
 \alias{filters<-,VariantFilteringResults-method}
-\alias{filtersMetaData}
-\alias{filtersMetaData,VariantFilteringParam-method}
-\alias{filtersMetaData,VariantFilteringResults-method}
+\alias{filtersMetadata}
+\alias{filtersMetadata,VariantFilteringParam-method}
+\alias{filtersMetadata,VariantFilteringResults-method}
 \alias{cutoffs}
 \alias{cutoffs<-}
 \alias{cutoffs,VariantFilteringResults-method}
 \alias{cutoffs<-,VariantFilteringResults-method}
 \alias{cutoffs<-,VariantFilteringResults,CutoffsList-method}
 \alias{cutoffs<-,VariantFilteringResults,logical-method}
+\alias{change<-}
 \alias{change<-,CutoffsList,integer-method}
 \alias{change<-,CutoffsList,numeric-method}
 \alias{change<-,CutoffsList,character-method}
 \alias{change<-,CutoffsList,logical-method}
+\alias{sortings}
+\alias{sortings<-}
 \alias{sortings,VariantFilteringResults-method}
 \alias{sortings<-,VariantFilteringResults,CutoffsList-method}
 \alias{softFilterMatrix,VariantFilteringResults-method}
@@ -131,6 +137,7 @@
 \alias{filteredVariants}
 \alias{reportVariants,VariantFilteringResults-method}
 \alias{reportVariants}
+\alias{browseVariants}
 \alias{plot,VariantFilteringResults,ANY-method}
 
 \title{VariantFilteringResults class}
