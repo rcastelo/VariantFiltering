@@ -59,28 +59,9 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
 
   gSO <- annotateSO(annotated_variants, sog(param))
   annotated_variants <- addSOmetadata(annotated_variants)
-  locMask <- conMask <- varTypMask <- logical(0)
 
-  if (length(annotated_variants) > 0) {
-
-    locMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$LOCATION)),
-                                       levels(annotated_variants$LOCATION)))
-    conMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$CONSEQUENCE)),
-                                       levels(annotated_variants$CONSEQUENCE)))
-    varTypMask <- do.call("names<-", list(rep(TRUE, nlevels(annotated_variants$TYPE)),
-                                        levels(annotated_variants$TYPE)))
-  } else
+  if (length(annotated_variants) == 0)
     warning("The input VCF file has no variants.")
-
-  MAFpopMask <- NA
-  if ("MafDb" %in% param$otherAnnotationsClass) {
-    ## assume AF columns are those containing AF[A-Z]+ and being of class 'numeric'
-    cnAF <- colnames(mcols(annotated_variants))
-    colsclasses <- sapply(mcols(annotated_variants), class)
-    cnAF <- cnAF[intersect(grep("^AF.+|_AF.+", cnAF), grep("numeric", colsclasses))]
-    MAFpopMask <- rep(TRUE, length(cnAF))
-    names(MAFpopMask) <- cnAF
-  }
 
   annoGroups <- list()
   if (!is.null(mcols(mcols(annotated_variants))$TAB)) {
@@ -115,9 +96,6 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
       activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
       ## indselected=NA_character_, selectgene=NA_character_,
       bamViews=BamViews(), gSO=gSO, filters=flt, filtersMetadata=fltMd, cutoffs=cutoffs,
-      sortings=sortings, annoGroups=annoGroups, dbSNPflag=NA_character_, OMIMflag=NA_character_,
-      locationMask=locMask, consequenceMask=conMask, variantTypeMask=varTypMask, aaChangeType="Any",
-      MAFpopMask=MAFpopMask, naMAF=TRUE, maxMAF=1,
-      minPhastCons=NA_real_, minPhylostratumIndex=NA_integer_,
+      sortings=sortings, annoGroups=annoGroups,
       minScore5ss=NA_real_, minScore3ss=NA_real_, minCUFC=0)
 })

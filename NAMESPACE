@@ -186,15 +186,13 @@ importFrom(shinythemes, shinytheme)
 importFrom(shinyjs, hide,
                     hidden,
                     onevent,
-		    enable,
-		    disable,
-		    useShinyjs,
-		    show)
+                    enable,
+                    disable,
+                    useShinyjs)
 
 importFrom(DT, dataTableProxy,
                selectPage,
-               renderDataTable,
-	       datatable)
+               datatable)
 
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               GenePhylostrataDb,
@@ -246,20 +244,22 @@ exportMethods(summary,
               filteredVariants,
               sog,
               annoGroups,
-              ## dbSNPpresent, "dbSNPpresent<-",
-              ## OMIMpresent, "OMIMpresent<-",
-              ## variantType, "variantType<-",
+
+              ## being deprecated
+              dbSNPpresent, "dbSNPpresent<-",
+              OMIMpresent, "OMIMpresent<-",
+              variantType, "variantType<-",
               variantLocation, "variantLocation<-",
               variantConsequence, "variantConsequence<-",
-              ## aaChangeType, "aaChangeType<-",
-              ## MAFpop, "MAFpop<-",
-              ## naMAF, "naMAF<-",
-              ## maxMAF, "maxMAF<-",
-              ## minPhastCons, "minPhastCons<-",
-              ## minPhylostratum, "minPhylostratum<-",
+              aaChangeType, "aaChangeType<-",
+              MAFpop, "MAFpop<-",
+              naMAF, "naMAF<-",
+              maxMAF, "maxMAF<-",
+              minPhastCons, "minPhastCons<-",
+              minPhylostratum, "minPhylostratum<-",
               minScore5ss, "minScore5ss<-",
               minScore3ss, "minScore3ss<-",
-              ## minCUFC, "minCUFC<-",
+              minCUFC, "minCUFC<-",
 
               ## for the GenePhylostrataDb class
               genePhylostratum,

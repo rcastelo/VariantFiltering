@@ -36,36 +36,6 @@ setMethod("show", signature(object="VariantFilteringResults"),
             }
             cat("  Functional annotation filters\n")
             print(active(filters(object))[setdiff(names(filters(object)), param(object)@qualityFilterNames)])
-            ## if (minCUFC(object) > 0)
-            ##   cat(sprintf("    Minimum codon-usage abs log2-fold change: %s\n", minCUFC(object)))
-            ## cat(sprintf("    Amino acid change type: %s\n", aaChangeType(object)))
-            ## if (!all(variantLocation(object)))
-            ##   cat(sprintf("    Location restricted to: %s\n", paste(names(variantLocation(object))[variantLocation(object)], collapse=", ")))
-            ## if (!all(variantConsequence(object)))
-            ##   cat(sprintf("    Consequence restricted to: %s\n", paste(names(variantConsequence(object))[variantConsequence(object)], collapse=", ")))
-            ## if ("MafDb" %in% sapply(param(object)$otherAnnotations, class)) {
-            ##   cat(sprintf("    Populations used for MAF filtering: %s\n", paste(names(MAFpop(object))[MAFpop(object)], collapse=", ")))
-            ##   cat(sprintf("    Include MAF NA values: %s\n", ifelse(naMAF(object), "yes", "no")))
-            ##   cat(sprintf("    Maximum MAF: %.2f\n", maxMAF(object)))
-            ## }
-            ## if ("GScores" %in% sapply(param(object)$otherAnnotations, class)) {
-            ##   if (!is.na(minPhastCons(object)))
-            ##     cat(sprintf("    Minimum score for phastCons nucleotide conservation: %.2f\n", minPhastCons(object)))
-            ## }
-            ## if ("GenePhylostrataDb" %in% sapply(param(object)$otherAnnotations, class)) {
-            ##   whGPSdb <- match("GenePhylostrataDb", sapply(param(object)$otherAnnotations, class))
-            ##   if (!is.na(minPhylostratum(object)))
-            ##     cat(sprintf("    Minimum conserved gene phylostratum: %s (%d/%d)\n",
-            ##                 genePhylostrata(param(object)$otherAnnotations[[whGPSdb]])$Description[minPhylostratum(object)],
-            ##                 minPhylostratum(object),
-            ##                 nrow(genePhylostrata(param(object)$otherAnnotations[[whGPSdb]]))))
-            ## }
-            ## if (all(!is.na(param(object)$spliceSiteMatricesFilenames))) {
-            ##   if (!is.na(minScore5ss(object)))
-            ##     cat(sprintf("    Minimum score for cryptic 5'ss: %.2f\n", minScore5ss(object)))
-            ##   if (!is.na(minScore3ss(object)))
-            ##     cat(sprintf("    Minimum score for cryptic 3'ss: %.2f\n", minScore3ss(object)))
-            ## }
           })
 
 setMethod("summary", signature(object="VariantFilteringResults"),
@@ -276,364 +246,6 @@ setMethod("annoGroups", signature(x="VariantFilteringResults"),
             x@annoGroups
           })
 
-## setMethod("dbSNPpresent", signature(x="VariantFilteringResults"),
-##           function(x) {
-##             x@dbSNPflag
-##           })
-## 
-## setReplaceMethod("dbSNPpresent", signature(x="VariantFilteringResults", value="ANY"),
-##                  function(x, value) {
-##                    if (!is.na(value) && !is.character(value) && !is.logical(value))
-##                      stop("Presence in dbSNP should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-## 
-##                    if (!is.na(value)) {
-##                      if (is.character(value)) {
-##                        if (tolower(value) == "yes")
-##                          value <- "Yes"
-##                        else if (tolower(value) == "no")
-##                          value <- "No"
-##                        else
-##                          stop("Presence in dbSNP should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-##                      }
-## 
-##                      if (is.logical(value)) {
-##                        if (value)
-##                          value <- "Yes"
-##                        else
-##                          value <- "No"
-##                      }
-##                    }
-## 
-##                    x@dbSNPflag <- as.character(value)
-## 
-##                    x
-##                  })
-## 
-## setMethod("OMIMpresent", signature(x="VariantFilteringResults"),
-##           function(x) {
-##             x@OMIMflag
-##           })
-## 
-## setReplaceMethod("OMIMpresent", signature(x="VariantFilteringResults", value="ANY"),
-##                  function(x, value) {
-##                    if (!is.na(value) && !is.character(value) && !is.logical(value))
-##                      stop("Presence in OMIM should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-## 
-##                    if (!is.na(value)) {
-##                      if (is.character(value)) {
-##                        if (tolower(value) == "yes")
-##                          value <- "Yes"
-##                        else if (tolower(value) == "no")
-##                          value <- "No"
-##                        else
-##                          stop("Presence in OMIM should be indicated either by NA, a character string \"yes\" or \"no\", or a logical value TRUE or FALSE.")
-##                      }
-## 
-##                      if (is.logical(value)) {
-##                        if (value)
-##                          value <- "Yes"
-##                        else
-##                          value <- "No"
-##                      }
-##                    }
-## 
-##                    value <- as.character(value)
-##                    x@OMIMflag <- value
-## 
-##                    x
-##                  })
-## 
-## setMethod("variantType", signature(x="VariantFilteringResults"),
-##           function(x) {
-##             x@variantTypeMask
-##           })
-## 
-## setReplaceMethod("variantType", signature(x="VariantFilteringResults", value="logical"),
-##                  function(x, typkey=NA, value) {
-##                    if (any(is.na(value)))
-##                      stop("The given value(s) must be either TRUE or FALSE.")
-## 
-##                    if (is.na(typkey)) {
-##                      typkey <- names(x@variantTypeMask)
-##                      if (is.null(names(value))) {
-##                        if (length(value) > 1)
-##                          stop("When given multiple values they must be a logical vector whose names match the available location keywords.")
-##                        value <- do.call("names<-", list(rep(value, length(typkey)), typkey))
-##                      } else if (any(is.na(match(names(value), names(x@variantTypeMask)))))
-##                        stop(sprintf("Element names %s do not match the available variant type keywords",
-##                                     names(value)[is.na(match(names(value), names(x@variantTypeMask)))]))
-##                      else
-##                        typkey <- names(value)
-##                    } else {
-##                      if (any(is.na(match(typkey, names(x@variantTypeMask)))))
-##                        stop(sprintf("%s does not match the available variant type keywords", typkey))
-##                    }
-## 
-##                    x@variantTypeMask[typkey] <- value
-##                    cutoffs(x)$variantType <- x@variantTypeMask
-##                    x
-##                  })
-## 
-## setMethod("aaChangeType", signature(x="VariantFilteringResults"),
-##           function(x) {
-##             x@aaChangeType
-##           })
-## 
-## setReplaceMethod("aaChangeType", signature(x="VariantFilteringResults", value="character"),
-##                  function(x, value=c("Any", "Radical", "Conservative")) {
-##                    value <- match.arg(value)
-##                    x@aaChangeType <- value
-##                    cutoffs(x)$aaChangeType <- value
-##                    x
-##                  })
-
-setMethod("variantLocation", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@locationMask
-          })
-
-setReplaceMethod("variantLocation", signature(x="VariantFilteringResults", value="logical"),
-                 function(x, lockey=NA, value) {
-                   if (any(is.na(value)))
-                     stop("The given value(s) must be either TRUE or FALSE.")
-
-                   if (is.na(lockey)) {
-                     lockey <- names(x@locationMask)
-                     if (is.null(names(value))) {
-                       if (length(value) > 1)
-                         stop("When given multiple values they must be a logical vector whose names match the available location keywords.")
-                       value <- do.call("names<-", list(rep(value, length(lockey)), lockey))
-                     } else if (any(is.na(match(names(value), names(x@locationMask)))))
-                       stop(sprintf("Element names %s do not match the available location keywords",
-                                    names(value)[is.na(match(names(value), names(x@locationMask)))]))
-                     else
-                       lockey <- names(value)
-                   } else {
-                     if (any(is.na(match(lockey, names(x@locationMask)))))
-                       stop(sprintf("%s does not match the available location keywords", lockey))
-                   }
-
-                   x@locationMask[lockey] <- value
-                   x
-                 })
-
-setMethod("variantConsequence", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@consequenceMask
-          })
-
-setReplaceMethod("variantConsequence", signature(x="VariantFilteringResults", value="logical"),
-                 function(x, conkey=NA, value) {
-
-                   if (any(is.na(value)))
-                     stop("The given value(s) must be either TRUE or FALSE.")
-
-                   if (is.na(conkey)) {
-                     conkey <- names(x@consequenceMask)
-                     if (is.null(names(value))) {
-                       if (length(value) > 1)
-                         stop("When given multiple values they must be a logical vector whose names match the available consequence keywords.")
-                       value <- do.call("names<-", list(rep(value, length(conkey)), conkey))
-                     } else if (any(is.na(match(names(value), names(x@consequenceMask)))))
-                       stop(sprintf("Element names %s do not match the available consequence keywords",
-                                    names(value)[is.na(match(names(value), names(x@consequenceMask)))]))
-                     else
-                       conkey <- names(value)
-                   } else {
-                     if (any(is.na(match(conkey, names(x@consequenceMask)))))
-                       stop(sprintf("%s does not match the available consequence keywords", conkey))
-                   }
-
-                   x@consequenceMask[conkey] <- value
-                   x
-                 })
-
-setMethod("naMAF", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (!"MafDb" %in% param(x)$otherAnnotationsClass)
-              stop("A MafDb object was not used to annotate variants.")
-
-            x@naMAF
-          })
-
-setReplaceMethod("naMAF", signature(x="VariantFilteringResults", value="logical"),
-          function(x, value) {
-            if (!"MafDb" %in% param(x)$otherAnnotationsClass)
-              stop("A MafDb object was not used to annotate variants.")
-
-            x@naMAF <- value
-            x
-          })
-
-setMethod("MAFpop", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (!"MafDb" %in% param(x)$otherAnnotationsClass)
-              stop("A MafDb object was not used to annotate variants.")
-
-            x@MAFpopMask
-          })
-
-setReplaceMethod("MAFpop", signature(x="VariantFilteringResults", value="logical"),
-                 function(x, popkey=NA, value) {
-                   if (!"MafDb" %in% param(x)$otherAnnotationsClass)
-                     stop("A MafDb object was not used to annotate variants.")
-
-                   if (any(is.na(value)))
-                     stop("The given value(s) must be either TRUE or FALSE.")
-
-                   if (is.na(popkey)) {
-                     popkey <- names(x@MAFpopMask)
-                     if (is.null(names(value))) {
-                       if (length(value) > 1)
-                         stop("When given multiple values they must be a logical vector whose names match the available population keywords.")
-                       value <- do.call("names<-", list(rep(value, length(popkey)), popkey))
-                     } else if (any(is.na(match(names(value), names(x@MAFpopMask)))))
-                       stop(sprintf("Element names %s do not match the available population keywords",
-                                    names(value)[is.na(match(names(value), names(x@MAFpopMask)))]))
-                     else
-                       popkey <- names(value)
-                   } else {
-                     if (any(is.na(match(popkey, names(x@MAFpopMask)))))
-                       stop(sprintf("%s does not match the available population keywords", popkey))
-                   }
-
-                   x@MAFpopMask[popkey] <- value
-                   x
-                 })
-
-setMethod("maxMAF", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (!"MafDb" %in% param(x)$otherAnnotationsClass)
-              stop("A MafDb object was not used to annotate variants.")
-
-            x@maxMAF
-          })
-
-setReplaceMethod("maxMAF", signature(x="VariantFilteringResults", value="numeric"),
-                 function(x, value) {
-                   if (!"MafDb" %in% param(x)$otherAnnotationsClass)
-                     stop("A MafDb object was not used to annotate variants.")
-
-                   x@maxMAF <- value
-                   x
-                 })
-
-setMethod("minPhastCons", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (is.na(match("GScores", param(x)$otherAnnotationsClass)))
-              stop("A GScores object was not used to annotate variants.")
-
-            x@minPhastCons
-          })
-
-setReplaceMethod("minPhastCons", signature(x="VariantFilteringResults", value="ANY"),
-                 function(x, value) {
-                   if (is.na(match("GScores", param(x)$otherAnnotationsClass)))
-                     stop("A phastConsDb object was not used to annotate variants.")
-
-                   if (!is.na(value) && !is.numeric(value) && !is.integer(value))
-                     stop("Only a numeric or NA value is allowed as minimum cutoff for phastCons scores.")
-
-                   if (!is.na(value)) {
-                     if (value < 0 || value > 1)
-                       stop("The minimum cutoff for phastCons scores should be a number between 0 and 1.")
-                   }
-
-                   value <- as.numeric(value)
-                   x@minPhastCons <- value
-
-                   x
-                 })
-
-setMethod("minPhylostratum", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (is.na(match("GenePhylostrataDb", param(x)$otherAnnotationsClass)))
-              stop("A GenePhylostrataDb object was not used to annotate variants.")
-
-            x@minPhylostratumIndex
-          })
-
-setReplaceMethod("minPhylostratum", signature(x="VariantFilteringResults", value="ANY"),
-                 function(x, value) {
-                   whGPSdb <- match("GenePhylostrataDb", param(x)$otherAnnotationsClass)
-                   if (is.na(whGPSdb))
-                     stop("A GenePhylostrataDb object was not used to annotate variants.")
-
-                   if (!is.na(value) && !is.numeric(value) && !is.integer(value) && !is.character(value))
-                     stop("Only an integer, character or NA value is allowed as minimum phylostratum index.")
-
-                   if (!is.na(value)) {
-                     if (is.character(value)) {
-                       value <- match(tolower(value),
-                                      tolower(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb]))$Description))
-                       if (is.na(value))
-                         stop(sprintf("%s is not valid. The minimum phylostratum character value should be one of: %s",
-                                      value, paste(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb]))$Description,
-                                                   collapse=",")))
-                     }
-
-                     value <- as.integer(value)
-                     if (value < 1 || value > nrow(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb]))))
-                       stop(sprintf("%d is not valid. The minimum phylostratum integer value should be between 1 and %d",
-                                    nrow(genePhylostrata(get(param(x)$otherAnnotations[whGPSdb])))))
-                   }
-
-                   value <- as.integer(value)
-                   x@minPhylostratumIndex <- value
-
-                   x
-                 })
-
-setMethod("minScore5ss", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
-              stop("No splice site matrix was used to annotate variants.")
-
-            x@minScore5ss
-          })
-
-setReplaceMethod("minScore5ss", signature(x="VariantFilteringResults", value="ANY"),
-                 function(x, value) {
-                   if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
-                     stop("No splice site matrix was used to annotate variants.")
-
-                   if (!is.na(value) && !is.numeric(value) && !is.integer(value))
-                     stop("Only a numeric or NA value is allowed as minimum cutoff for cryptic 5'ss.")
-                   x@minScore5ss <- as.numeric(value)
-                   x
-                 })
-
-setMethod("minScore3ss", signature(x="VariantFilteringResults"),
-          function(x) {
-            if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
-              stop("No splice site matrix was used to annotate variants.")
-
-            x@minScore3ss
-          })
-
-setReplaceMethod("minScore3ss", signature(x="VariantFilteringResults", value="ANY"),
-                 function(x, value) {
-                   if (any(is.na(param(x)$spliceSiteMatricesFilenames)))
-                     stop("No splice site matrix was used to annotate variants.")
-
-                   if (!is.na(value) && !is.numeric(value) && !is.integer(value))
-                     stop("Only a numeric or NA value is allowed as minimum cutoff for cryptic 3'ss.")
-                   x@minScore3ss <- as.numeric(value)
-                   x
-                 })
-
-setMethod("minCUFC", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@minCUFC
-          })
-
-setReplaceMethod("minCUFC", signature(x="VariantFilteringResults", value="numeric"),
-                 function(x, value) {
-                   x@minCUFC <- value
-                   x
-                 })
-
-
 setMethod("filters", signature(x="VariantFilteringResults"),
           function(x) {
             x@filters
@@ -663,7 +275,8 @@ setMethod("allVariants", signature(x="VariantFilteringResults"),
 
 ## get variants after applying all filters
 setMethod("filteredVariants", signature(x="VariantFilteringResults"), 
-          function(x, groupBy=c("sample", "nothing"), unusedColumns.rm=FALSE) {
+          function(x, groupBy=c("sample", "nothing"),
+                   unusedColumns.rm=FALSE) {
             groupBy <- match.arg(groupBy)
 
             if (length(filters(x)) > 0)
@@ -916,10 +529,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         ## variantType(vfResultsObj) <- varTypMask
 
         ## variant location
-        locMask <- variantLocation(vfResultsObj)
-        for (i in names(locMask))
-          locMask[i] <- input[[i]]
-        variantLocation(vfResultsObj) <- locMask
+        ## locMask <- variantLocation(vfResultsObj)
+        ## for (i in names(locMask))
+        ##   locMask[i] <- input[[i]]
+        ## variantLocation(vfResultsObj) <- locMask
 
         ## variant consequence
         conMask <- variantConsequence(vfResultsObj)
@@ -1226,10 +839,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         ## variantType(vfResultsObj) <- varTypMask
  
         ## variant location
-        locMask <- variantLocation(vfResultsObj)
-        for (i in names(locMask))
-          locMask[i] <- input[[i]]
-        variantLocation(vfResultsObj) <- locMask
+        ## locMask <- variantLocation(vfResultsObj)
+        ## for (i in names(locMask))
+        ##   locMask[i] <- input[[i]]
+        ## variantLocation(vfResultsObj) <- locMask
 
         ## variant consequence
         conMask <- variantConsequence(vfResultsObj)
@@ -1322,10 +935,10 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         ## variantType(vfResultsObj) <- varTypMask
 
         ## variant location
-        locMask <- variantLocation(vfResultsObj)
-        for (i in names(locMask))
-          locMask[i] <- input[[i]]
-        variantLocation(vfResultsObj) <- locMask
+        ## locMask <- variantLocation(vfResultsObj)
+        ## for (i in names(locMask))
+        ##   locMask[i] <- input[[i]]
+        ## variantLocation(vfResultsObj) <- locMask
 
         ## variant consequence
         conMask <- variantConsequence(vfResultsObj)
@@ -1391,8 +1004,8 @@ setMethod("reportVariants", signature(vfResultsObj="VariantFilteringResults"),
         ##   cat(sprintf("> OMIMpresent(res) <- \"%s\"\n", OMIMpresent(vfResultsObj)))
         ## if (!all(variantType(vfResultsObj)))
         ##     cat(sprintf("> variantType(res) <- c(%s)\n", paste(paste(names(variantType(vfResultsObj)), as.character(variantType(vfResultsObj)), sep="="), collapse=", ")))
-        if (!all(variantLocation(vfResultsObj)))
-            cat(sprintf("> variantLocation(res) <- c(%s)\n", paste(paste(names(variantLocation(vfResultsObj)), as.character(variantLocation(vfResultsObj)), sep="="), collapse=", ")))
+        ## if (!all(variantLocation(vfResultsObj)))
+        ##     cat(sprintf("> variantLocation(res) <- c(%s)\n", paste(paste(names(variantLocation(vfResultsObj)), as.character(variantLocation(vfResultsObj)), sep="="), collapse=", ")))
         if (!all(variantConsequence(vfResultsObj)))
             cat(sprintf("> variantConsequence(res) <- c(%s)\n", paste(paste(names(variantConsequence(vfResultsObj)), as.character(variantConsequence(vfResultsObj)), sep="="), collapse=", ")))
         ## if (aaChangeType(vfResultsObj) != "Any")
