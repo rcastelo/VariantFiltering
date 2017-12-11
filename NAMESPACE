@@ -185,10 +185,16 @@ importFrom(shinythemes, shinytheme)
 
 importFrom(shinyjs, hide,
                     hidden,
-                    onevent)
+                    onevent,
+		    enable,
+		    disable,
+		    useShinyjs,
+		    show)
 
 importFrom(DT, dataTableProxy,
-               selectPage)
+               selectPage,
+               renderDataTable,
+	       datatable)
 
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               GenePhylostrataDb,

@@ -109,43 +109,42 @@ listPanel <- function(flt,tab) {
 
 ## build the filtering control panel
 generateFiltering <- function(vfResultsObj) {
-  lapply(1:NROW(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),]),
-         function(j) {
-           tab <- tolower(paste("'","'", sep=filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),][,2][j]))
-           flt <- rownames(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),])[j]
-           switch(class(cutoffs(vfResultsObj)[[flt]]),
-                  "logical" = {
-                    logicalPanel(flt,tab)
-                  },
-                  "character" = {
-                    if(length(cutoffs(vfResultsObj)[[flt]]) > 1) {
-                      characterVectorPanel(flt,tab) 
-                    } else {
-                      characterPanel(flt,tab)
-                    }
-                  },
-                  "numeric" = {
-                    if(length(cutoffs(vfResultsObj)[[flt]]) > 1) {
-                      numericVectorPanel(flt,tab)
-                    } else {
-                      numericPanel(flt,tab)
-                    }
-                  },
-                  "CutoffsList" = {
-                    listPanel(flt,tab)
-                  },
-                  "factor" = {
-                    factorPanel(flt,tab)
-                  },
-                  NULL = {
-                    conditionalPanel(condition=paste("input.tsp ==", tab, sep = ""),
-                                     checkboxInput(paste("active",flt,sep=""),
-                                                   strong(flt),active(filters(vfResultsObj))[[flt]]),
-                                     hidden(p(id=paste0("info", flt),
-                                              tags$i(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),
-                                                     "Description"][[flt]]))))
-                  })
-         })
+  lapply(1:NROW(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),]), function(j) {
+    tab <- tolower(paste("'","'", sep=filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),][,2][j]))
+    flt <- rownames(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),])[j]
+    switch(class(cutoffs(vfResultsObj)[[flt]]),
+           "logical" = {
+             logicalPanel(flt,tab)
+           },
+           "character" = {
+             if(length(cutoffs(vfResultsObj)[[flt]]) > 1) {
+               characterVectorPanel(flt,tab)
+             }
+             else {
+               characterPanel(flt,tab)
+             }
+           },
+           "numeric" = {
+             if(length(cutoffs(vfResultsObj)[[flt]]) > 1) {
+               numericVectorPanel(flt,tab)
+             }
+             else {
+               numericPanel(flt,tab)
+             }
+           },
+           "CutoffsList" = {
+             listPanel(flt,tab)
+           },
+           "factor" = {
+             factorPanel(flt,tab)
+           },
+           NULL = {
+             conditionalPanel(condition=paste("input.tsp ==", tab, sep = ""), checkboxInput(paste("active",flt,sep=""), 
+                                                                                            strong(flt),active(filters(vfResultsObj))[[flt]]),
+                              hidden(p(id=paste0("info",flt),tags$i(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),"Description"][[flt]]))))
+           }
+    )
+  })
 }
 
 ## layout the UI of the controls
@@ -181,16 +180,17 @@ inputData <- function(id, vfrobj) {
 
 ## populate the table of variants
 datatable_generation <- function(input, output, session, global) {
-
+  
   observe({global$val <- input$tableGenome_state$start / input$tableGenome_state$length + 1})
   observe({global$val <- input$tableGene_state$start / input$tableGene_state$length + 1})
   observe({global$val <- input$tableMAF_state$start / input$tableMAF_state$length + 1})
   observe({global$val <- input$tableTranscript_state$start / input$tableTranscript_state$length + 1})
-
+  observe({global$val <- input$tableProtein_state$start / input$tableProtein_state$length + 1})
+  
   output$pageFilter <- renderUI({
     numericInput("page", "", global$val, min = 1)
   })
-
+  
   filteredVariantsReact <- reactive({
     vdf <- data.frame()
     fvxsam <- filteredVariants(vfResultsObj)
@@ -204,14 +204,15 @@ datatable_generation <- function(input, output, session, global) {
     rownames(vdf) <- NULL
     vdf
   })
-
+  
   withProgress(message = "Loading...",
-    lapply(names(annoGroups(vfResultsObj)), function(tabname) {
-      output[[paste0("table",tabname)]] <- DT::renderDataTable({
-        DT::datatable(filteredVariantsReact()[, annoGroups(vfResultsObj)[[tabname]]], options = list(ordering=F, pageLength = 10, stateSave = TRUE))
-      })
-    })
+               lapply(names(annoGroups(vfResultsObj)), function(tabname) {
+                 output[[paste0("table",tabname)]] <- DT::renderDataTable({
+                   DT::datatable(filteredVariantsReact()[,annoGroups(vfResultsObj)[[tabname]]], options = list(ordering=F, pageLength = 10, stateSave = TRUE))
+                 })
+               })
   )
+  
 }
 
 ## activate filters
@@ -340,8 +341,8 @@ app$server <- function(input, output, session) {
 
   #Showing Variant Description
   lapply(rownames(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),]), function(flt) {
-    shinyjs::onevent("mouseenter", paste0("active",flt), show(paste0("info",flt)))
-    onevent("mouseleave", paste0("active",flt), hide(paste0("info",flt)))
+    shinyjs::onevent("mouseenter", paste0("active",flt), shinyjs::show(paste0("info",flt)))
+    onevent("mouseleave", paste0("active",flt), shinyjs::hide(paste0("info",flt)))
   })
 
   #Sorting
