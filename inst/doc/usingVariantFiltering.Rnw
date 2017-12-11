@@ -1,0 +1,432 @@
+%\VignetteIndexEntry{VariantFiltering: filter coding and non-coding genetic variants}
+%\VignetteKeywords{genetics, variants, annotation, filtering, inheritance}
+%\VignettePackage{VariantFiltering}
+\documentclass{article}
+
+<<style, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex(use.unsrturl=FALSE)
+@
+
+\usepackage{natbib}
+
+\title{VariantFiltering: filtering of coding and non-coding genetic variants}
+\author{Dei M. Elurbe\,$^{1,2}$ and Robert Castelo\,$^{3,4}$}
+
+\begin{document}
+\SweaveOpts{eps=FALSE}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim}
+{formatcom = {\color{Sinput}}}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}
+{formatcom = {\color{Soutput}}}
+\DefineVerbatimEnvironment{Scode}{Verbatim}
+{formatcom = {\color{Scode}}}
+
+
+\definecolor{Sinput}{rgb}{0.21,0.49,0.72}
+\definecolor{Soutput}{rgb}{0.32,0.32,0.32}
+\definecolor{Scode}{rgb}{0.75,0.19,0.19}
+
+<<<setup, echo=FALSE>>=
+pdf.options(useDingbats=FALSE)
+options(width=80)
+@
+
+\maketitle
+
+\begin{quote}
+{\scriptsize
+\noindent
+$^{1}$CIBER de Enfermedades Raras (CIBERER), Barcelona, Spain \\
+$^{2}$Present address: CMBI, Radboud University Medical Centre, Nijmegen, The Netherlands. \\
+$^{2}$Department of Experimental and Health Sciences, Universitat Pompeu Fabra, Barcelona, Spain. \\
+$^{3}$Research Program on Biomedical Informatics (GRIB), Hospital del Mar Medical Research Institute, Barcelona, Spain.
+}
+\end{quote}
+
+\section{Overview}
+
+The aim of this software package is to facilitate the filtering and annotation
+of coding and non-coding genetic variants from a group of unrelated individuals,
+or a family of related ones among which at least one of them is affected by a
+genetic disorder. When working with related individuals, \Biocpkg{VariantFiltering}
+can search for variants from the affected individuals that segregate according to
+a particular inheritance model acting on autosomes (dominant, recessive homozygous
+or recessive heterozygous -also known as compound heterozygous) or on allosomes
+(X-linked), or that occur \emph{de novo}. When working with unrelated
+individuals, no mode of inheritance is used for filtering but it can be used to
+search for variants shared among individuals affected by a common genetic
+disorder.
+
+The main input is a multisample Variant Call Format (VCF) file which is parsed
+using the R/Bioconductor infrastructure, and particularly the functionality from
+the \Biocpkg{VariantAnnotation} package for that purpose. This infrastructure also
+allows \Biocpkg{VariantFiltering} to stream over large VCF files to reduce the memory
+footprint and to annotate the input variants with diverse functional information.
+
+A core set of functional data are annotated by \Biocpkg{VariantFiltering} but
+this set can be modified and extended using Bioconductor annotation packages such
+as \Biocpkg{MafDb.1Kgenomes.phase3.hs37d5}, which stores and exposes to
+the user minor allele frequency (MAF) values frozen from the latest realease
+of the 1000 Genomes project.
+
+The package contains a toy data set to illustrate how it works through this
+vignette, and it consists of a multisample VCF file with variants from
+chromosomes 20, 21, 22 and allosomes X, Y from a trio of CEU individuals of
+the 1000 Genomes project. To further reduce the execution time of this vignette,
+only the code for the first analysis is actually evaluated and its results reported.
+
+\section{Setting up the analysis}
+
+To start using \Biocpkg{VariantFiltering} the user should consider installing
+the packages listed in the \Rcode{Suggests:} field from its \Rcode{DESCRIPTION}
+file. After loading \Biocpkg{VariantFiltering} the first step is to build
+a parameter object, of class \Rclass{VariantFilteringParam}  which requires at
+least a character string with the input VCF filename, as follows:
+
+<<>>=
+library(VariantFiltering)
+
+CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"),
+                    "CEUtrio.vcf.bgz")
+vfpar <- VariantFilteringParam(CEUvcf)
+class(vfpar)
+vfpar
+@
+The display of the \Rclass{VariantFilteringParam} object indicates a number of
+default values which can be overriden when calling the construction function.
+To quickly see all the available arguments and their default values we should
+type:
+
+<<>>=
+args(VariantFilteringParam)
+@
+The manual page of \Rfunction{VariantFilteringParam} contains more information
+about these arguments and their default values.
+
+\section{Annotating variants}
+
+After setting up the parameters object, the next step is to annotate
+variants. This can be done using upfront an inheritance model that will
+substantially filter and reduce the number of variants and annotations or,
+as we illustrate here below, calling the function \Rfunction{unrelatedIndividuals()}
+that just annotates the variants without filtering out any of them:
+
+<<echo=FALSE>>=
+if (VariantFiltering:::.getOS() == "windows") {
+  uind <- VariantFiltering:::.loadPrecomputedVariantFilteringResults()
+} else
+  uind <- unrelatedIndividuals(vfpar) ## ~75 sec.
+
+<<eval=FALSE, echo=TRUE>>=
+uind <- unrelatedIndividuals(vfpar)
+@
+<<>>=
+class(uind)
+uind
+@
+The resulting object belongs to the \Rclass{VariantFilteringResults} class of
+objects, defined within \Biocpkg{VariantFiltering}, whose purpose is to ease
+the task of filtering and prioritizing the annotated variants. The display of
+the object just tells us the genome version of the input VCF file, the number
+of individuals, the inheritance model and what variant filters are activated.
+
+To get a summary of the number of variants annotated to a particular feature
+we should use the function \Rfunction{summary()}:
+
+<<>>=
+summary(uind)
+@
+The default setting of the \Rfunction{summary()} function is to provide
+feature annotations in terms of Sequence Ontology (SO) terms. The reported
+number of variants refer to the number of different variants in the input VCF
+file annotated to the feature while the percentage of variants refers to
+the fraction of this number over the total number of different variants in the 
+input VCF file.
+
+We can also obtain a summary based on the Bioconductor feature annotations
+provided by the functions \Rfunction{locateVariants()} and
+\Rfunction{predictCoding()} from the \Biocpkg{VariantAnnotation} package, as
+follows:
+
+<<>>=
+summary(uind, method="bioc")
+@
+Since SO terms are organized hierarchically, we can use this structure to
+aggregate feature annotations into more coarse-grained SO terms using the
+argument \Robject{method="SOfull"}:
+
+<<>>=
+uindSO <- summary(uind, method="SOfull")
+uindSO
+@
+Here the \Robject{Level} column refers to the shortest-path distance to
+the most general SO term \Robject{sequence\_variant} within the SO ayclic
+digraph. We can use this level value to interrogate the annotations on a
+specific granularity:
+
+<<>>=
+uindSO[uindSO$Level == 6, ]
+@
+Variants are stored internally in a \Rclass{VRanges} object. We can retrieve
+the variants as a \Rclass{Vranges} object with the function \Rfunction{allVariants()}:
+
+<<>>=
+allVariants(uind)
+@
+This function in fact returns a \Rclass{VRangesList} object with one element
+per sample by default. We can change the grouping of variants with the
+argument \Robject{groupBy} specifying the annotation column we want to use to
+group variants. If the specified column does not exist, then it will return
+a single \Rclass{VRanges object} with all annotated variants.
+
+Using the following code we can obtain a graphical display of a variant,
+including the aligned reads and the running coverage, to have a visual
+representation of its support. For this purpose we need to have the
+BAM files used to perform the variant calling. In this case we are using
+toy BAM files stored along with the \Biocpkg{VariantFiltering} package,
+which for practical reasons only include a tiny subset of the aligned reads.
+
+<<displayedVariant, fig=TRUE, include=FALSE, echo=TRUE, height=6, width=8>>=
+path2bams <- file.path(system.file("extdata", package="VariantFiltering"),
+                       paste0(samples(uind), ".subset.bam"))
+bv <- BamViews(bamPaths=path2bams,
+               bamSamples=DataFrame(row.names=samples(uind)))
+bamFiles(uind) <- bv
+bamFiles(uind)
+plot(uind, what="rs6130959", sampleName="NA12892")
+@
+\begin{figure}[ht]
+\centerline{\includegraphics[width=0.7\textwidth]{usingVariantFiltering-displayedVariant}}
+\caption{Browser-like display of a variant.}
+\label{displayedVariant}
+\end{figure}
+
+\section{Filters and cutoffs}
+
+In the case of having run the \Rfunction{unrelatedIndividuals()} annotation
+function we can filter variants by restricting the samples involved in
+the analysis, as follows:
+
+<<>>=
+samples(uind)
+samples(uind) <- c("NA12891", "NA12892")
+uind
+uindSO2sam <- summary(uind, method="SOfull")
+uindSO2sam[uindSO2sam$Level == 6, ]
+@
+As we can see, restricting the samples for filtering variants results
+in fewer variants. We can set the original samples back with the function
+\Rfunction{resetSamples()}:
+
+<<>>=
+uind <- resetSamples(uind)
+uind
+@
+The rest of the filtering operations we can perform on a \Rclass{VariantFilteringResults}
+objects are implemented through the \Rclass{FilterRules} class which implements a
+general mechanism for generating logical masks to filter vector-like objects; consult
+its manual page at the \Biocpkg{IRanges} package for full technical details.
+
+The \Biocpkg{Variantfiltering} package provides a number of default filters, which can
+be extended by the user. To see which are these filters we just have to use the
+\Rfunction{filters()} function:
+
+<<>>=
+filters(uind)
+@
+Filters may be active or inactive. Only active filters will participate in the
+filtering process when we interrogate for variants. To know what filters are active
+we should use the \Rfunction{active()} function as follows:
+
+<<>>=
+active(filters(uind))
+@
+By default, all filters are always inactive. To activate all of them, we can simply
+type:
+
+<<>>=
+active(filters(uind)) <- TRUE
+active(filters(uind))
+summary(uind)
+@
+To deactivate all of them back and selectively activate one of them, we should use
+the bracket \Robject{[]} notation, as follows:
+
+<<>>=
+active(filters(uind)) <- FALSE
+active(filters(uind))["dbSNP"] <- TRUE
+summary(uind)
+@
+The previous filter just selects variants with an annotated dbSNP identifier. However,
+other filters may require cutoff values to decide what variants pass the filter. To
+set those values we can use the function \Rfunction{cutoffs()}. For instance, in the
+case of the \Robject{SOterms} filter, we should use set the cutoff values to select
+variants annotated to specific SO terms. Here we select, for instance, those annotated
+in UTR regions:
+
+<<>>=
+change(cutoffs(uind), "SOterms") <- "UTR_variant"
+active(filters(uind))["SOterms"] <- TRUE
+summary(uind)
+summary(uind, method="SOfull")
+@
+Note that the first call to \Rfunction{summary()} did not report any variant since
+there are no variants annotated to the SO term \Robject{UTR\_variant}. However,
+when using the argument \Robject{method="SOfull"}, all variants annotated to
+more specific SO terms in the hierarchy will be reported.
+
+The methods \Rfunction{filters()} and \Rfunction{cutoffs()} can be employed to extend
+the filtering functionality. Here we show a simple example in which we add a filter
+to detect the loss of the codon that initiates translation. This constitutes already
+a feature annotated by \Biocpkg{VariantFiltering} so that we can verify that it works:
+
+<<>>=
+startLost <- function(x) {
+  mask <- start(allVariants(x, groupBy="nothing")$CDSLOC) == 1 &
+          as.character(allVariants(x, groupBy="nothing")$REFCODON) == "ATG" &
+          as.character(allVariants(x, groupBy="nothing")$VARCODON) != "ATG"
+  mask
+}
+filters(uind)$startLost <- startLost
+active(filters(uind)) <- FALSE
+active(filters(uind))["startLost"] <- TRUE
+active(filters(uind))
+summary(uind)
+@
+As we can see, our filter works as expected and selects the only variant which
+was annotated with the SO term \Robject{start\_lost}. Note that there is also
+an additional annotation indicating this variant belongs to an UTR region resulting
+from an alternative CDS.
+
+Properly updating cutoff values may be problematic if we do not know how exactly
+are they employed by the corresponding filters. To facilitate setting the right cutoff
+values we use the \Rfunction{change()} method and we illustrate it on the filter
+of minor allele frequency (MAF) values:
+
+<<>>=
+active(filters(uind)) <- FALSE
+active(filters(uind))["maxMAF"] <- TRUE
+cutoffs(uind)$maxMAF
+cutoffs(uind)$maxMAF$popmask
+cutoffs(uind)$maxMAF$maxvalue
+change(cutoffs(uind)$maxMAF, "popmask") <- FALSE
+cutoffs(uind)$maxMAF$popmask
+change(cutoffs(uind)$maxMAF, "popmask") <- c(AFKGp1=TRUE)
+cutoffs(uind)$maxMAF$popmask
+change(cutoffs(uind)$maxMAF, "maxvalue") <- 0.01
+summary(uind)
+@
+In this case we selected variants with MAF$< 0.01$ in the global population of the
+1000 Genomes project. If we are interested in retrieving the actual set of
+filtered variants, we can do it using the function \Rfunction{filteredVariants()}:
+
+<<>>=
+filteredVariants(uind)
+@
+To further understand how to manipulate \Rclass{Vranges} and \Rclass{VRangesList}
+objects, please consult the package \Biocpkg{VariantAnnotation}.
+
+\section{Inheritance models}
+
+We can filter upfront variants that do not segregate according to a given
+inheritance model. In such a case, we also need to provide a PED file at the
+time we build the parameter object, as follows:
+
+<<eval=FALSE>>=
+CEUped <- file.path(system.file("extdata", package="VariantFiltering"),
+                    "CEUtrio.ped")
+param <- VariantFilteringParam(vcfFilenames=CEUvcf, pedFilename=CEUped)
+@
+Here we are using a PED file included in the \Biocpkg{VariantFiltering}
+package and specifying information about the CEU trio employed int his vignette.
+
+To use an inherintance model we need to replace the previous call to
+\Rfunction{unrelatedIndividuals()} by one specific to the inheritance
+model. The \Biocpkg{VariantFiltering} package offers 5 possible ones:
+
+\begin{itemize}
+  \item \textbf{Autosomal recessive inheritance analysis: Homozygous.}
+
+        Homozygous variants responsible for a recessive trait in the affected
+        individuals can be identified calling the
+        \Rfunction{autosomalRecessiveHomozygous()} function. This function
+        selects homozygous variants that are present in all the affected
+        individuals and occur in heterozygosity in the unaffected ones.
+
+  \item \textbf{Autosomal recessive inheritance analysis: Heterozygous.}
+
+        To filter by this mode of inheritance, also known as compound heterozygous, we
+        need two unaffected parents/ancestors and at least one affected descendant.
+        Variants are filtered in five steps: 1. select heterozygous variants in one of
+        the parents and homozygous in the other; 2. discard previously selected variants
+        that are common between the two parents; 3. group variants by gene; 4. select
+        those genes, and the variants that occur within them, which have two or more
+        variants and there is at least one from each parent; 5. from the previously
+        selected variants, discard those that do not occur in the affected descendants.
+        This is implemented in the function \Rfunction{autosomalRecessiveHeterozygous()}.
+
+  \item \textbf{Autosomal dominant inheritance analysis.}
+
+        The function \Rfunction{autosomalDominant()} identifies variants present in all
+        the affected individual(s) discarding the ones that also occur in at least one
+        of the unaffected subjects.
+
+  \item \textbf{X-Linked inheritance analysis.}
+
+        The function \Rfunction{xLinked()} identifies variants that appear only in the
+        X chromosome of the unaffected females as heterozygous, don't appear in the
+        unaffected males analyzed and finally are present (as homozygous) in the
+        affected male(s). This function is currently restricted to affected males, and
+        therefore, it cannot search for X-linked segregating variants affecting
+        daughters.
+
+  \item \textbf{De Novo variants analysis}
+
+        The function \Rfunction{deNovo()} searches for \emph{de novo} variants which are
+        present in one descendant and present in both parents/ancestors. It is currently
+        restricted to a trio of individuals.
+
+\end{itemize}
+
+\section{Create a report from the filtered variants}
+
+The function \Rfunction{reportVariants()} allows us to easily create a report
+from the filtered variants into a CSV or a TSV file as follows:
+
+<<reportvariants, eval=FALSE>>=
+reportVariants(uind, type="csv", file="uind.csv")
+@
+The default value on the \Robject{type} argument (\Robject{"shiny"})
+starts a shiny web app which allows one to interactively filter the variants,
+obtaining an udpated \Rclass{VariantFilteringResults} object and downloading the
+filtered variants and the corresponding full reproducible R code, if necessary.
+
+\begin{figure}[ht]
+\centerline{\includegraphics[width=\textwidth]{shinysnapshotVariantFiltering.jpg}}
+\caption{Snapshot of the shiny web app run from VariantFiltering with the
+function \Rfunction{reportVariants()}. Some of the parameters has been filled
+for illustrative purposes.}
+\label{shinyapp}
+\end{figure}
+
+\section{Using the package with parallel execution}
+
+Functions in \Biocpkg{VariantFiltering} to annotate and filter variants leverage
+the functionality of the Bioconductor package \Biocpkg{BiocParallel} to perform
+in parallel some of the tasks and calculations and reduce the overall execution
+time. These functions have an argument called \Robject{BPPARAM} that allows the
+user to control how this parallelism is exploited. In particular the user must
+give as value to this argument the result from a call to the function
+\Rfunction{bpparam()}, which actually is its default behavior. Here below we
+modify that behavior to force a call being executed without parallelism. The
+interested reader should consult the help page of \Rfunction{bpparam()} and the
+vignette of the \Biocpkg{BiocParallel} for further information.
+
+\section{Session information}
+
+<<info, results=tex>>=
+toLatex(sessionInfo())
+@
+
+\end{document}
