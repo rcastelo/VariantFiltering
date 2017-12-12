@@ -181,11 +181,9 @@ inputData <- function(id, vfrobj) {
 ## populate the table of variants
 datatable_generation <- function(input, output, session, global) {
   
-  observe({global$val <- input$tableGenome_state$start / input$tableGenome_state$length + 1})
-  observe({global$val <- input$tableGene_state$start / input$tableGene_state$length + 1})
-  observe({global$val <- input$tableMAF_state$start / input$tableMAF_state$length + 1})
-  observe({global$val <- input$tableTranscript_state$start / input$tableTranscript_state$length + 1})
-  observe({global$val <- input$tableProtein_state$start / input$tableProtein_state$length + 1})
+  lapply(names(annoGroups(vfResultsObj)), function(tabname){
+    observe({global$val <- eval(parse(text = paste0("input$table",tabname,"_state$start"))) / eval(parse(text = paste0("input$table",tabname,"_state$length"))) + 1})
+  })
   
   output$pageFilter <- renderUI({
     numericInput("page", "", global$val, min = 1)
