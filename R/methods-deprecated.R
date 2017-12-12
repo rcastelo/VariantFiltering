@@ -352,6 +352,21 @@ setReplaceMethod("minPhylostratum", signature(x="VariantFilteringResults", value
                    x
                  })
 
+setMethod("minCUFC", signature(x="VariantFilteringResults"),
+          function(x) {
+            warning("This method is deprecated and has been replaced with the use of methods 'filters(x), active(x), cutoffs(x) and change(x). It will become defunct in the next release of Bioconductor.")
+            cutoffs(x)$codonusageFC
+          })
+
+setReplaceMethod("minCUFC", signature(x="VariantFilteringResults", value="numeric"),
+                 function(x, value) {
+                   warning("This method is deprecated and has been replaced with the use of methods 'filters(x), active(x), cutoffs(x) and change(x). It will become defunct in the next release of Bioconductor.")
+                   ## x@minCUFC <- value
+                   change(cutoffs(x), "codonusageFC") <- value
+
+                   x
+                 })
+
 setMethod("minScore5ss", signature(x="VariantFilteringResults"),
           function(x) {
             warning("This method is deprecated and has been replaced with the use of methods 'filters(x), active(x), cutoffs(x) and change(x). It will become defunct in the next release of Bioconductor.")
@@ -394,15 +409,3 @@ setReplaceMethod("minScore3ss", signature(x="VariantFilteringResults", value="AN
                    x
                  })
 
-setMethod("minCUFC", signature(x="VariantFilteringResults"),
-          function(x) {
-            warning("This method is deprecated and has been replaced with the use of methods 'filters(x), active(x), cutoffs(x) and change(x). It will become defunct in the next release of Bioconductor.")
-            x@minCUFC
-          })
-
-setReplaceMethod("minCUFC", signature(x="VariantFilteringResults", value="numeric"),
-                 function(x, value) {
-                   warning("This method is deprecated and has been replaced with the use of methods 'filters(x), active(x), cutoffs(x) and change(x). It will become defunct in the next release of Bioconductor.")
-                   x@minCUFC <- value
-                   x
-                 })

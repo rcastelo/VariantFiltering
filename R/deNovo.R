@@ -120,7 +120,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
       activeSamples=sampleNames, inheritanceModel="de novo", variants=annotated_variants,
       bamViews=BamViews(), gSO=gSO, filters=filters(param), filtersMetadata=fltMd, cutoffs=cutoffs,
       sortings=sortings, annoGroups=annoGroups,
-      minScore5ss=NA_real_, minScore3ss=NA_real_, minCUFC=0)
+      minScore5ss=NA_real_, minScore3ss=NA_real_)
 })
 
 .deNovoMask <- function(vObj, pedDf,

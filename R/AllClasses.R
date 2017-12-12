@@ -79,8 +79,7 @@ setClass("VariantFilteringResults",
                                        sortings="CutoffsList",
                                        annoGroups="list",
                                        minScore5ss="numeric",
-                                       minScore3ss="numeric",
-                                       minCUFC="numeric"))
+                                       minScore3ss="numeric"))
 
 setClass("WeightMatrix",
          representation(wm="externalptr",

@@ -137,7 +137,9 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   ## read radical amino acid change matrix
   radicalAAchangeMatrix <- readAAradicalChangeMatrix(radicalAAchangeFilename)
 
-  ## read codon usage table
+  ## read codon usage table, in particular, codon relative
+  ## frequencies within amino acids with the aim of quantifying
+  ## the impact of a coding synonymous mutation
   codonusageTable <- read.table(file=codonusageFilename, sep=";")
   codonusageTable <- do.call("names<-", list(codonusageTable[[3]], codonusageTable[[1]]))
   

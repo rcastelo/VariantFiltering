@@ -112,7 +112,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
       activeSamples=sampleNames, inheritanceModel="autosomal recessive homozygous",
       variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=filters(param),
       filtersMetadata=fltMd, cutoffs=cutoffs, sortings=sortings, annoGroups=annoGroups,
-      minScore5ss=NA_real_, minScore3ss=NA_real_, minCUFC=0)
+      minScore5ss=NA_real_, minScore3ss=NA_real_)
 })
 
 

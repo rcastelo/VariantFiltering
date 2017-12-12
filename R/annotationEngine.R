@@ -358,17 +358,17 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
   annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, conmetadata$cutoffs)
 
   cufilter <- function(x) {
-                cuFC <- log2(VariantFiltering::allVariants(x, groupBy="nothing")$CUALT) -
-                        log2(VariantFiltering::allVariants(x, groupBy="nothing")$CUREF)
-                mask <- cuFC >= VariantFiltering::cutoffs(x)$codonusageFC[1]
+                cuFC <- VariantFiltering::allVariants(x, groupBy="nothing")$CUALT /
+                        VariantFiltering::allVariants(x, groupBy="nothing")$CUREF
+                mask <- abs(log2(cuFC)) >= log2(VariantFiltering::cutoffs(x)$codonusageFC[1])
                 mask[is.na(mask)] <- FALSE
                 mask
               }
-  attr(cufilter, "description") <- "Codon usage fold change"
+  attr(cufilter, "description") <- "Minimum codon usage fold change between synonymous reference and alternative codons"
   attr(cufilter, "TAB") <- "Protein"
   environment(cufilter) <- baseenv()
   cumetadata <- list(filters=list(codonusageFC=cufilter),
-                     cutoffs=CutoffsList(codonusageFC=0))
+                     cutoffs=CutoffsList(codonusageFC=1))
   annotationmetadata$filters <- c(annotationmetadata$filters, cumetadata$filters)
   annotationmetadata$cutoffs <- c(annotationmetadata$cutoffs, cumetadata$cutoffs)
 

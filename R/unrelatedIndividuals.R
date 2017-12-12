@@ -97,5 +97,5 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
       ## indselected=NA_character_, selectgene=NA_character_,
       bamViews=BamViews(), gSO=gSO, filters=flt, filtersMetadata=fltMd, cutoffs=cutoffs,
       sortings=sortings, annoGroups=annoGroups,
-      minScore5ss=NA_real_, minScore3ss=NA_real_, minCUFC=0)
+      minScore5ss=NA_real_, minScore3ss=NA_real_)
 })
