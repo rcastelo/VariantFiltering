@@ -15,7 +15,7 @@ setGeneric("cutoffs<-", function(x, value) standardGeneric("cutoffs<-"))
 setGeneric("change<-", function(x, value, ...) standardGeneric("change<-"))
 setGeneric("sortings", function(x) standardGeneric("sortings"))
 setGeneric("sortings<-", function(x, value) standardGeneric("sortings<-"))
-setGeneric("sog", function(x) standardGeneric("sog"))
+setGeneric("sog", function(x, ...) standardGeneric("sog"))
 setGeneric("sodmat", function(x) standardGeneric("sodmat"))
 setGeneric("soamat", function(x) standardGeneric("soamat"))
 
