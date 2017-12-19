@@ -181,8 +181,17 @@ setReplaceMethod("softFilterMatrix", signature(x="VariantFilteringResults"),
                  })
 
 setMethod("sog", signature(x="VariantFilteringResults"),
-          function(x) {
-            x@gSO
+          function(x, reverse=FALSE) {
+            g <- x@gSO
+            if (reverse) {
+              grev <- as(as(t(as(as(g, "graphAM"), "matrix")), "graphAM"), "graphNEL")
+              nodeDataDefaults(grev, "label") <- NA_character_
+              allterms <- unlist(nodeData(g, nodes(g), "label"))
+              nodeData(grev, nodes(grev), "label") <- allterms[nodes(grev)]
+              g <- grev
+            }
+
+            g
           })
 
 setMethod("samples", signature(object="VariantFilteringResults"),
