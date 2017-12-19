@@ -74,9 +74,10 @@ setReplaceMethod("change", signature(x="CutoffsList", value="character"),
                        stop("a string value for a factor cutoff must be a singleton.")
                      if (!value %in% levels(curvalues))
                        stop(sprintf("invalid value for cutoff '%s'", cutoff))
-                   }
+                     x@listData[[cutoff]][1] <- value
+                   } else
+                     x@listData[[cutoff]] <- value
 
-                   x@listData[[cutoff]] <- value
                    x
                  })
 
