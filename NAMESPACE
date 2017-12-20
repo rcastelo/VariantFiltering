@@ -76,7 +76,6 @@ importMethodsFrom(VariantAnnotation, fixed,
                                      refDepth,
                                      totalDepth)
 importMethodsFrom(Rsamtools, headerTabix,
-                             path,
                              scanBamHeader,
                              scanBam)
 importMethodsFrom(IRanges, elementNROWS,
