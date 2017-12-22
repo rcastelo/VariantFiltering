@@ -184,7 +184,8 @@ annotateSO <- function(variantsVR, gSO) {
 addSOmetadata <- function(variantsVR) {
   sofilter <- function(x) {
                 soterms <- VariantFiltering::cutoffs(x)$SOterms
-                if (is.null(soterms) || all(is.na(soterms)) || soterms[1] == "Any") ## no SO terms specified imply no restriction
+                if (is.null(soterms) || all(is.na(soterms)) ||
+                    length(soterms) == 0 || soterms[1] == "Any") ## no SO terms specified imply no restriction
                   soterms <- graph::nodes(VariantFiltering::sog(x))[sapply(graph::nodeData(VariantFiltering::sog(x), graph::nodes(VariantFiltering::sog(x)), "varIdx"), length) > 0]
                 else {
                   soterms <- VariantFiltering:::.findSOIDs(VariantFiltering::cutoffs(x)$SOterms, VariantFiltering::sog(x))
