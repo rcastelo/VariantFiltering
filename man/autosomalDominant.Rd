@@ -56,7 +56,7 @@ Dei M. Elurbe and R. Castelo
 
 CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
 CEUped <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.ped")
-param <- VariantFilteringParam(vcfFilenames=CEUvcf,
+param <- VariantFilteringParam(vcfFilename=CEUvcf,
                      pedFilename=CEUped)
 aDo <- autosomalDominant(param)
 aDo

@@ -53,7 +53,7 @@ Dei M. Elurbe and R. Castelo
 \dontrun{
 
 CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
-param <- VariantFilteringParam(vcfFilenames=CEUvcf)
+param <- VariantFilteringParam(vcfFilename=CEUvcf)
 uInd <- unrelatedIndividuals(param)
 uInd
 }

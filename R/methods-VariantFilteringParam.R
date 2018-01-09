@@ -1,4 +1,4 @@
-VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
+VariantFilteringParam <- function(vcfFilename, pedFilename=NA_character_,
                                   bsgenome="BSgenome.Hsapiens.1000genomes.hs37d5",
                                   orgdb="org.Hs.eg.db",
                                   txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
@@ -27,14 +27,14 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   callobj <- match.call()
   callstr <- gsub(".local", "VariantFilteringParam", deparse(callobj))
 
-  if (length(vcfFilenames) > 1) {
+  if (length(vcfFilename) > 1) {
     stop("More than one input VCF file is currently not supported. Please either merge the VCF files into a single one with vcftools, do the variant calling simultaneously on all samples, or proceed analyzing each file separately.")
-  } else if (length(vcfFilenames) < 1)
+  } else if (length(vcfFilename) < 1)
     stop("Missing VCF filename.")
 
   ## check if input VCF, PED, splice site and radical AA change files exist
   tryCatch({
-    .io_check_exists(c(vcfFilenames, radicalAAchangeFilename, codonusageFilename))
+    .io_check_exists(c(vcfFilename, radicalAAchangeFilename, codonusageFilename))
   }, error=function(err) {
        stop(conditionMessage(err), call.=FALSE)
   })
@@ -57,26 +57,26 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   else
     weightMatricesFilenames <- NA_character_
 
-  callstr <- gsub("= vcfFilenames", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilenames), collapse=", ")), callstr)
+  callstr <- gsub("= vcfFilename", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilename), collapse=", ")), callstr)
 
-  maskGz <- grepl("vcf.bgz$", vcfFilenames)
+  maskGz <- grepl("vcf.bgz$", vcfFilename)
 
   ## files that are no bgzipped should get bgzipped for the indexTabix() call below
   if (any(!maskGz)) {
-    maskVcf <- grepl("vcf$", vcfFilenames[!maskGz])
+    maskVcf <- grepl("vcf$", vcfFilename[!maskGz])
     if (!all(maskVcf))
-      stop(sprintf("file(s) %s have no .vcf extension.", paste(vcfFilenames[!maskGz][!maskVcf], collapse=", ")))
-    sapply(vcfFilenames[!maskGz], function(f) {
+      stop(sprintf("file(s) %s have no .vcf extension.", paste(vcfFilename[!maskGz][!maskVcf], collapse=", ")))
+    sapply(vcfFilename[!maskGz], function(f) {
                                     message(sprintf("Tabix compressing with bgzip %s", f))
                                     bgzip(f, overwrite=TRUE)
                                   })
-    vcfFilenames[!maskGz] <- paste0(vcfFilenames[!maskGz], ".bgz")
+    vcfFilename[!maskGz] <- paste0(vcfFilename[!maskGz], ".bgz")
   }
 
-  maskTbi <- .io_exists_mask(paste0(vcfFilenames, ".tbi"))
+  maskTbi <- .io_exists_mask(paste0(vcfFilename, ".tbi"))
   ## files with no tabix index should get built their tabix index
   if (any(!maskTbi)) {
-    for (f in vcfFilenames) {
+    for (f in vcfFilename) {
       tryCatch({
         message(sprintf("Tabix indexing %s", f))
         indexTabix(f, format="vcf")
@@ -87,13 +87,13 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   }
 
   sampleNames <- character()
-  seqinfos <- vector(mode="list", length=length(vcfFilenames))
+  seqinfos <- vector(mode="list", length=length(vcfFilename))
   tfl <- list()
-  for (i in seq_along(vcfFilenames)) {
-    hd <- scanVcfHeader(vcfFilenames[i])
+  for (i in seq_along(vcfFilename)) {
+    hd <- scanVcfHeader(vcfFilename[i])
     seqinfos[[i]] <- seqinfo(hd)
     sampleNames <- c(sampleNames, samples(hd))
-    tfl[[i]] <- TabixFile(vcfFilenames[i], yieldSize=yieldSize)
+    tfl[[i]] <- TabixFile(vcfFilename[i], yieldSize=yieldSize)
   }
   tfl <- do.call(TabixFileList, tfl)
 
@@ -102,7 +102,7 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   for (i in wh)
     if (!identical(seqinfos[[i]], seqinfos[[wh[1]]]))
       stop("Genome version for VCF file %s is different from VCF file %s\n",
-           basename(vcfFilenames[i]), basename(vcfFilenames[wh[1]]))
+           basename(vcfFilename[i]), basename(vcfFilename[wh[1]]))
 
   ## those VCFs without genome information take the genome information from
   ## VCFs with genome information (if any)
@@ -110,8 +110,8 @@ VariantFilteringParam <- function(vcfFilenames, pedFilename=NA_character_,
   if (length(wh0) > 0 && length(wh) > 0) {
     seqinfos[wh0] <- seqinfos[wh[1]]
     warning(sprintf("Genome information missing in VCF file(s) %s is taken from VCF file %s.",
-                    paste(sapply(vcfFilenames[wh0], basename), collapse=", "),
-                    basename(vcfFilenames[wh[1]])))
+                    paste(sapply(vcfFilename[wh0], basename), collapse=", "),
+                    basename(vcfFilename[wh[1]])))
   }
 
   ## read weight matrices
@@ -379,6 +379,39 @@ setMethod("soamat", signature(x="VariantFilteringParam"),
                  ifelse(is.character(pkgName), pkgName, gettext(callobj)[2])), pkgType)
 
   annotObj
+}
+
+.availablePackages <- function(pattern) {
+  ips <- installed.packages(noCache=TRUE)[, "Package"]
+  as.vector(ips[grep(pattern, ips)])
+}
+
+.bsgenomepkgs <- function() {
+  .availablePackages("^BSgenome.")
+}
+
+.orgdbpkgs <- function() {
+  .availablePackages("^org.")
+}
+
+.txdbpkgs <- function() {
+  .availablePackages("^TxDb.")
+}
+
+.snpdbpkgs <- function() {
+  .availablePackages("^SNPlocs.")
+}
+
+.xtrasnpdbpkgs <- function() {
+  .availablePackages("^XtraSNPlocs.")
+}
+
+.otherannotations <- function() {
+  otherann <- c(.availablePackages("^MafDb."),
+                .availablePackages("^phastCons"),
+                .availablePackages("^fitCons"),
+                "humanGenesPhylostrata")
+  otherann
 }
 
 ## some utility functions copied from Rsamtools/R/utilities.R

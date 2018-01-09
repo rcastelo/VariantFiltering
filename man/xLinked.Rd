@@ -58,7 +58,7 @@ Dei M. Elurbe and R. Castelo
 ## This actually won't run b/c in this trio de descendant is a female
 CEUvcf <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.vcf.bgz")
 CEUped <- file.path(system.file("extdata", package="VariantFiltering"), "CEUtrio.ped")
-param <- VariantFilteringParam(vcfFilenames=CEUvcf,
+param <- VariantFilteringParam(vcfFilename=CEUvcf,
                      pedFilename=CEUped)
 xlid <- xLinked(param)
 xlid

@@ -28,7 +28,7 @@ to the functions that filter input genetic variants according to a desired
 segregating inheritance model (\code{xLinked()}, \code{autosomalRecessiveHomozygous()}, etc).
 }
 \usage{
-VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
+VariantFilteringParam(vcfFilename, pedFilename=NA_character_,
                       bsgenome="BSgenome.Hsapiens.1000genomes.hs37d5",
                       orgdb="org.Hs.eg.db",
                       txdb="TxDb.Hsapiens.UCSC.hg19.knownGene",
@@ -59,7 +59,7 @@ VariantFilteringParam(vcfFilenames, pedFilename=NA_character_,
 \S4method{names}{VariantFilteringParam}(x)
 }
 \arguments{
-  \item{vcfFilenames}{
+  \item{vcfFilename}{
   Character string of the input VCF file name.
   }
   \item{pedFilename}{
