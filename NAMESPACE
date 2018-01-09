@@ -187,11 +187,20 @@ importFrom(shinyjs, hide,
                     onevent,
                     enable,
                     disable,
-                    useShinyjs)
+                    useShinyjs,
+		    alert)
 
 importFrom(DT, dataTableProxy,
                selectPage,
                datatable)
+
+importFrom(shinyTree, shinyTree,
+               get_selected,
+               renderTree)
+
+importFrom(shinyTree, shinyTree,
+		      get_selected,
+			renderTree)
 
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               GenePhylostrataDb,
