@@ -198,10 +198,6 @@ importFrom(shinyTree, shinyTree,
                get_selected,
                renderTree)
 
-importFrom(shinyTree, shinyTree,
-		      get_selected,
-			renderTree)
-
 exportClasses(FiveSpliceSiteVariants, ThreeSpliceSiteVariants,
               GenePhylostrataDb,
               VariantFilteringParam, VariantFilteringResults,

@@ -24,7 +24,7 @@ browseVariants <- function(vfResultsObj) {
                                    active(filters(vfResultsObj))[[flt]]),
                      hidden(p(id=paste0("info",flt),tags$i(filtersMetadata(vfResultsObj)[!is.na(filtersMetadata(vfResultsObj)$AnnoGroup),"Description"][[flt]]))),
                      #textInput(flt, flt, value = cutoffs(vfResultsObj)[[flt]][1])
-                     shinyTree("tree", flt, checkbox = TRUE))
+                     shinyTree::shinyTree("tree", flt, checkbox = TRUE))
   }
   
   ## filtering control of a vector of numeric values
@@ -275,9 +275,8 @@ browseVariants <- function(vfResultsObj) {
              "character" = {
                if(flt == "SOterms") {
                  observeEvent(input$tree,{
-                   if(length(unlist(get_selected(input$tree)) == 0)) {
-                     change(cutoffs(vfResultsObj), flt) <<- unlist(get_selected(input$tree))
-                     alert(cutoffs(vfResultsObj)[[flt]])
+                   if(length(unlist(shinyTree::get_selected(input$tree)) == 0)) {
+                     change(cutoffs(vfResultsObj), flt) <<- unlist(shinyTree::get_selected(input$tree))                     
                    }
                    else {
                      change(cutoffs(vfResultsObj), flt) <<- "Any"
@@ -335,24 +334,24 @@ browseVariants <- function(vfResultsObj) {
   }
   
   ## recursive function to generate the tree
-  generateTree <- function(n,g) {
-    sapply(n,
-           function(x){
-             if(length(unlist(edges(g)[[x]])) == 0) {
-               return(1)
-             }else{
-               generateTree(edges(g)[[x]], g)
-             }
-           }, USE.NAMES = TRUE, simplify = FALSE)
+  "generateTree <- function(n,g) {
+  sapply(n,
+  function(x){
+  if(length(unlist(edges(g)[[x]])) == 0) {
+  return(1)
+  }else{
+  generateTree(edges(g)[[x]], g)
   }
+  }, USE.NAMES = TRUE, simplify = FALSE)
+}"
   
   ## generates SOterms tree
-  generateSOtermsTree <- function(vfResultsObj) {
+"  generateSOtermsTree <- function(vfResultsObj) {
     gn <- sog(vfResultsObj,reverse=TRUE)
     to <- tsort(gn)
     
     tree <- generateTree(to[1],gn)
-    nodeD <- nodeData(gn, nodes(gn), "label")
+    nodeD <- nodeData(gn, nodes(gn), 'label')
     
     ## renames the tree
     rename_items <- function(item){
@@ -363,8 +362,9 @@ browseVariants <- function(vfResultsObj) {
       item
     }
     
-    tree2<<-rename_items(tree)
-  }
+    tree2<-rename_items(tree)
+    return(tree2)
+  }"
   
   ## build the shiny app
   app <- list(ui = NULL, server = NULL)
@@ -385,13 +385,40 @@ browseVariants <- function(vfResultsObj) {
     
     global <- reactiveValues()
     
-    generateSOtermsTree(vfResultsObj)
-    
-    output$tree <- renderTree({ 
-      tree2
-    })
+    generateTree <- function(n,g) {
+      sapply(n,
+             function(x){
+               if(length(unlist(edges(g)[[x]])) == 0) {
+                 return(1)
+               }else{
+                 generateTree(edges(g)[[x]], g)
+               }
+             }, USE.NAMES = TRUE, simplify = FALSE)
+    }
     
     datatable_generation(input,output,session,global)
+    
+    gn <- sog(vfResultsObj,reverse=TRUE)
+    to <- tsort(gn)
+    
+    tree1 <- generateTree(to[1],gn)
+    nodeD <- nodeData(gn, nodes(gn), "label")
+    
+    ## renames the tree
+    rename_items <- function(item){
+      if (is.list(item)){
+        item <- lapply(item,rename_items)
+        names(item) <- unname(nodeD[names(item)])
+      }
+      item
+    }
+    
+    tree2<-rename_items(tree1)
+    #tree2 <- generateSOtermsTree(vfResultsObj)
+    
+    #output$tree <- shinyTree::renderTree({ 
+    #  tree2
+    #})
     
     #Page filter
     observeEvent({input$page; input$tsp}, {
