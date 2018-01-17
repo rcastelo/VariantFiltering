@@ -59,7 +59,9 @@ VariantFilteringParam <- function(vcfFilename, pedFilename=NA_character_,
 
   callstr <- gsub("= vcfFilename", sprintf("= c(%s)", paste(sprintf("\"%s\"", vcfFilename), collapse=", ")), callstr)
 
-  maskGz <- grepl("vcf.bgz$", vcfFilename)
+  ## R temporary files do not preserve the double extension .vcf.bgz
+  ## maskGz <- grepl("vcf.bgz$", vcfFilename)
+  maskGz <- grepl(".bgz$", vcfFilename)
 
   ## files that are no bgzipped should get bgzipped for the indexTabix() call below
   if (any(!maskGz)) {
