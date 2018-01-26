@@ -625,6 +625,3 @@ browseVariants <- function() {
   }
   runApp(app)
  }
-
-browseVariants()
-
