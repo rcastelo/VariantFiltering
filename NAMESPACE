@@ -187,6 +187,7 @@ importFrom(shinyjs, hide,
                     onevent,
                     enable,
                     disable,
+                    disabled,
                     useShinyjs,
 		    alert)
 
