@@ -41,9 +41,9 @@ browseVariants <- function() {
               ),
               HTML("<br>"),
               actionButton("returnButton", strong("Build"), class = "btn-primary"),
-              disabled(actionButton("run", strong("Run"), class = "btn-info")),
-              disabled(actionButton("browse", strong("Browse Variants"), class = "btn-success")),
-              disabled(downloadButton("closeSave", strong("Save variants file"), class = "btn-warning"))))
+              shinyjs::disabled(actionButton("run", strong("Run"), class = "btn-info")),
+              shinyjs::disabled(actionButton("browse", strong("Browse Variants"), class = "btn-success")),
+              shinyjs::disabled(downloadButton("closeSave", strong("Save variants file"), class = "btn-warning"))))
   }
   
   ## validates construction params
@@ -624,4 +624,4 @@ browseVariants <- function() {
     }
   }
   runApp(app)
- }
+}
