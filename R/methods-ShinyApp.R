@@ -1,4 +1,7 @@
-browseVariants <- function() {
+browseVariants <- function(vfResultsObj) {
+  
+  argumentMissing <- missing(vfResultsObj)
+
   ##
   ## Build
   ##
@@ -43,7 +46,7 @@ browseVariants <- function() {
               actionButton("returnButton", strong("Build"), class = "btn-primary"),
               shinyjs::disabled(actionButton("run", strong("Run"), class = "btn-info")),
               shinyjs::disabled(actionButton("browse", strong("Browse Variants"), class = "btn-success")),
-              shinyjs::disabled(downloadButton("closeSave", strong("Save variants file"), class = "btn-warning"))))
+              shinyjs::disabled(downloadButton("closeSave", strong("Save parameters file"), class = "btn-warning"))))
   }
   
   ## validates construction params
@@ -58,8 +61,7 @@ browseVariants <- function() {
     #ped
     if (!is.null(input$pedFilename)) {
       ped <- input$pedFilename
-      flag <- TRUE
-    } else flag <- FALSE
+    } else ped <- NULL
     
     #orgdb
     if (!is.null(input$orgdb)) {
@@ -87,17 +89,31 @@ browseVariants <- function() {
     
     if(flag) {
       sn <- c(snpdb,snpdb2)
-      withProgress(message = 'Building', value = 0, {
-        incProgress(1, detail = "This may take a while...")
-        result = tryCatch({
-          vfpardev <<- VariantFilteringParam(vcfFilename = vcf$datapath,pedFilename=ped$datapath,
-                                             orgdb=orgdb, txdb=txdb, snpdb=sn, otherAnnotations=otherAnnotations)
-        }, warning = function(w) {
-          #warning-handler-code
-        }, error = function(e) {
-          shinyjs::alert("Select correct file!")
+      if(!is.null(ped)) {
+        withProgress(message = 'Building', value = 0, {
+          incProgress(1, detail = "This may take a while...")
+          result = tryCatch({
+            vfpardev <<- VariantFilteringParam(vcfFilename = vcf$datapath,pedFilename=ped$datapath,
+                                               orgdb=orgdb, txdb=txdb, snpdb=sn, otherAnnotations=otherAnnotations)
+          }, warning = function(w) {
+            #warning-handler-code
+          }, error = function(e) {
+            shinyjs::alert("Select correct file!")
+          })
         })
-      })
+      } else {
+        withProgress(message = 'Building', value = 0, {
+          incProgress(1, detail = "This may take a while...")
+          result = tryCatch({
+            vfpardev <<- VariantFilteringParam(vcfFilename = vcf$datapath,
+                                               orgdb=orgdb, txdb=txdb, snpdb=sn, otherAnnotations=otherAnnotations)
+          }, warning = function(w) {
+            #warning-handler-code
+          }, error = function(e) {
+            shinyjs::alert("Select correct file!")
+          })
+        })
+      }
     }
   }
   
@@ -464,7 +480,7 @@ browseVariants <- function() {
       renderProgress(input,output,session,1, "Step 1: Build your vfParam object by selecting the parameters in the left.")
     } else renderProgress(input,output,session, 2, "Step 2: Run unrelated individuals to build your final object.")
     
-    if(!exists("vfResultsObj")) {
+    if(!exists("vfResultsObj") || argumentMissing) {
       shinyjs::disable("browse")
       shinyjs::disable("closeSave")
     } else renderProgress(input,output,session, 3, "Step 3: Browse the results in our visualitzation app or save the generated object
@@ -484,9 +500,10 @@ browseVariants <- function() {
         withProgress(message = 'Building unrelated individuals', value = 0, {
           incProgress(1, detail = "This may take a while...")
           vfResultsObj <<- unrelatedIndividuals(vfpardev) 
+          argumentMissing <<- FALSE
         })
       }
-      if(exists("vfResultsObj")) {
+      if(exists("vfResultsObj") || argumentMissing) {
         shinyjs::enable("browse")
         shinyjs::enable("closeSave")
         renderProgress(input,output,session, 3, "Step 3: Browse the results in our visualitzation app or save the generated object
@@ -595,7 +612,7 @@ browseVariants <- function() {
   )
   
   app$server <- function(input, output, session) {
-    if(!exists("vfResultsObj")) {
+    if(!exists("vfResultsObj") || argumentMissing) {
       output$ui <- renderUI({
         fluidPage(theme = shinytheme("cerulean"), shinyjs::useShinyjs(),
                   tags$head(
