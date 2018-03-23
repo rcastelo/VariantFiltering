@@ -37,6 +37,7 @@
 \alias{cutoffs<-,VariantFilteringResults,logical-method}
 \alias{change}
 \alias{change<-}
+\alias{change<-,CutoffsList}
 \alias{change<-,CutoffsList,integer-method}
 \alias{change<-,CutoffsList,numeric-method}
 \alias{change<-,CutoffsList,character-method}

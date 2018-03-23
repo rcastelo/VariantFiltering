@@ -28,10 +28,10 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
   pedDf <- .readPEDfile(ped)
 
-  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 1, ]
-  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 2, ]
+  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 1, ]
+  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 2, ]
   
-  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Gender == 1, ]
+  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Sex == 1, ]
 
   if (nrow(aff_males) < 1)
     stop("The 'X-linked' analysis requires at least one affected male.")
@@ -133,7 +133,7 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
   if (class(vObj) != "VRanges" && class(vObj) != "CollapsedVCF")
     stop("Argument 'vObj' should be either a 'VRanges' or a 'CollapsedVCF' object.")
 
-  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype"))) ## QC
+  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype"))) ## QC
 
   nsamples <- nvariants <- 0
   if (class(vObj) == "VRanges") {
@@ -146,10 +146,10 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
   ## PENETRANCE ??
 
-  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 1, ]
-  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Gender == 2, ]
+  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 1, ]
+  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 2, ]
   
-  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Gender == 1, ]
+  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Sex == 1, ]
 
   if (nrow(aff_males) < 1)
     stop("The 'X-linked' analysis requires at least one affected male.")

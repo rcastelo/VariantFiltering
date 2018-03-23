@@ -127,7 +127,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   if (class(vObj) != "VRanges" && class(vObj) != "CollapsedVCF")
     stop("Argument 'vObj' should be either a 'VRanges' or a 'CollapsedVCF' object.")
 
-  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype"))) ## QC
+  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype"))) ## QC
 
   nsamples <- nvariants <- 0
   if (class(vObj) == "VRanges") {

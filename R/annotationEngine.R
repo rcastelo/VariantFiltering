@@ -55,6 +55,12 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
     mtlength <- sapply(mtlength, "[", 1)
     vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
 
+    mt <- gregexpr("^[0-9]+$", vnames)
+    mtstart <- sapply(mt, "[", 1)
+    mtlength <- sapply(mt, attr, "match.length")
+    mtlength <- sapply(mtlength, "[", 1)
+    vnames2[mtstart != -1] <- substr(vnames[mtstart != -1], mtstart[mtstart != -1], mtlength[mtstart != -1])
+
     wh <- nchar(vnames2) > 20
     vnames2[wh] <- paste0(substr(vnames2[wh], 1, 20), "...")
 
@@ -641,69 +647,6 @@ setMethod("annotateVariants", signature(annObj="PROVEANDb"),
           })
 
 ##
-## Annotate MAF values
-##
-
-setMethod("annotateVariants", signature(annObj="MafDb"),
-          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
-
-            ## adapt to sequence style and genome version from the input
-            ## MafDb object, thus assuming positions are based on the same
-            ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
-            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
-            commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
-            if (any(is.na(genome(variantsVR)))) {
-              warning(sprintf("Assuming the genome build of the input variants is the one of the MafDb package (%s).", unique(genome(annObj)[commonChr])))
-            genome(variantsVR) <- genome(annObj)
-            } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
-              warning(sprintf("Assumming %s represent the same genome build between variants and the MafDb package, respectively.",
-                               paste(c(unique(genome(variantsVR)[commonChr]),
-                                       unique(genome(annObj)[commonChr])),
-                                     collapse=" and ")))
-              genome(variantsVR) <- genome(annObj)
-            }
-
-            ## get the MAF columns
-            mafCols <- populations(annObj)
-
-            mafValues <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(variantsVR),
-                                                        ncol=length(mafCols),
-                                                        dimnames=list(NULL, mafCols))))
-            snvmask <- isSNV(variantsVR)
-            if (any(snvmask))
-              mafValues[snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[snvmask], mafCols, type="snvs"))
-
-            if (any(!snvmask))
-              mafValues[!snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[!snvmask], mafCols, type="nonsnvs"))
-
-            colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
-            mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
-            maffilter <- function(x) {
-                           maxMAFannot <- rep(NA_real_, length(x))
-                           mask <- rep(TRUE, length(x))
-                           mafpopmask <- VariantFiltering::cutoffs(x)$maxMAF$popmask
-                           if (any(mafpopmask)) {
-                             mtNoMAF <- NULL
-                             maxMAFannot <- do.call(pmax,
-                                                    c(as.list(S4Vectors::mcols(VariantFiltering::allVariants(x, groupBy="nothing"))[, names(mafpopmask[mafpopmask]), drop=FALSE]), na.rm=TRUE))
-                             maxMAFannot[is.na(maxMAFannot)] <- -Inf
-                             mask <- maxMAFannot <= VariantFiltering::cutoffs(x)$maxMAF$maxvalue
-                             mask[is.na(mask)] <- FALSE
-                           }
-                           mask
-                         }
-            attr(maffilter, "description") <- "Maximum minor allele frequency"
-            attr(maffilter, "TAB") <- "MAF"
-            environment(maffilter) <- baseenv()
-            cnAF <- rep(TRUE, ncol(mafValues))
-            names(cnAF) <- colnames(mafValues)
-            metadata(mafValues) <- list(filters=list(maxMAF=maffilter),
-                                        cutoffs=CutoffsList(maxMAF=CutoffsList(popmask=cnAF, maxvalue=0.5)))
-
-            mafValues
-          })
-
-##
 ## Annotate organism-level gene-centric features
 ##
 
@@ -807,21 +750,111 @@ setMethod("annotateVariants", signature(annObj="TxDb"),
 setMethod("annotateVariants", signature(annObj="GScores"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
-            sco <- scores(annObj, variantsVR, scores.only=TRUE)
+            if ("default" %in% populations(annObj))
+              defaultPopulation(annObj) <- "default"
 
-            dtf <- DataFrame(sco)
-            colnames(dtf) <- type(annObj)
-            mcols(dtf) <- DataFrame(TAB="Genome")
-            fstr <- sprintf("gscfilter <- function(x) { opf <- get(as.character(VariantFiltering::cutoffs(x)$%s$op[1])) ; opf(VariantFiltering::allVariants(x, groupBy=\"nothing\")$%s, VariantFiltering::cutoffs(x)$%s$value[1]) }", type(annObj), type(annObj), type(annObj))
+            pop <- defaultPopulation(annObj)
+            if (pop != "default")
+              pop <- populations(annObj)
+
+            cnames <- gscoresTag(annObj)
+            if (any(pop != "default"))
+              cnames <- paste0(cnames, pop)
+
+            scodtf <- DataFrame(as.data.frame(matrix(NA_real_,
+                                                     nrow=length(variantsVR),
+                                                     ncol=length(pop),
+                                                     dimnames=list(NULL, cnames))))
+            snvmask <- rep(TRUE, length(variantsVR))
+            if (gscoresNonSNRs(annObj))
+              snvmask <- isSNV(variantsVR)
+
+            if (any(snvmask))
+              scodtf[snvmask, ] <- score(annObj, ranges=variantsVR[snvmask], pop=pop, type="snrs")
+
+            if (any(!snvmask))
+              scodtf[!snvmask, ] <- score(annObj, ranges=variantsVR[!snvmask], pop=pop, type="nonsnrs")
+
+            mcols(scodtf) <- DataFrame(TAB=gscoresGroup(annObj))
+
+            fstr <- sprintf("gscfilter <- function(x) { opf <- get(as.character(VariantFiltering::cutoffs(x)$%s$op[1])) ; opf(VariantFiltering::allVariants(x, groupBy=\"nothing\")$%s, VariantFiltering::cutoffs(x)$%s$value[1]) }", gscoresTag(annObj), gscoresTag(annObj), gscoresTag(annObj))
+            if (length(pop) > 1)
+              fstr <- sprintf("gscfilter <- function(x) { cutoffval <- rep(NA_real_, length(x)) ; mask <- rep(TRUE, length(x)) ; popmask <- VariantFiltering::cutoffs(x)$%s$popmask ; if (any(popmask)) { cutoffval <- do.call(get(as.character(VariantFiltering::cutoffs(x)$%s$pfun)), c(as.list(S4Vectors::mcols(VariantFiltering::allVariants(x, groupBy=\"nothing\"))[, names(popmask[popmask]), drop=FALSE]), na.rm=TRUE)) ; cutoffval[is.na(cutoffval)] <- -Inf ; opf <- get(as.character(VariantFiltering::cutoffs(x)$%s$op[1])) ; mask <- opf(cutoffval, VariantFiltering::cutoffs(x)$%s$value) ; mask[is.na(mask)] <- FALSE } ; mask }", gscoresTag(annObj), gscoresTag(annObj), gscoresTag(annObj), gscoresTag(annObj))
             eval(parse(text=fstr))
             attr(gscfilter, "description") <- sprintf("%s genomic scores", type(annObj))
-            attr(gscfilter, "TAB") <- "Genome"
+            attr(gscfilter, "TAB") <- gscoresGroup(annObj)
             environment(gscfilter) <- baseenv()
-            eval(parse(text=sprintf("flt <- list(%s=gscfilter)", type(annObj))))
-            eval(parse(text=sprintf("ctf <- CutoffsList(%s=CutoffsList(op=factor(\">=\", levels=c(\"==\", \"!=\", \">\", \"<\", \">=\", \"<=\")), value=0))", type(annObj))))
-            metadata(dtf) <- list(filters=get("flt"), cutoffs=get("ctf"), sortings=type(annObj))
+            eval(parse(text=sprintf("flt <- list(%s=gscfilter)", gscoresTag(annObj))))
+            eval(parse(text=sprintf("ctf <- CutoffsList(%s=CutoffsList(op=factor(\">=\", levels=c(\"==\", \"!=\", \">\", \"<\", \">=\", \"<=\")), value=0))", gscoresTag(annObj))))
+            if (length(pop) > 1) {
+              eval(parse(text=sprintf("ctf <- CutoffsList(%s=CutoffsList(popmask=setNames(rep(TRUE, ncol(scodtf)), colnames(scodtf)), pfun=factor(\"pmax\", levels=c(\"pmax\", \"pmin\")), op=factor(\"<=\", levels=c(\"==\", \"!=\", \">\", \"<\", \">=\", \"<=\")), value=%s))", gscoresTag(annObj), "0.5"))) ## REPLACE 0.5!!!
+            }
+            metadata(scodtf) <- list(filters=get("flt"), cutoffs=get("ctf"), sortings=type(annObj))
 
-            dtf
+            scodtf
+          })
+
+##
+## Annotate MAF values
+##
+
+setMethod("annotateVariants", signature(annObj="MafDb"),
+          function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
+
+            ## adapt to sequence style and genome version from the input
+            ## MafDb object, thus assuming positions are based on the same
+            ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
+            if (any(is.na(genome(variantsVR)))) {
+              warning(sprintf("Assuming the genome build of the input variants is the one of the MafDb package (%s).", unique(genome(annObj)[commonChr])))
+            genome(variantsVR) <- genome(annObj)
+            } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
+              warning(sprintf("Assumming %s represent the same genome build between variants and the MafDb package, respectively.",
+                               paste(c(unique(genome(variantsVR)[commonChr]),
+                                       unique(genome(annObj)[commonChr])),
+                                     collapse=" and ")))
+              genome(variantsVR) <- genome(annObj)
+            }
+
+            ## get the MAF columns
+            mafCols <- populations(annObj)
+
+            mafValues <- DataFrame(as.data.frame(matrix(NA_real_, nrow=length(variantsVR),
+                                                        ncol=length(mafCols),
+                                                        dimnames=list(NULL, mafCols))))
+            snvmask <- isSNV(variantsVR)
+            if (any(snvmask))
+              mafValues[snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[snvmask], mafCols, type="snvs"))
+
+            if (any(!snvmask))
+              mafValues[!snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[!snvmask], mafCols, type="nonsnvs"))
+
+            colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
+            mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
+            maffilter <- function(x) {
+                           maxMAFannot <- rep(NA_real_, length(x))
+                           mask <- rep(TRUE, length(x))
+                           mafpopmask <- VariantFiltering::cutoffs(x)$maxMAF$popmask
+                           if (any(mafpopmask)) {
+                             mtNoMAF <- NULL
+                             maxMAFannot <- do.call(pmax,
+                                                    c(as.list(S4Vectors::mcols(VariantFiltering::allVariants(x, groupBy="nothing"))[, names(mafpopmask[mafpopmask]), drop=FALSE]), na.rm=TRUE))
+                             maxMAFannot[is.na(maxMAFannot)] <- -Inf
+                             mask <- maxMAFannot <= VariantFiltering::cutoffs(x)$maxMAF$maxvalue
+                             mask[is.na(mask)] <- FALSE
+                           }
+                           mask
+                         }
+            attr(maffilter, "description") <- "Maximum minor allele frequency"
+            attr(maffilter, "TAB") <- "MAF"
+            environment(maffilter) <- baseenv()
+            cnAF <- rep(TRUE, ncol(mafValues))
+            names(cnAF) <- colnames(mafValues)
+            metadata(mafValues) <- list(filters=list(maxMAF=maffilter),
+                                        cutoffs=CutoffsList(maxMAF=CutoffsList(popmask=cnAF, maxvalue=0.5)))
+
+            mafValues
           })
 
 ##

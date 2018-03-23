@@ -137,11 +137,47 @@
 
   pedDf <- read.table(pedFilename, header=FALSE, stringsAsFactors=FALSE)
   pedDf <- pedDf[, 1:6]
-  colnames(pedDf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+  colnames(pedDf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype")
+
+  if (is.character(pedDf$Sex)) {
+    if (all(sort(unique(pedDf$Sex)) == c("f", "m")))
+      pedDf$Sex <- match(pedDf$Sex, c("m", "f"))
+    else
+      stop("Character values in the 'Sex' column of the PED file are not valid. ",
+           "Please use only 'm' for males and 'f' for females.")
+  }
+
+  if (is.character(pedDf$Phenotype)) {
+    if (all(unique(pedDf$Phenotype) %in% c("a", "h")))
+      pedDf$Phenotype <- match(pedDf$Phenotype, c("h", "a"))
+    else if (all(unique(pedDf$Phenotype) %in% c("a", "h", "u")))
+      pedDf$Phenotype <- match(pedDf$Phenotype, c("u", "h", "a")) - 1L
+    else
+      stop("Character values in the 'Phenotype' column of the PED file are not valid. ",
+           "Please use only 'a' for affected, 'h' for healthy and 'u' for unknown.")
+  }
 
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedDf$Phenotype  == 2) < 1)
+  if (sum(pedDf$Phenotype == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
+
+  maskFatherIDs <- pedDf$FatherID != 0
+  maskMotherIDs <- pedDf$MotherID != 0
+  if (any(maskFatherIDs != maskMotherIDs))
+    stop("Father and mother identifiers must be both either zero or non-zero.")
+
+  if (any(duplicated(pedDf$IndividualID))) {
+    pedDf$IndividualID <- paste(pedDf$FamilyID, pedDf$IndividualID, sep="_")
+    pedDf$FatherID[maskFatherIDs] <- paste(pedDf$FamilyID[maskFatherIDs],
+                                           pedDf$FatherID[maskFatherIDs], sep="_")
+    pedDf$MotherID[maskMotherIDs] <- paste(pedDf$FamilyID[maskMotherIDs],
+                                           pedDf$MotherID[maskMotherIDs], sep="_")
+    if (!duplicated(pedDf$IndividualID))
+      warning("Individual identifiers have been made unique.")
+    else
+      stop("Individual identifiers are not unique, even when combined with ",
+           "family identifiers.")
+  }
 
   pedDf
 }

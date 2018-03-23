@@ -306,15 +306,15 @@ of minor allele frequency (MAF) values:
 
 <<>>=
 active(filters(uind)) <- FALSE
-active(filters(uind))["maxMAF"] <- TRUE
-cutoffs(uind)$maxMAF
-cutoffs(uind)$maxMAF$popmask
-cutoffs(uind)$maxMAF$maxvalue
-change(cutoffs(uind)$maxMAF, "popmask") <- FALSE
-cutoffs(uind)$maxMAF$popmask
-change(cutoffs(uind)$maxMAF, "popmask") <- c(AFKGp1=TRUE)
-cutoffs(uind)$maxMAF$popmask
-change(cutoffs(uind)$maxMAF, "maxvalue") <- 0.01
+active(filters(uind))["KGp1"] <- TRUE
+cutoffs(uind)$KGp1
+cutoffs(uind)$KGp1$popmask
+cutoffs(uind)$KGp1$value
+change(cutoffs(uind)$KGp1, "popmask") <- FALSE
+cutoffs(uind)$KGp1$popmask
+change(cutoffs(uind)$KGp1, "popmask") <- c(KGp1AF=TRUE)
+cutoffs(uind)$KGp1$popmask
+change(cutoffs(uind)$KGp1, "value") <- 0.01
 summary(uind)
 @
 In this case we selected variants with MAF$< 0.01$ in the global population of the

@@ -28,12 +28,12 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
 
   pedDf <- .readPEDfile(ped)
 
-  if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Gender[pedDf$Phenotype == 1]) != 1:2)
+  if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Sex[pedDf$Phenotype == 1]) != 1:2)
     stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
   unaff <- pedDf[pedDf$Phenotype == 1, ]
-  unaff_dad <- unaff[unaff$Gender == 1, "IndividualID"]
-  unaff_mom <- unaff[unaff$Gender == 2, "IndividualID"]
+  unaff_dad <- unaff[unaff$Sex == 1, "IndividualID"]
+  unaff_mom <- unaff[unaff$Sex == 2, "IndividualID"]
   aff <- pedDf[pedDf$Phenotype == 2, ]
   
   if (aff$FatherID != unaff_dad || aff$MotherID != unaff_mom)
@@ -132,7 +132,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
   if (class(vObj) != "VRanges" && class(vObj) != "CollapsedVCF")
     stop("Argument 'vObj' should be either a 'VRanges' or a 'CollapsedVCF' object.")
 
-  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype"))) ## QC
+  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype"))) ## QC
 
   nsamples <- nvariants <- 0
   if (class(vObj) == "VRanges") {
@@ -145,12 +145,12 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
 
   ## PENETRANCE ??
 
-  if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Gender[pedDf$Phenotype == 1]) != 1:2) 
+  if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Sex[pedDf$Phenotype == 1]) != 1:2) 
     stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
   unaff <- pedDf[pedDf$Phenotype == 1, ]
-  unaff_dad <- unaff[unaff$Gender == 1, "IndividualID"]
-  unaff_mom <- unaff[unaff$Gender == 2, "IndividualID"]
+  unaff_dad <- unaff[unaff$Sex == 1, "IndividualID"]
+  unaff_mom <- unaff[unaff$Sex == 2, "IndividualID"]
   aff <- pedDf[pedDf$Phenotype == 2, ]
   
   if (aff$FatherID != unaff_dad || aff$MotherID != unaff_mom)

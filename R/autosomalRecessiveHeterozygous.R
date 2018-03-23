@@ -37,7 +37,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
    
   pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
   pedf <- pedf[, 1:6]
-  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype")
+  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype")
   
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
   if (sum(pedf$Phenotype == 2) < 1)

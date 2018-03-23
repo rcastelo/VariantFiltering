@@ -128,7 +128,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   if (class(vObj) != "VRanges" && class(vObj) != "CollapsedVCF")
     stop("Argument 'vObj' should be either a 'VRanges' or a 'CollapsedVCF' object.")
 
-  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Gender", "Phenotype"))) ## QC
+  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype"))) ## QC
 
   nsamples <- nvariants <- 0
   if (class(vObj) == "VRanges") {
@@ -143,7 +143,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
 
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
   if (sum(pedDf$Phenotype  == 2) < 1)
-    stop("No affected individuals detected. Something is wrong with the PED file.")
+    stop("No affected individuals found in the PED file.")
 
   unaff <- pedDf[pedDf$Phenotype == 1, ]
   aff <- pedDf[pedDf$Phenotype == 2, ]
@@ -170,6 +170,12 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     gt <- do.call("cbind", split(vObj$GT[autosomalMask], sampleNames(vObj)))
   else if (class(vObj) == "CollapsedVCF")
     gt <- geno(vObj)$GT[autosomalMask, , drop=FALSE]
+
+  gtind <- colnames(gt)
+  unaff <- unaff[unaff$IndividualID %in% gtind, , drop=FALSE]
+  aff <- aff[aff$IndividualID %in% gtind, , drop=FALSE]
+  if (nrow(aff) == 0)
+    stop("No affected individuals have genotypes.")
 
   missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
 
