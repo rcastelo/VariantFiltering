@@ -769,11 +769,19 @@ setMethod("annotateVariants", signature(annObj="GScores"),
             if (gscoresNonSNRs(annObj))
               snvmask <- isSNV(variantsVR)
 
-            if (any(snvmask))
-              scodtf[snvmask, ] <- score(annObj, ranges=variantsVR[snvmask], pop=pop, type="snrs")
+            ## need to check for NAs in 'snvmask' due to '*' ALT alleles
+            ## see https://samtools.github.io/hts-specs/VCFv4.2.pdf (1.4.1.5)
+            ## and https://software.broadinstitute.org/gatk/documentation/article.php?id=6926
+            ## and https://support.bioconductor.org/p/80212
+            if (any(!is.na(snvmask) & snvmask))
+              scodtf[!is.na(snvmask) & snvmask, ] <- score(annObj,
+                                                           ranges=variantsVR[!is.na(snvmask) & snvmask],
+                                                           pop=pop, type="snrs")
 
-            if (any(!snvmask))
-              scodtf[!snvmask, ] <- score(annObj, ranges=variantsVR[!snvmask], pop=pop, type="nonsnrs")
+            if (any(!is.na(snvmask) & !snvmask))
+              scodtf[!is.na(snvmask) & !snvmask, ] <- score(annObj,
+                                                            ranges=variantsVR[!is.na(snvmask) & !snvmask],
+                                                            pop=pop, type="nonsnrs")
 
             mcols(scodtf) <- DataFrame(TAB=gscoresGroup(annObj))
 
