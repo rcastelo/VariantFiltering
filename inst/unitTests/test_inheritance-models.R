@@ -6,7 +6,7 @@ Hsapiens <- BSgenome.Hsapiens.1000genomes.hs37d5
 pedDf <- data.frame(FamilyID="1", IndividualID=LETTERS[1:3],
                     FatherID=factor(c("B", NA, NA), levels=LETTERS[1:3]),
                     MotherID=factor(c("C", NA, NA), levels=LETTERS[1:3]),
-                    Gender=c(1, 1, 2), Phenotype=c(2, 1, 1))
+                    Sex=c(1, 1, 2), Phenotype=c(2, 1, 1))
 
 ## create a VRanges object with two synthetic variants on three individuals
 vr <- VRanges(seqnames=rep("1", 6),

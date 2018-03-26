@@ -93,16 +93,13 @@ scoss_read_wm(SEXP fnameR) {
 /* entry point to wm_score */
 SEXP
 scoss_wm_score(SEXP wmR, SEXP dnastringR, SEXP nscoR) {
-  int i, j, k;
+  int i, j;
   int ndnastrings = length(dnastringR);
   WeightMatrix* wm = (WeightMatrix *) R_ExternalPtrAddr(wmR);
-  int nsco = INTEGER(nscoR)[0];
-  double* scores;
   SEXP scoresR;
   SEXP result;
 
   PROTECT(result = allocVector(VECSXP, ndnastrings));
-  k = 0;
   for (i=0; i < ndnastrings; i++) {
     const char* dnaseq = CHAR(STRING_ELT(dnastringR, i));
 
@@ -126,9 +123,7 @@ SEXP
 scoss_wm_score_DNAStringSet(SEXP wmR, SEXP dnaStringSet, SEXP nscoR) {
   XStringSet_holder S;
   int S_length, i, j;
-  int nsco = INTEGER(nscoR)[0];
   WeightMatrix* wm = (WeightMatrix *) R_ExternalPtrAddr(wmR);
-  double* scores;
   SEXP scoresR;
   SEXP result;
 
