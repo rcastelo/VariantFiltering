@@ -106,6 +106,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
                            AnnoGroup=sapply(metadata(mcols(annotated_variants))$filters,
                                             attr, "TAB")))
   cutoffs <- metadata(mcols(annotated_variants))$cutoffs
+  sortings <- metadata(mcols(annotated_variants))$sortings
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr,
       genomeDescription=genomeDescription, inputParameters=param,
