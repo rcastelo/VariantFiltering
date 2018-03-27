@@ -120,7 +120,7 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   new("VariantFilteringResults", callObj=callobj, callStr=callstr,
       genomeDescription=genomeDescription, inputParameters=param,
       activeSamples=sampleNames, inheritanceModel="autosomal dominant",
-      variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=filters(param),
+      variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=flt,
       filtersMetadata=fltMd, cutoffs=cutoffs, sortings=sortings, annoGroups=annoGroups,
       minScore5ss=NA_real_, minScore3ss=NA_real_)
 })

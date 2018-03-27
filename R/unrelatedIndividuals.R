@@ -99,9 +99,8 @@ setMethod("unrelatedIndividuals", signature(param="VariantFilteringParam"),
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr,
       genomeDescription=genomeDescription, inputParameters=param,
-      activeSamples=sampleNames, inheritanceModel="unrelated individuals", variants=annotated_variants,
-      ## indselected=NA_character_, selectgene=NA_character_,
-      bamViews=BamViews(), gSO=gSO, filters=flt, filtersMetadata=fltMd, cutoffs=cutoffs,
-      sortings=sortings, annoGroups=annoGroups,
+      activeSamples=sampleNames, inheritanceModel="unrelated individuals",
+      variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=flt,
+      filtersMetadata=fltMd, cutoffs=cutoffs, sortings=sortings, annoGroups=annoGroups,
       minScore5ss=NA_real_, minScore3ss=NA_real_)
 })

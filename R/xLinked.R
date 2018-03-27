@@ -114,9 +114,9 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
 
   new("VariantFilteringResults", callObj=callobj, callStr=callstr,
       genomeDescription=genomeDescription, inputParameters=param,
-      activeSamples=sampleNames, inheritanceModel="X-linked", variants=annotated_variants,
-      bamViews=BamViews(), gSO=gSO, filters=filters(param), filtersMetadata=fltMd, cutoffs=cutoffs,
-      sortings=sortings, annoGroups=annoGroups,
+      activeSamples=sampleNames, inheritanceModel="X-linked",
+      variants=annotated_variants, bamViews=BamViews(), gSO=gSO, filters=flt,
+      filtersMetadata=fltMd, cutoffs=cutoffs, sortings=sortings, annoGroups=annoGroups,
       minScore5ss=NA_real_, minScore3ss=NA_real_)
 })
 
