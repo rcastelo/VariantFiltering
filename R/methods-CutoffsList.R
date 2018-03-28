@@ -17,12 +17,12 @@ CutoffsList <- function(...) {
 }
 
 setReplaceMethod("change", signature(x="CutoffsList", value="integer"),
-                 function(x, value, cutoff) {
+                 function(x, cutoff, value) {
                    change(x, cutoff) <- as.numeric(value)
                  })
 
 setReplaceMethod("change", signature(x="CutoffsList", value="numeric"),
-                 function(x, value, cutoff) {
+                 function(x, cutoff, value) {
                    .checkValueCutoffArgs(x, value, cutoff)
 
                    if (!is.numeric(x[[cutoff]]) && !is.integer(x[[cutoff]]))
@@ -33,7 +33,7 @@ setReplaceMethod("change", signature(x="CutoffsList", value="numeric"),
                  })
 
 setReplaceMethod("change", signature(x="CutoffsList", value="logical"),
-                 function(x, value, cutoff) {
+                 function(x, cutoff, value) {
                    .checkValueCutoffArgs(x, value, cutoff)
 
                    if (!is.logical(x[[cutoff]]))
@@ -62,7 +62,7 @@ setReplaceMethod("change", signature(x="CutoffsList", value="logical"),
                  })
   
 setReplaceMethod("change", signature(x="CutoffsList", value="character"),
-                 function(x, value, cutoff) {
+                 function(x, cutoff, value) {
                    .checkValueCutoffArgs(x, value, cutoff)
 
                    if (!is.character(x[[cutoff]]) && !is.factor(x[[cutoff]]))

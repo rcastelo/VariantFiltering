@@ -64,9 +64,12 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
 
   annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
+  metadata(mcols(annotated_variants)) <- list(cutoffs=CutoffsList(), sortings=CutoffsList())
+
   open(vcfFiles[[1]])
   n.var <- 0
-  while(nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]], param=svparam))) {
+  flag <- TRUE
+  while(flag && nrow(vcf <- readVcf(vcfFiles[[1]], genome=seqInfos[[1]], param=svparam))) {
 
     ## insert an index for each variant in the VCF file, and indicator
     ## values for heterozygous variants in affected and one of the parents only
@@ -133,9 +136,16 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
       variants <- .matchSeqinfo(variants, txdb, bsgenome)
 
       ## annotate variants
-      annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
-                                                                   BPPARAM=BPPARAM))
+      if (length(annotated_variants) > 0)
+        annotated_variants <- c(annotated_variants, annotationEngine(variants, param, annotationCache,
+                                                                     BPPARAM=BPPARAM))
+      else
+        annotated_variants <- annotationEngine(variants, param, annotationCache,
+                                               BPPARAM=BPPARAM)
     }
+
+    if (length(vcfWhich(svparam)) > 0) ## temporary fix to keep this looping
+      flag <- FALSE                    ## structure with access through genomic ranges
 
     message(sprintf("%d variants processed", n.var))
   }

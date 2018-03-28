@@ -172,7 +172,8 @@ importFrom(VariantAnnotation, AllVariants,
                               IntergenicVariants,
                               VRanges,
                               VRangesList,
-                              softFilter)
+                              softFilter,
+                              vcfWhich)
 importFrom(Gviz, GenomeAxisTrack,
                  GeneRegionTrack,
                  AnnotationTrack,

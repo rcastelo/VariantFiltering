@@ -38,10 +38,10 @@
 \alias{change}
 \alias{change<-}
 \alias{change<-,CutoffsList}
-\alias{change<-,CutoffsList,integer-method}
-\alias{change<-,CutoffsList,numeric-method}
-\alias{change<-,CutoffsList,character-method}
-\alias{change<-,CutoffsList,logical-method}
+\alias{change<-,CutoffsList,ANY,integer-method}
+\alias{change<-,CutoffsList,ANY,numeric-method}
+\alias{change<-,CutoffsList,ANY,character-method}
+\alias{change<-,CutoffsList,ANY,logical-method}
 \alias{sortings}
 \alias{sortings<-}
 \alias{sortings,VariantFilteringResults-method}
