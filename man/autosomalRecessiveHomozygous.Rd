@@ -12,6 +12,7 @@ This function works analyzing the variants of the unaffected individuals storing
 \S4method{autosomalRecessiveHomozygous}{VariantFilteringParam}(param,
                                                                svparam=ScanVcfParam(),
                                                                use=c("everything", "complete.obs", "all.obs"),
+                                                               includeHomRef=FALSE,
                                                                BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
@@ -24,6 +25,8 @@ This function works analyzing the variants of the unaffected individuals storing
   \code{VariantAnnotation} package, see its help page for a complete description of this functionality.
   }
   \item{use}{character string specifying the policy to apply on missing genotypes when comparing them. This policy can be either '"everything"' (default), '"complete.obs"' or '"all.obs"'. The default policy ('"everything"') will propagate NA truth values using the behavior of the R logical operators, with the exception that when the final truth value associated with a variant is \code{NA}, the variant is ultimately discarded.
+  }
+  \item{includeHomRef}{logical value specifying whether the homozygous reference genotype determines the affected phenotype (\code{TRUE}) or not (\code{FALSE}, default).
   }
   \item{BPPARAM}{
   An VariantFilteringParam object containing VCF file(s). From 1 to 5 independent files for affected individuals and 0 to 5 more for unaffected ones (up to 10 individuals). If the VCF is a multi-sample, it can contain the same amount of individuals divided likewise.

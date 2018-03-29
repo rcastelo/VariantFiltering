@@ -149,8 +149,6 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     nvariants <- nrow(vObj)
   }
 
-  ## PENETRANCE ??
-
   if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Sex[pedDf$Phenotype == 1]) != 1:2) 
     stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
@@ -168,6 +166,18 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     gt <- do.call("cbind", split(vObj$GT, sampleNames(vObj)))
   else if (class(vObj) == "CollapsedVCF")
     gt <- geno(vObj)$GT
+
+  ## further restrict affected and unaffected individuals to
+  ## those who have been genotyped
+  gtind <- colnames(gt)
+  unaff <- unaff[unaff$IndividualID %in% gtind, , drop=FALSE]
+  aff <- aff[aff$IndividualID %in% gtind, , drop=FALSE]
+  if (nrow(aff) == 0)
+    stop("No affected individuals have genotypes.")
+  if (!unaff_dad %in% gtind)
+    stop("Unaffected father is not genotyped.")
+  if (!unaff_mom %in% gtind)
+    stop("Unaffected mother is not genotyped.")
 
   missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
 

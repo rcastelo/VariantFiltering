@@ -150,12 +150,10 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     nvariants <- nrow(vObj)
   }
 
-  ## PENETRANCE ??
-
-  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 1, ]
-  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 2, ]
+  unaff_males <- pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 1, , drop=FALSE]
+  carrier_females <-  pedDf[pedDf$Phenotype == 1 & pedDf$Sex == 2, , drop=FALSE]
   
-  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Sex == 1, ]
+  aff_males <- pedDf[pedDf$Phenotype == 2 & pedDf$Sex == 1, , drop=FALSE]
 
   if (nrow(aff_males) < 1)
     stop("The 'X-linked' analysis requires at least one affected male.")
@@ -183,6 +181,15 @@ setMethod("xLinked", signature(param="VariantFilteringParam"),
     gt <- do.call("cbind", split(vObj$GT[XchromosomeMask], sampleNames(vObj)))
   else if (class(vObj) == "CollapsedVCF")
     gt <- geno(vObj)$GT[XchromosomeMask, , drop=FALSE]
+
+  ## further restrict affected and unaffected individuals to
+  ## those who have been genotyped
+  gtind <- colnames(gt)
+  unaff_males <- unaff_males[unaff_males$IndividualID %in% gtind, , drop=FALSE]
+  carrier_females <- carrier_females[carrier_females$IndividualID %in% gtind, , drop=FALSE]
+  aff_males <- aff_males[aff_males$IndividualID %in% gtind, , drop=FALSE]
+  if (nrow(aff_males) == 0)
+    stop("No affected male individuals have genotypes.")
 
   missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
 

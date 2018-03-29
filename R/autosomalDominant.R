@@ -149,8 +149,6 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
     nvariants <- nrow(vObj)
   }
 
-  ## PENETRANCE ??
-
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
   if (sum(pedDf$Phenotype  == 2) < 1)
     stop("No affected individuals found in the PED file.")
@@ -181,32 +179,79 @@ setMethod("autosomalDominant", signature(param="VariantFilteringParam"),
   else if (class(vObj) == "CollapsedVCF")
     gt <- geno(vObj)$GT[autosomalMask, , drop=FALSE]
 
+  ## further restrict affected and unaffected individuals to
+  ## those who have been genotyped
   gtind <- colnames(gt)
   unaff <- unaff[unaff$IndividualID %in% gtind, , drop=FALSE]
   aff <- aff[aff$IndividualID %in% gtind, , drop=FALSE]
   if (nrow(aff) == 0)
     stop("No affected individuals have genotypes.")
 
-  missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
+  phasedgt <- any(grepl("\\|", gt))
+
+  missingMask <- rowSums(gt == ".") > 0
+  if (phasedgt)
+    missingMask <- missingMask | (rowSums(gt == ".|.") > 0)
+  else
+    missingMask <- missingMask | (rowSums(gt == "./.") > 0)
+
+  ## missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
 
   if (any(missingMask) && use == "all.obs")
     stop("There are missing genotypes and current policy to deal with them is 'all.obs', which does not allow them.")
 
+  ## build logical masks of unaffected and affected individuals
+  ## unaffected individuals should be homozygous reference and affected
+  ## should be heterozygous of homozygous alternative
   unaffectedMask <- rep(TRUE, times=nrow(gt))
   if (nrow(unaff) > 0) {
     unaffgt <- gt[, unaff$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      unaffgt[unaffgt == "." | unaffgt == "./." | unaffgt == ".|."] <- NA_character_
-    unaffectedMask <- unaffgt == "0/0" | unaffgt == "0|0"
-    unaffectedMask <- apply(unaffectedMask, 1, all)
+    if (any(missingMask) && use == "everything") {
+      unaffgt[unaffgt == "."] <- NA_character_
+      if (phasedgt)
+        unaffgt[unaffgt == ".|."] <- NA_character_
+      else
+        unaffgt[unaffgt == "./."] <- NA_character_
+    }
+    if (phasedgt)
+      unaffectedMask <- unaffgt == "0|0"
+    else
+      unaffectedMask <- unaffgt == "0/0"
+    unaffectedMask <- rowSums(unaffectedMask, na.rm=TRUE) == nrow(unaff)
     rm(unaffgt)
   }
 
   affgt <- gt[, aff$IndividualID, drop=FALSE]
-  if (any(missingMask) && use == "everything")
-    affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
-  affectedMask <- affgt == "0/1" | affgt == "0|1" | affgt == "1/1" | affgt == "1|1"
-  affectedMask <- rowSums(affectedMask) == nrow(aff)
+  if (any(missingMask) && use == "everything") {
+    affgt[affgt == "."] <- NA_character_
+    if (phasedgt)
+      affgt[affgt == ".|."] <- NA_character_
+    else
+      affgt[affgt == "./."] <- NA_character_
+  }
+
+  ## old mask assuming biallelic variants
+  ## affectedMask <- affgt == "0/1" | affgt == "0|1" | affgt == "1/1" | affgt == "1|1"
+  ## affected mask is built taking into account multiallelic variants that typically happen in indels,
+  ## i.e., 0/1, 0/2, 0/3, ..., 1/1, 2/2, 3/3, etc.
+  if (phasedgt) {
+    affectedMask <- matrix(grepl("0\\|\\|0", affgt), nrow=nrow(affgt)) & affgt != "0|0"
+    affgt[affgt == "0|0"] <- NA_character_
+    affgt <- strsplit(affgt, "|")
+  } else {
+    affectedMask <- matrix(grepl("0/", affgt), nrow=nrow(affgt)) & affgt != "0/0"
+    affgt[affgt == "0/0"] <- NA_character_
+    affgt <- strsplit(affgt, "/")
+  }
+
+  naMask <- sapply(affgt, function(x) any(is.na(x)))
+  affectedMask <- as.vector(affectedMask)
+  affectedMask[!naMask] <- affectedMask[!naMask] |
+                           as.vector(tapply(unlist(affgt[!naMask]), rep(1:sum(!naMask), each=2),
+                                            function(x) all(x[1] == x[2])))
+  affectedMask <- matrix(affectedMask, ncol=nrow(aff))
+
+  affectedMask <- rowSums(affectedMask, na.rm=TRUE) == nrow(aff)
   rm(affgt)
 
   uaMask <- unaffectedMask & affectedMask

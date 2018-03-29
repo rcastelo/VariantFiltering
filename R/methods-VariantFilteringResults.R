@@ -271,7 +271,7 @@ setMethod("referenceGenome", signature=(x="VariantFilteringResults"),
 setMethod("allVariants", signature(x="VariantFilteringResults"), 
           function(x, groupBy="sample") {
             vars <- x@variants
-            if (groupBy[1] %in% "sample") {
+            if (groupBy[1] %in% "sample" && length(sampleNames(x@variants)) > 0) {
               f <- sampleNames(x@variants)
               if (all(is.na(f)))
                 f <- rep("nosample", length(x))
@@ -291,6 +291,10 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             if (length(filters(x)) > 0)
               x <- softFilter(x, filters(x))
             varsxsam <- allVariants(x)
+
+            if (length(varsxsam) == 0)
+              return(varsxsam)
+
             vars <- varsxsam[[1]]
             selcols <- names(active(filters(x)))[active(filters(x))] ## default VCF filters may or may not show up
             rowsMask <- apply(softFilterMatrix(vars)[, selcols, drop=FALSE], 1, all, na.rm=TRUE)
@@ -350,7 +354,7 @@ setMethod("filteredVariants", signature(x="VariantFilteringResults"),
             else if (sortings(x)$decreasing)
               vars <- rev(vars)
 
-            if (groupBy[1] %in% "sample")
+            if (groupBy[1] %in% "sample" && length(sampleNames(vars)) > 0)
               vars <- split(vars, sampleNames(vars))
             else if (groupBy[1] %in% colnames(mcols(vars)))
               vars <- split(vars, mcols(vars)[, groupBy])

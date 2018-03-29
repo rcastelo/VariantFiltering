@@ -1,6 +1,7 @@
 setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam"),
           function(param, svparam=ScanVcfParam(),
                    use=c("everything", "complete.obs", "all.obs"),
+                   includeHomRef=FALSE,
                    BPPARAM=bpparam("SerialParam")) {
             
   use <- match.arg(use)
@@ -52,7 +53,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     n.var <- n.var + nrow(vcf)
 
-    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use)
+    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use, includeHomRef)
 
     if (any(mask)) {
 
@@ -131,7 +132,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 ## according to an autosomal recessive homozygous inheritance model
 .autosomalRecessiveHomozygousMask <- function(vObj, pedDf, bsgenome,
                                               use=c("everything", "complete.obs", "all.obs"),
-                                              penetrance=1) {
+                                              includeHomRef=FALSE,
+                                              penetrance=1) { ## the penetrance argument is experimental
 
   use <- match.arg(use)
 
@@ -149,18 +151,6 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
     nvariants <- nrow(vObj)
   }
 
-  if (missing(penetrance) || is.null(penetrance))
-    penetrance <- nsamples
-
-  if (class(penetrance) == "numeric" && (penetrance <= 0 || penetrance > 1))
-    stop("When penetrance is a real number, then it should take values > 0 and <= 1.")
-  else if (class(penetrance) == "integer" && (penetrance <= 0 || penetrance > nsamples))
-    stop(sprintf("When penetrance is an integer (%d), then it should take values > 0 and <= %d (# of samples).",
-                 penetrance, nsamples))
-
-  if (class(penetrance) == "numeric")
-    penetrance <- ceiling(penetrance*nsamples)
-
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
   if (sum(pedDf$Phenotype  == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
@@ -169,13 +159,11 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   aff <- pedDf[pedDf$Phenotype == 2, ]
   
   ## restrict upfront variants to those in autosomal chromosomes
-  snames <- as.character(seqnames(vObj))
-
-  ## restrict upfront variants to those in autosomal chromosomes
   ## we subset to the first element of the value returned by seqlevelsStyle()
   ## to deal with cases in which only a subset of chromosomes is contained in
   ## the input VCF (typically for teaching/example/illustration purposes) which
   ## matches more than one chromosome style, or because Ensembl is identical to NCBI for human :\
+  snames <- as.character(seqnames(vObj))
   autosomalMask <- snames %in% extractSeqlevelsByGroup(organism(bsgenome),
                                                        seqlevelsStyle(vObj)[1],
                                                        group="auto")
@@ -193,7 +181,37 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   else if (class(vObj) == "CollapsedVCF")
     gt <- geno(vObj)$GT[autosomalMask, , drop=FALSE]
 
-  missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
+  ## further restrict affected and unaffected individuals to
+  ## those who have been genotyped
+  gtind <- colnames(gt)
+  unaff <- unaff[unaff$IndividualID %in% gtind, , drop=FALSE]
+  aff <- aff[aff$IndividualID %in% gtind, , drop=FALSE]
+  if (nrow(aff) == 0)
+    stop("No affected individuals have genotypes.")
+
+  phasedgt <- any(grepl("\\|", gt))
+
+  ## the penetrance argument is experimental
+  naff <- as.integer(nrow(aff))
+  if (missing(penetrance) || is.null(penetrance))
+    penetrance <- naff
+
+  if (class(penetrance) == "numeric" && (penetrance <= 0 || penetrance > 1))
+    stop("When penetrance is a real number, then it should take values > 0 and <= 1.")
+  else if (class(penetrance) == "integer" && (penetrance <= 0 || penetrance > naff))
+    stop(sprintf("When penetrance is an integer (%d), then it should take values > 0 and <= %d (# of genotyped samples from affected individuals).",
+                 penetrance, naff))
+
+  if (class(penetrance) == "numeric")
+    penetrance <- ceiling(penetrance*naff)
+
+  missingMask <- rowSums(gt == ".") > 0
+  if (phasedgt)
+    missingMask <- missingMask | (rowSums(gt == ".|.") > 0)
+  else
+    missingMask <- missingMask | (rowSums(gt == "./.") > 0)
+
+  ## missingMask <- apply(gt, 1, function(x) any(x == "." | x == "./." | x == ".|."))
   
   if (any(missingMask) && use == "all.obs")
     stop("There are missing genotypes and current policy to deal with them is 'all.obs', which does not allow them.")
@@ -203,21 +221,58 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   carriersMask <- rep(TRUE, times=nrow(gt))
   if (nrow(unaff) > 0) {
     unaffgt <- gt[, unaff$IndividualID, drop=FALSE]
-    if (any(missingMask) && use == "everything")
-      unaffgt[unaffgt == "." | unaffgt == "./." | unaffgt == ".|."] <- NA_character_
-    carriersMask <- unaffgt == "0/1" | unaffgt == "0|1" | unaffgt == "1|0"
-    carriersMask <- apply(carriersMask, 1, all)
+    if (any(missingMask) && use == "everything") {
+      unaffgt[unaffgt == "."] <- NA_character_
+      if (phasedgt)
+        unaffgt[unaffgt == ".|."] <- NA_character_
+      else
+        unaffgt[unaffgt == "./."] <- NA_character_
+    }
+    ## old mask assuming biallelic variants
+    ## carriersMask <- unaffgt == "0/1" | unaffgt == "0|1" | unaffgt == "1|0"
+    ## carriers mask is built taking into account multiallelic variants that typically happen in indels,
+    ## i.e., 0/1, 0/2, 0/3, etc.
+    if (phasedgt)
+      carriersMask <- matrix(grepl("0\\|\\|0", unaffgt), nrow=nrow(unaffgt)) & unaffgt != "0|0"
+    else
+      carriersMask <- matrix(grepl("0/", unaffgt), nrow=nrow(unaffgt)) & unaffgt != "0/0"
+    carriersMask <- rowSums(carriersMask, na.rm=TRUE) == nrow(unaff)
     rm(unaffgt)
   }
 
   affgt <- gt[, aff$IndividualID, drop=FALSE]
-  if (any(missingMask) && use == "everything")
-    affgt[affgt == "." | affgt == "./." | affgt == ".|."] <- NA_character_
-  affectedMask <- affgt == "1/1" | affgt == "1|1"
-  if (penetrance < nsamples)
-    affectedMask <- apply(affectedMask, 1, function(x, p) sum(x, na.rm=TRUE) <= p, penetrance)
+  if (any(missingMask)) { ## && use == "everything") {
+    affgt[affgt == "."] <- NA_character_
+    if (phasedgt)
+      affgt[affgt == ".|."] <- NA_character_
+    else
+      affgt[affgt == "./."] <- NA_character_
+  }
+  
+  ## old mask assuming biallelic variants
+  ## affectedMask <- affgt == "1/1" | affgt == "1|1"
+  ## affected mask is built taking into account multiallelic variants that typically happen in indels,
+  ## i.e., 1/1, 2/2, 3/3, etc.
+  if (phasedgt) {
+    if (!includeHomRef)
+      affgt[affgt == "0|0"] <- NA_character_
+    affgt <- strsplit(affgt, "|")
+  } else {
+    if (!includeHomRef)
+      affgt[affgt == "0/0"] <- NA_character_
+    affgt <- strsplit(affgt, "/")
+  }
+
+  naMask <- sapply(affgt, function(x) any(is.na(x)))
+  affectedMask <- vector(mode="logical", length=length(naMask))
+  affectedMask[!naMask] <- as.vector(tapply(unlist(affgt[!naMask]), rep(1:sum(!naMask), each=2),
+                                            function(x) all(x[1] == x[2])))
+  affectedMask <- matrix(affectedMask, ncol=nrow(aff))
+
+  if (penetrance < naff)
+    affectedMask <- rowSums(affectedMask, na.rm=TRUE) >= penetrance
   else
-    affectedMask <- apply(affectedMask, 1, all)
+    affectedMask <- rowSums(affectedMask, na.rm=TRUE) == nrow(aff)
   rm(affgt)
 
   caMask <- carriersMask & affectedMask

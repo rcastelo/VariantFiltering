@@ -25,8 +25,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   if (is.na(ped))
     stop("Please specify a PED file name when building the parameter object.")
 
-  if (!file.exists(ped))
-    stop(sprintf("could not open the PED file %s.", ped))
+  pedDf <- .readPEDfile(ped)
 
   ## REVISE THIS !!
   ## if (allTranscripts == TRUE) {
@@ -35,30 +34,26 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   ##    allTranscripts <- FALSE
   ## }
    
-  pedf <- read.table(ped, header=FALSE, stringsAsFactors=FALSE)
-  pedf <- pedf[, 1:6]
-  colnames(pedf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype")
-  
   ## assuming Phenotype == 2 means affected and Phenotype == 1 means unaffected
-  if (sum(pedf$Phenotype == 2) < 1)
+  if (sum(pedDf$Phenotype == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
 
-  unaff <- pedf[pedf$Phenotype == 1, ]
-  aff <- pedf[pedf$Phenotype == 2, ]
+  unaff <- pedDf[pedDf$Phenotype == 1, ]
+  aff <- pedDf[pedDf$Phenotype == 2, ]
   
   motherID <- unique(aff$MotherID)
   if (length(motherID) > 1) {
     stop("The mother of all the affected individuals has to be the same. Please check out the PED file.")
   } else if (length(motherID) < 1)
     stop("One individual has to be set as mother of the affected individual(s).")
-  carrierMother <- pedf[pedf$IndividualID == as.character(motherID), ]
+  carrierMother <- pedDf[pedDf$IndividualID == as.character(motherID), ]
   
   fatherID <- unique(aff$FatherID)
   if (length(fatherID) > 1) {
     stop("The father of all the affected individuals has to be the same. Please check out the PED file.")
   } else if (length(fatherID) < 1)
     stop("One individual has to be set as father of the affected individual(s)")
-  carrierFather <- pedf[pedf$IndividualID == as.character(fatherID), ]
+  carrierFather <- pedDf[pedDf$IndividualID == as.character(fatherID), ]
   
   mom_comphet <- dad_comphet <- NULL
 
@@ -92,20 +87,41 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
     autosomalMask <- seqnames(vcf) %in% extractSeqlevelsByGroup(organism(bsgenome),
                                                                 seqlevelsStyle(vcf)[1],
                                                                 group="auto")
-    vcf <- vcf[autosomalMask, ]
+    vcf <- vcf[autosomalMask, , drop=FALSE]
+
+    gt <- geno(vcf)$GT
+
+    ## further restrict affected and unaffected individuals to
+    ## those who have been genotyped
+    gtind <- colnames(gt)
+    unaff <- unaff[unaff$IndividualID %in% gtind, , drop=FALSE]
+    aff <- aff[aff$IndividualID %in% gtind, , drop=FALSE]
+    if (nrow(aff) == 0)
+      stop("No affected individuals have genotypes.")
+    if (!fatherID %in% gtind)
+      stop("Father is not genotyped.")
+    if (!motherID %in% gtind)
+      stop("Mother is not genotyped.")
 
     ## heterozygous mask for *all* affected individuals
-    affectedMask <- geno(vcf)$GT[, aff$IndividualID, drop=FALSE] == "0/1"
+    affectedMask <- gt[, aff$IndividualID, drop=FALSE] == "0/1" ||
+                    gt[, aff$IndividualID, drop=FALSE] == "0|1" ||
+                    gt[, aff$IndividualID, drop=FALSE] == "1|0"
     affectedMask <- apply(affectedMask, 1, all)
 
     ## heterozygous mask for mother
-    motherHetMask <- geno(vcf)$GT[, motherID, drop=FALSE] == "0/1"
+    motherHetMask <- gt[, motherID, drop=FALSE] == "0/1" ||
+                     gt[, motherID, drop=FALSE] == "0|1" ||
+                     gt[, motherID, drop=FALSE] == "1|0"
 
     ## heterozygous mask for father
-    fatherHetMask <- geno(vcf)$GT[, fatherID, drop=FALSE] == "0/1"
+    fatherHetMask <- gt[, fatherID, drop=FALSE] == "0/1" ||
+                     gt[, fatherID, drop=FALSE] == "0|1" ||
+                     gt[, fatherID, drop=FALSE] == "1|0"
 
     ## homozygous alternative mask for *any* of the unaffected individuals
-    unaffHomMask <- geno(vcf)$GT[, unaff$IndividualID, drop=FALSE] == "1/1"
+    unaffHomMask <- gt[, unaff$IndividualID, drop=FALSE] == "1/1" ||
+                    gt[, unaff$IndividualID, drop=FALSE] == "1|1"
     unaffHomMask <- apply(unaffHomMask, 1, any)
 
     ## candidate variants are heterozygous in affected individuals,
