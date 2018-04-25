@@ -25,9 +25,9 @@
   slenBSgenome <- slenBSgenome[commonChr]
   if (any(slenVcf != slenBSgenome)) {
     if (sum(slenVcf != slenBSgenome) == 1) {
-      warning(sprintf("Chromosome %s has different lengths between the input VCF and the BSgenome pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
+      message(sprintf("Chromosome %s has different lengths between the input VCF and the BSgenome pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
     } else {
-      warning(sprintf("Chromosomes %s have different lengths between the input VCF and the BSgenome package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
+      message(sprintf("Chromosomes %s have different lengths between the input VCF and the BSgenome package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenBSgenome)], collapse=", ")))
     }
     if (sum(slenVcf == slenBSgenome) == 0)
       stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the input BSgenome package. The genome reference sequence employed to generate the VCF file was probably different from the one in the input BSgenome package.")
@@ -51,9 +51,9 @@
   slenTxDb <- seqlengths(txdb)[commonChr]
   if (any(slenVcf != slenTxDb)) {
     if (sum(slenVcf != slenTxDb) == 1) {
-      warning(sprintf("Chromosome %s has different lengths between the input VCF and the input TxDb pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
+      message(sprintf("Chromosome %s has different lengths between the input VCF and the input TxDb pakage. This chromosome will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
     } else {
-      warning(sprintf("Chromosomes %s have different lengths between the input VCF and the input TxDb package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
+      message(sprintf("Chromosomes %s have different lengths between the input VCF and the input TxDb package. These chromosomes will be discarded from further analysis", paste(commonChr[which(slenVcf != slenTxDb)], collapse=", ")))
     }
     if (sum(slenVcf == slenTxDb) == 0)
       stop("None of the chromosomes in the input VCF file has the same length as the chromosomes in the input TxDb package. The genome reference sequence employed to generate the VCF file was probably different from the one in the input TxDb package.")
@@ -65,10 +65,10 @@
   ## variants and genome package, in case it does not match the one of the annotations
   ## the genome build is going to be the one of the annotations assuming it's the same
   if (any(is.na(genome(txdb)[commonChr])))
-    warning(sprintf("Assuming the genome build of transcript-centric annotations is %s.",
+    message(sprintf("Assuming the genome build of transcript-centric annotations is %s.",
                     unique(genome(variantsGR)[commonChr])))
   else if (any(genome(variantsGR)[commonChr] != genome(txdb)[commonChr])) {
-    warning(sprintf("Assumming %s represent the same genome build.",
+    message(sprintf("Assumming %s represent the same genome build.",
                     paste(c(unique(genome(variantsGR)[commonChr]), unique(genome(txdb)[commonChr])),
                           collapse=" and ")))
     seqinfo(variantsGR, new2old=match(commonChr, seqlevels(variantsGR))) <- seqinfo(txdb)[commonChr]
@@ -173,7 +173,7 @@
     pedDf$MotherID[maskMotherIDs] <- paste(pedDf$FamilyID[maskMotherIDs],
                                            pedDf$MotherID[maskMotherIDs], sep="_")
     if (!duplicated(pedDf$IndividualID))
-      warning("Individual identifiers have been made unique.")
+      message("Individual identifiers have been made unique.")
     else
       stop("Individual identifiers are not unique, even when combined with ",
            "family identifiers.")
