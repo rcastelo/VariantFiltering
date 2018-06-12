@@ -2,6 +2,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
           function(param, svparam=ScanVcfParam(),
                    use=c("everything", "complete.obs", "all.obs"),
                    includeHomRef=FALSE,
+                   AgeOfOnset=9999,
+                   penetrance=1,
                    BPPARAM=bpparam("SerialParam")) {
             
   use <- match.arg(use)
@@ -28,16 +30,15 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   
   if (is.na(ped))
     stop("Please specify a PED file name when building the parameter object.")
-
+  
   pedDf <- .readPEDfile(ped)
-
-  unaff <- pedDf[pedDf$Phenotype == 1, ]
-  aff <- pedDf[pedDf$Phenotype == 2, ]
+  
+  #unaff <- pedDf[pedDf$Phenotype == 1, ]
+  #aff <- pedDf[pedDf$Phenotype == 2, ]
   
   annotationCache <- new.env() ## cache annotations when using VariantAnnotation::locateVariants()
   annotated_variants <- VRanges()
   metadata(mcols(annotated_variants)) <- list(cutoffs=CutoffsList(), sortings=CutoffsList())
-
   open(vcfFiles[[1]])
   n.var <- 0
   flag <- TRUE
@@ -53,16 +54,15 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     n.var <- n.var + nrow(vcf)
 
-    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use, includeHomRef)
-
+    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use, includeHomRef, penetrance, AgeOfOnset)
+    
     if (any(mask)) {
 
       ## filter out variants that do not segregate as an autosomal recessive homozygous trait
       vcf <- vcf[mask, ]
-
       ## coerce the VCF object to a VRanges object
       variants <- as(vcf, "VRanges")
-
+      
       ## since the conversion of VCF to VRanges strips the VCF ID field, let's put it back
       variants$VARID <- varIDs[variants$VCFIDX]
 
@@ -76,8 +76,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
       else
         annotated_variants <- annotationEngine(variants, param, annotationCache,
                                                BPPARAM=BPPARAM)
+        
     }
-
+    
     if (length(vcfWhich(svparam)) > 0) ## temporary fix to keep this looping
       flag <- FALSE                    ## structure with access through genomic ranges
 
@@ -133,14 +134,15 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 .autosomalRecessiveHomozygousMask <- function(vObj, pedDf, bsgenome,
                                               use=c("everything", "complete.obs", "all.obs"),
                                               includeHomRef=FALSE,
-                                              penetrance=1) { ## the penetrance argument is experimental
+                                              penetrance=1,  ## the penetrance argument is experimental
+                                              AgeOfOnset=9999) { ## the AgeOfOnset argument is experimental
 
   use <- match.arg(use)
 
   if (class(vObj) != "VRanges" && class(vObj) != "CollapsedVCF")
     stop("Argument 'vObj' should be either a 'VRanges' or a 'CollapsedVCF' object.")
 
-  stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype"))) ## QC
+  #stopifnot(all(colnames(pedDf) %in% c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype"))) ## QC
 
   nsamples <- nvariants <- 0
   if (class(vObj) == "VRanges") {
@@ -155,8 +157,18 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   if (sum(pedDf$Phenotype  == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
   
-  unaff <- pedDf[pedDf$Phenotype == 1, ]
-  aff <- pedDf[pedDf$Phenotype == 2, ]
+  if (missing(AgeOfOnset)){
+      unaff <- pedDf[pedDf$Phenotype == 1, ]
+      aff <- pedDf[pedDf$Phenotype == 2, ]
+      
+  } else {
+      
+      ## If AgeOfOnset is specified
+      ## Healthy individuals below the age of disease onset show an uncertain phenotype which is rewritten as unknown.
+      pedDf[which(pedDf$Age<AgeOfOnset & pedDf$Phenotype==1),]$Phenotype <- 0
+      unaff <- pedDf[pedDf$Phenotype == 1, ]
+      aff <- pedDf[pedDf$Phenotype == 2, ]
+  }
   
   ## restrict upfront variants to those in autosomal chromosomes
   ## we subset to the first element of the value returned by seqlevelsStyle()
@@ -194,7 +206,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   ## the penetrance argument is experimental
   naff <- as.integer(nrow(aff))
   if (missing(penetrance) || is.null(penetrance))
-    penetrance <- naff
+      penetrance <- naff
 
   if (class(penetrance) == "numeric" && (penetrance <= 0 || penetrance > 1))
     stop("When penetrance is a real number, then it should take values > 0 and <= 1.")

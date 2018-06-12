@@ -1,3 +1,4 @@
+
 VariantFilteringParam <- function(vcfFilename, pedFilename=NA_character_,
                                   bsgenome="BSgenome.Hsapiens.1000genomes.hs37d5",
                                   orgdb="org.Hs.eg.db",
@@ -15,6 +16,8 @@ VariantFilteringParam <- function(vcfFilename, pedFilename=NA_character_,
                                   regionAnnotations=list(CodingVariants(), IntronVariants(),
                                                          FiveSpliceSiteVariants(), ThreeSpliceSiteVariants(),
                                                          PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants()),
+                                                         #IntergenicVariants()),
+				  intergenic=FALSE,	
                                   otherAnnotations=c("MafDb.1Kgenomes.phase1.hs37d5",
                                                      "PolyPhen.Hsapiens.dbSNP131",
                                                      "SIFT.Hsapiens.dbSNP137",
@@ -172,6 +175,11 @@ VariantFilteringParam <- function(vcfFilename, pedFilename=NA_character_,
     stop("argument 'otherAnnotations' should contain names of objects or installed packages that can be used by VariantFiltering to annotate genetic variants.")
 
   ## check that object determining region annotations belong to the 'VariantType' class
+  if (intergenic==TRUE)
+    regionAnnotations=list(CodingVariants(), IntronVariants(),
+                                                         FiveSpliceSiteVariants(), ThreeSpliceSiteVariants(),
+                                                         PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants(),
+                                                         IntergenicVariants())
   if (!is.list(regionAnnotations))
     regionAnnotations <- list(regionAnnotations)
 
