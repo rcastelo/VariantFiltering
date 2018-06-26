@@ -2,8 +2,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
           function(param, svparam=ScanVcfParam(),
                    use=c("everything", "complete.obs", "all.obs"),
                    includeHomRef=FALSE,
-                   AgeOfOnset=9999,
-                   penetrance=1,
+                   age.of.onset=999,
+                   phenocopies=0,
                    BPPARAM=bpparam("SerialParam")) {
             
   use <- match.arg(use)
@@ -54,7 +54,9 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
     n.var <- n.var + nrow(vcf)
 
-    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use, includeHomRef, penetrance, AgeOfOnset)
+    mask <- .autosomalRecessiveHomozygousMask(vcf, pedDf, bsgenome, use,
+                                              includeHomRef, phenocopies,
+                                              age.of.onset)
     
     if (any(mask)) {
 
@@ -134,8 +136,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 .autosomalRecessiveHomozygousMask <- function(vObj, pedDf, bsgenome,
                                               use=c("everything", "complete.obs", "all.obs"),
                                               includeHomRef=FALSE,
-                                              penetrance=1,  ## the penetrance argument is experimental
-                                              AgeOfOnset=9999) { ## the AgeOfOnset argument is experimental
+                                              phenocopies=0,  ## the phenocopies argument is experimental
+                                              age.of.onset=9999) { ## the age.of.onset argument is experimental
 
   use <- match.arg(use)
 
@@ -157,15 +159,15 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   if (sum(pedDf$Phenotype  == 2) < 1)
     stop("No affected individuals detected. Something is wrong with the PED file.")
   
-  if (missing(AgeOfOnset)){
+  if (missing(age.of.onset)){
       unaff <- pedDf[pedDf$Phenotype == 1, ]
       aff <- pedDf[pedDf$Phenotype == 2, ]
       
   } else {
       
-      ## If AgeOfOnset is specified
+      ## If age.of.onset is specified
       ## Healthy individuals below the age of disease onset show an uncertain phenotype which is rewritten as unknown.
-      pedDf[which(pedDf$Age<AgeOfOnset & pedDf$Phenotype==1),]$Phenotype <- 0
+      pedDf[which(pedDf$Age<age.of.onset & pedDf$Phenotype==1),]$Phenotype <- 0
       unaff <- pedDf[pedDf$Phenotype == 1, ]
       aff <- pedDf[pedDf$Phenotype == 2, ]
   }
@@ -203,19 +205,19 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 
   phasedgt <- any(grepl("\\|", gt))
 
-  ## the penetrance argument is experimental
+  ## the phenocopies argument is experimental
   naff <- as.integer(nrow(aff))
-  if (missing(penetrance) || is.null(penetrance))
-      penetrance <- naff
+  if (missing(phenocopies) || is.null(phenocopies))
+      phenocopies <- 0L
 
-  if (class(penetrance) == "numeric" && (penetrance <= 0 || penetrance > 1))
-    stop("When penetrance is a real number, then it should take values > 0 and <= 1.")
-  else if (class(penetrance) == "integer" && (penetrance <= 0 || penetrance > naff))
-    stop(sprintf("When penetrance is an integer (%d), then it should take values > 0 and <= %d (# of genotyped samples from affected individuals).",
-                 penetrance, naff))
+  if (class(phenocopies) == "numeric" && (phenocopies < 0 || phenocopies > 0.5))
+    stop("When phenocopies is a real number, then it should take values > 0 and < 0.5.")
+  else if (class(phenocopies) == "integer" && (phenocopies < 0 || phenocopies > naff/2))
+    stop(sprintf("When phenocopies is an integer (%d), then it should take values >= 0 and <= %d (# of genotyped samples from half of the affected individuals).",
+                 phenocopies, naff/2))
 
-  if (class(penetrance) == "numeric")
-    penetrance <- ceiling(penetrance*naff)
+  if (class(phenocopies) == "numeric")
+    phenocopies <- ceiling(phenocopies*naff)
 
   missingMask <- rowSums(gt == ".") > 0
   if (phasedgt)
@@ -281,8 +283,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
                                             function(x) all(x[1] == x[2])))
   affectedMask <- matrix(affectedMask, ncol=nrow(aff))
 
-  if (penetrance < naff)
-    affectedMask <- rowSums(affectedMask, na.rm=TRUE) >= penetrance
+  if (phenocopies > 0L)
+    affectedMask <- rowSums(affectedMask, na.rm=TRUE) >= nrow(aff)-phenocopies
   else
     affectedMask <- rowSums(affectedMask, na.rm=TRUE) == nrow(aff)
   rm(affgt)
@@ -319,6 +321,5 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
   pedDf <- .readPEDfile(param(x)$pedFilename)
 
   .autosomalRecessiveHomozygousMask(vObj=allVariants(x, groupBy="nothing"), pedDf=pedDf,
-                                    bsgenome=param(x)$bsgenome, use="everything",
-                                    penetrance=cutoffs(x)$ARHOM)
+                                    bsgenome=param(x)$bsgenome, use="everything")
 }
