@@ -136,9 +136,22 @@
     stop(sprintf("could not open the PED file %s.", pedFilename))
 
   pedDf <- read.table(pedFilename, header=FALSE, stringsAsFactors=FALSE)
-  pedDf <- pedDf[, 1:6]
-  colnames(pedDf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype")
-
+  
+  if (dim(pedDf)[2]==6) {
+     
+      pedDf <- pedDf[, 1:6]
+      colnames(pedDf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype") 
+      
+  } else if (dim(pedDf)[2]==7) {
+      
+      pedDf <- pedDf[, 1:7]
+      colnames(pedDf) <- c("FamilyID", "IndividualID", "FatherID", "MotherID", "Sex", "Phenotype", "Age") 
+      message("Age is present as the 7th column in the PED file")
+      
+  } else { stop("Not standard PED file format. Required columns: ",
+                "'FamilyID', 'IndividualID', 'FatherID', 'MotherID', 'Sex', 'Phenotype'",
+                "Optionally another 'Age' column can be attached.") }
+  
   if (is.character(pedDf$Sex)) {
     if (all(sort(unique(pedDf$Sex)) == c("f", "m")))
       pedDf$Sex <- match(pedDf$Sex, c("m", "f"))

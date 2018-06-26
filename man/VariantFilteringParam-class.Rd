@@ -47,6 +47,7 @@ VariantFilteringParam(vcfFilename, pedFilename=NA_character_,
                       regionAnnotations=list(CodingVariants(), IntronVariants(),
                                              FiveSpliceSiteVariants(), ThreeSpliceSiteVariants(),
                                              PromoterVariants(), FiveUTRVariants(), ThreeUTRVariants()),
+                      intergenic=FALSE,
                       otherAnnotations=c("MafDb.1Kgenomes.phase1.hs37d5",
                                          "PolyPhen.Hsapiens.dbSNP131",
                                          "SIFT.Hsapiens.dbSNP137",
@@ -108,6 +109,9 @@ VariantFilteringParam(vcfFilename, pedFilename=NA_character_,
   }
   \item{regionAnnotations}{
   List of \code{\link[VariantAnnotation]{VariantType-class}} objects defining what regions to annotate.
+  }
+  \item{intergenic}{
+  Logical. When \code{TRUE}, the intergenic variants are also annotated.
   }
   \item{otherAnnotations}{
   Character vector of names of annotation packages or annotation objects.
