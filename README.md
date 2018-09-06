@@ -19,10 +19,9 @@ If you were really looking for this development version, then to install it you
 need first to install the development version of R that you can find at [http://cran.r-project.org](http://cran.r-project.org) and then type the following instructions from the R shell:
 
 ```r
-install.packages("BiocManager")
-BiocManager::install("BiocInstaller", version="devel")
-BiocInstaller::useDevel()
-BiocManager::install("VariantFiltering")
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("VariantFiltering", version="devel")
 ```
 
 Alternatively, you can install it from GitHub using the [devtools](https://github.com/hadley/devtools "devtools") package.
