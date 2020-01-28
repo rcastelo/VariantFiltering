@@ -149,7 +149,7 @@ setMethod("deNovo", signature(param="VariantFilteringParam"),
     nvariants <- nrow(vObj)
   }
 
-  if (sum(pedDf$Phenotype == 1) != 2 || sort(pedDf$Sex[pedDf$Phenotype == 1]) != 1:2) 
+  if (sum(pedDf$Phenotype == 1) != 2 || all(sort(pedDf$Sex[pedDf$Phenotype == 1]) != 1:2))
     stop("Current 'de novo' analysis requires two unaffected parents and one or more affected children.")
 
   unaff <- pedDf[pedDf$Phenotype == 1, ]

@@ -833,10 +833,10 @@ setMethod("annotateVariants", signature(annObj="MafDb"),
                                                         dimnames=list(NULL, mafCols))))
             snvmask <- isSNV(variantsVR)
             if (any(snvmask))
-              mafValues[snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[snvmask], mafCols, type="snvs"))
+              mafValues[snvmask, ] <- mcols(gscores(annObj, variantsVR[snvmask], mafCols, type="snrs"))
 
             if (any(!snvmask))
-              mafValues[!snvmask, ] <- mcols(mafByOverlaps(annObj, variantsVR[!snvmask], mafCols, type="nonsnvs"))
+              mafValues[!snvmask, ] <- mcols(gscores(annObj, variantsVR[!snvmask], mafCols, type="nonsnrs"))
 
             colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
             mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
