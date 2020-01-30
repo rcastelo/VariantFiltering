@@ -20,7 +20,7 @@
   }
 
   wmNames <- sapply(weightMatrices, wmName)
-  mask <- nchar(wmNames) == 0 || is.na(wmNames)
+  mask <- is.na(wmNames) | nchar(wmNames) == 0
   wmNames[mask] <- paste("WM", 1:sum(mask))
 
   ## create a DataFrame object for binding site score annotations
