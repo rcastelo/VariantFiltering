@@ -783,14 +783,14 @@ setMethod("annotateVariants", signature(annObj="GScores"),
                                                             ranges=variantsVR[!is.na(snvmask) & !snvmask],
                                                             pop=pop, type="nonsnrs")
 
-            mcols(scodtf) <- DataFrame(TAB=gscoresGroup(annObj))
+            mcols(scodtf) <- DataFrame(TAB=gscoresCategory(annObj))
 
             fstr <- sprintf("gscfilter <- function(x) { opf <- get(as.character(VariantFiltering::cutoffs(x)$%s$op[1])) ; opf(VariantFiltering::allVariants(x, groupBy=\"nothing\")$%s, VariantFiltering::cutoffs(x)$%s$value[1]) }", gscoresTag(annObj), gscoresTag(annObj), gscoresTag(annObj))
             if (length(pop) > 1)
               fstr <- sprintf("gscfilter <- function(x) { cutoffval <- rep(NA_real_, length(x)) ; mask <- rep(TRUE, length(x)) ; popmask <- VariantFiltering::cutoffs(x)$%s$popmask ; if (any(popmask)) { cutoffval <- do.call(get(as.character(VariantFiltering::cutoffs(x)$%s$pfun)), c(as.list(S4Vectors::mcols(VariantFiltering::allVariants(x, groupBy=\"nothing\"))[, names(popmask[popmask]), drop=FALSE]), na.rm=TRUE)) ; cutoffval[is.na(cutoffval)] <- -Inf ; opf <- get(as.character(VariantFiltering::cutoffs(x)$%s$op[1])) ; mask <- opf(cutoffval, VariantFiltering::cutoffs(x)$%s$value) ; mask[is.na(mask)] <- FALSE } ; mask }", gscoresTag(annObj), gscoresTag(annObj), gscoresTag(annObj), gscoresTag(annObj))
             eval(parse(text=fstr))
             attr(gscfilter, "description") <- sprintf("%s genomic scores", type(annObj))
-            attr(gscfilter, "TAB") <- gscoresGroup(annObj)
+            attr(gscfilter, "TAB") <- gscoresCategory(annObj)
             environment(gscfilter) <- baseenv()
             eval(parse(text=sprintf("flt <- list(%s=gscfilter)", gscoresTag(annObj))))
             eval(parse(text=sprintf("ctf <- CutoffsList(%s=CutoffsList(op=factor(\">=\", levels=c(\"==\", \"!=\", \">\", \"<\", \">=\", \"<=\")), value=0))", gscoresTag(annObj))))
