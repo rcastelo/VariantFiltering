@@ -191,10 +191,10 @@ annotationEngine <- function(variantsVR, param, cache=new.env(parent=emptyenv())
 
     ## set temporarily the sequence style to the one of the genome package to
     ## access the genome sequence without chromosome nomenclature problems
-    origVarLevelsStyle <- seqlevelsStyle(variantsVR_annotated_coding)
-    seqlevelsStyle(variantsVR_annotated_coding) <- seqlevelsStyle(bsgenome)
-    origTxDbLevelsStyle <- seqlevelsStyle(txdb)
-    seqlevelsStyle(txdb) <- seqlevelsStyle(bsgenome)
+    origVarLevelsStyle <- seqlevelsStyle(variantsVR_annotated_coding)[1]
+    seqlevelsStyle(variantsVR_annotated_coding) <- seqlevelsStyle(bsgenome)[1]
+    origTxDbLevelsStyle <- seqlevelsStyle(txdb)[1]
+    seqlevelsStyle(txdb) <- seqlevelsStyle(bsgenome)[1]
 
     commonChr <- intersect(seqlevels(variantsVR_annotated_coding), seqlevels(bsgenome))
     if (any(genome(variantsVR_annotated_coding)[commonChr] != genome(bsgenome)[commonChr])) {
@@ -474,7 +474,7 @@ setMethod("annotateVariants", signature(annObj="SNPlocs"),
             ## adapt to sequence style and genome version from the input
             ## SNPlocs object, thus assuming positions are based on the same
             ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
-            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)[1]
             commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
             if (any(is.na(genome(variantsVR)))) {
               warning(sprintf("Assuming the genome build of the input variants is the one of the SNPlocs package (%s).", unique(genome(annObj)[commonChr])))
@@ -530,7 +530,7 @@ setMethod("annotateVariants", signature(annObj="XtraSNPlocs"),
             ## adapt to sequence style and genome version from the input
             ## SNPlocs object, thus assuming positions are based on the same
             ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
-            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)[1]
             commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
             if (any(is.na(genome(variantsVR)))) {
               warning(sprintf("Assuming the genome build of the input variants is the one of the XtraSNPlocs package (%s).", unique(genome(annObj)[commonChr])))
@@ -812,7 +812,7 @@ setMethod("annotateVariants", signature(annObj="GScores"),
             ## adapt to sequence style and genome version from the input
             ## GScores object, thus assuming positions are based on the same
             ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
-            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
+            seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)[1]
             commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
             if (any(is.na(genome(variantsVR)))) {
               warning(sprintf("Assuming the genome build of the input variants is the one of the GScores package (%s).", unique(genome(annObj)[commonChr])))
@@ -833,12 +833,14 @@ setMethod("annotateVariants", signature(annObj="GScores"),
                                                         dimnames=list(NULL, mafCols))))
             snvmask <- isSNV(variantsVR)
             if (any(snvmask))
-              mafValues[snvmask, ] <- mcols(gscores(annObj, variantsVR[snvmask], mafCols, type="snrs"))
+              mafValues[snvmask, ] <- score(annObj, ranges=variantsVR[snvmask],
+                                            pop=mafCols, type="snrs")
 
             if (any(!snvmask))
-              mafValues[!snvmask, ] <- mcols(gscores(annObj, variantsVR[!snvmask], mafCols, type="nonsnrs"))
+              mafValues[!snvmask, ] <- score(annObj, ranges=variantsVR[!snvmask],
+                                             pop=mafCols, type="nonsnrs")
 
-            colnames(mafValues) <- paste0(colnames(mafValues), annObj$tag) ## tag MAF columns with their data source
+            colnames(mafValues) <- paste0(colnames(mafValues), gscoresTag(annObj)) ## tag MAF columns with their data source
             mcols(mafValues) <- DataFrame(TAB=rep("MAF", ncol(mafValues)))
             maffilter <- function(x) {
                            maxMAFannot <- rep(NA_real_, length(x))

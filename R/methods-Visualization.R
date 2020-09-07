@@ -17,7 +17,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
             bsgenome <- get(param(x)$bsgenome)
 
             ## need to adapt to the seqlevelsStyle from the BAM file, when available
-            leadseqlevelsstyle <- seqlevelsStyle(bsgenome)
+            leadseqlevelsstyle <- seqlevelsStyle(bsgenome)[1]
             if (!missing(sampleName)) {
               if (!is.character(sampleName))
                 stop("The argument 'sampleName' should be a chracter string.")
@@ -107,7 +107,7 @@ setMethod("plot", signature(x="VariantFilteringResults"),
             ## prepare annotations for display, take care of restoring later the
             ## seqlevelsStyle of the TxDb object
             txdb <- get(param(x)$txdb)
-            seqlevelsstyletxdb <- seqlevelsStyle(txdb)
+            seqlevelsstyletxdb <- seqlevelsStyle(txdb)[1]
             seqlevelsStyle(txdb) <- leadseqlevelsstyle
             seqlevels(txdb, pruning.mode="coarse") <- chr2display
             txdbmdata <- metadata(txdb)

@@ -7,7 +7,7 @@
   ## adapt to sequence style and genome version from the input
   ## BSgenome object, thus assuming positions are based on the same
   ## genome even though might be differently specified (i.e., hg38 vs GRCh38)
-  seqlevelsStyle(variantsVR) <- seqlevelsStyle(bsgenome)
+  seqlevelsStyle(variantsVR) <- seqlevelsStyle(bsgenome)[1]
   commonChr <- intersect(seqlevels(variantsVR), seqlevels(bsgenome))
   if (any(is.na(genome(variantsVR)))) {
     warning(sprintf("Assuming the genome build of the input variants is %s.", unique(genome(bsgenome)[commonChr])))

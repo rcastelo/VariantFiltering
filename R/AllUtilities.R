@@ -17,7 +17,7 @@
   ## the genome and discard chromosomes that do not have the same
   ## length. this is basically to handle situations such as with
   ## NCBI GRCh37 / h19 vs b37 where the MT chromosome has different lengths
-  seqlevelsStyle(variantsGR) <- seqlevelsStyle(bsgenome)
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(bsgenome)[1]
   slenVcf <- seqlengths(variantsGR)
   slenBSgenome <- seqlengths(bsgenome)
   commonChr <- intersect(names(slenVcf), names(slenBSgenome))
@@ -43,7 +43,7 @@
   ## set the sequence style of variants to the one of annotations
   message(sprintf("Switching to the %s chromosome-name style from the transcript-centric annotation package.",
                   seqlevelsStyle(txdb)))
-  seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)
+  seqlevelsStyle(variantsGR) <- seqlevelsStyle(txdb)[1]
   commonChr <- intersect(seqlevels(variantsGR), seqlevels(txdb))
 
   ## subset further the sequences to analyze to those whose length also matches the ones of annotations

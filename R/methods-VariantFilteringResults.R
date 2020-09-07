@@ -20,7 +20,7 @@ setMethod("show", signature(object="VariantFilteringResults"),
             for (i in seq_along(param(object)$seqInfos))
               if (length(param(object)$seqInfos[[i]]) > 0)
                 cat(sprintf(" %s(%s)", paste(unique(genome(param(object)$seqInfos[[i]])), collapse=","),
-                            seqlevelsStyle(param(object)$seqInfos[[i]])))
+                            seqlevelsStyle(param(object)$seqInfos[[i]])[1]))
 
             sampleNames <- ifelse(length(samples(object)) <= 4, paste(samples(object), collapse=", "),
                                   paste(paste(head(samples(object), n=4), collapse=", "), "...", sep=", "))
