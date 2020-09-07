@@ -806,19 +806,19 @@ setMethod("annotateVariants", signature(annObj="GScores"),
 ## Annotate MAF values
 ##
 
-setMethod("annotateVariants", signature(annObj="MafDb"),
+setMethod("annotateVariants", signature(annObj="GScores"),
           function(annObj, variantsVR, param, BPPARAM=bpparam("SerialParam")) {
 
             ## adapt to sequence style and genome version from the input
-            ## MafDb object, thus assuming positions are based on the same
+            ## GScores object, thus assuming positions are based on the same
             ## genome even though might be differently specified (i.e., hg19 vs GRCh37.p13 or hg38 vs GRCh38)
             seqlevelsStyle(variantsVR) <- seqlevelsStyle(annObj)
             commonChr <- intersect(seqlevels(variantsVR), seqlevels(annObj))
             if (any(is.na(genome(variantsVR)))) {
-              warning(sprintf("Assuming the genome build of the input variants is the one of the MafDb package (%s).", unique(genome(annObj)[commonChr])))
+              warning(sprintf("Assuming the genome build of the input variants is the one of the GScores package (%s).", unique(genome(annObj)[commonChr])))
             genome(variantsVR) <- genome(annObj)
             } else if (any(genome(variantsVR)[commonChr] != genome(annObj)[commonChr])) {
-              warning(sprintf("Assumming %s represent the same genome build between variants and the MafDb package, respectively.",
+              warning(sprintf("Assumming %s represent the same genome build between variants and the GScores package, respectively.",
                                paste(c(unique(genome(variantsVR)[commonChr]),
                                        unique(genome(annObj)[commonChr])),
                                      collapse=" and ")))
