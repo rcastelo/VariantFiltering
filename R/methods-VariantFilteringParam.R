@@ -280,9 +280,9 @@ setMethod("show", signature(object="VariantFilteringParam"),
             bsgenomeobj <- .loadAnnotationPackageObject(object$bsgenome,
                                                         "bsgenome", "BSgenome",
                                                         verbose=FALSE)
-            cat(sprintf("  Genome-centric annotation package: %s (%s %s %s)\n",
+            cat(sprintf("  Genome-centric annotation package: %s (%s %s)\n",
                         object$bsgenome, provider(bsgenomeobj),
-                        providerVersion(as(bsgenomeobj, "GenomeDescription")), releaseName(bsgenomeobj)))
+                        providerVersion(as(bsgenomeobj, "GenomeDescription"))))
             if (length(object$snpdb) > 0) {
               for (pkg in object$snpdb) {
                 snpdbobj <- .loadAnnotationPackageObject(pkg, "snpdb",
