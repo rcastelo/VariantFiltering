@@ -42,7 +42,6 @@ importMethodsFrom(GenomeInfoDb, "seqinfo<-",
                                 "genome<-",
                                 provider,
                                 providerVersion,
-                                releaseName,
                                 commonName,
                                 releaseDate)
 importMethodsFrom(VariantAnnotation, fixed,

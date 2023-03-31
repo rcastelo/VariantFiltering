@@ -17,6 +17,7 @@
 #define MAXVALS 25              /* maximum size of the domain of a variable */
 #define MAXWIDZ 256             /* maximum width of a value of a domain */
 #define MAXSTAK MAXVARS*MAXVARS*MAXVALS /* maximum size of the stack used to explore the prefix tree */
+#define MAXERRORMSG 4096
 
 
 
@@ -66,7 +67,7 @@ scoss_read_wm(SEXP fnameR) {
   char* fname = (char *) CHAR(STRING_ELT(fnameR, 0));
   SEXP wmR;
   WeightMatrix* wm = Calloc(1, WeightMatrix);
-  char errormsg[4096];
+  char errormsg[MAXERRORMSG];
   Rboolean errorflag;
 
   PROTECT(wmR = R_MakeExternalPtr(wm, R_NilValue, R_NilValue));
@@ -77,7 +78,7 @@ scoss_read_wm(SEXP fnameR) {
     errorflag = read_meme(fname, (WeightMatrix *) R_ExternalPtrAddr(wmR), errormsg);
   else {
     errorflag = TRUE;
-    sprintf(errormsg, "weight matrix file %s should be either in DWM or MEME format.\n", fname);
+    snprintf(errormsg, sizeof(errormsg), "weight matrix file %s should be either in DWM or MEME format.\n", fname);
   }
 
   UNPROTECT(1); /* wmR */
@@ -705,7 +706,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
           if (alen != nv) {
             fclose(fd);
             Free(bfreq);
-            sprintf(errormsg, "number of letters in the ALPHABET line (%d) differs from alphabet length (%d) in the letter probability matrix line of the MEME file\n", alen, nv);
+            snprintf(errormsg, MAXERRORMSG, "number of letters in the ALPHABET line (%d) differs from alphabet length (%d) in the letter probability matrix line of the MEME file\n", alen, nv);
             return(TRUE);
           }
 
@@ -725,7 +726,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
             wm->w[i].idep = -1;
 
             for (j=0; j < alen; j++)
-              sprintf(wm->vals[i][j], "%c", alphabet[j]);
+              snprintf(wm->vals[i][j], MAXWIDZ, "%c", alphabet[j]);
           }
           
           wmbegin=ftell(fd);
@@ -1017,11 +1018,11 @@ wm_score(WeightMatrix* wm, const char* record) {
   if (ncommas == 0 && wm->nvars > 1) {
 
     p=record;
-    sprintf(recordc,"%c",*p++);
+    snprintf(recordc, sizeof(recordc), "%c", *p++);
     while (*p) {
       char buf[MAXWIDZ];
 
-      sprintf(buf,",%c",*p++);
+      snprintf(buf, sizeof(buf), ",%c", *p++);
       strcat(recordc,buf);
     }
 

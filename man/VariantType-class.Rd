@@ -86,19 +86,16 @@
   In the following code, \code{x} is a \code{PromoterVariants} or a
   \code{AllVariants} object.
   \describe{
-    \item{}{
-      \code{minIntronLength(x)}, \code{minIntronLength(x) <- value}:
+    \item{\code{minIntronLength(x)}, \code{minIntronLength(x) <- value}:}{
       Gets or sets the minimum number of nucleotides long of introns
       to be considered in the annotation of splice sites.
     }
-    \item{}{
-      \code{upstream(x)}, \code{upstream(x) <- value}:
+    \item{\code{upstream(x)}, \code{upstream(x) <- value}:}{
       Gets or sets the number of nucleotides upstream of the 5' and
       3' end of the intron, excluding the first and last dinucleotide,
       respectively.
     }
-    \item{}{
-      \code{downstream(x)}, \code{downstream(x) <- value}:
+    \item{\code{downstream(x)}, \code{downstream(x) <- value}:}{
       Gets or sets the number of nucleotides downstream of the 5' and
       3' end of the intron, excluding the first and last dinucleotide,
       respectively.

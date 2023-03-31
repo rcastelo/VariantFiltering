@@ -169,32 +169,26 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
   A \code{VariantFilteringResults} has the following set of accessor methods.
 
   \describe{
-    \item{}{
-      \code{length(x)}: total number of variants stored internatlly within the
+    \item{\code{length(x)}:}{ total number of variants stored internatlly within the
       \code{VRanges} object. Note that this number will be typically larger than the number
       of variantes in the input VCF object because each of them is copied for each combination
       of alternate allele, annotated region and sample.
     }
-    \item{}{
-      \code{param(x)}: returns the \code{VariantFilteringParam} input parameter
+    \item{\code{param(x)}:}{ returns the \code{VariantFilteringParam} input parameter
       object employed in the call that produced the \code{VariantFilteringResults} object \code{x}.
     }
-    \item{}{
-      \code{inheritanceModel(x)}: returns the model of inheritance employed in the
+    \item{\code{inheritanceModel(x)}:}{ returns the model of inheritance employed in the
       call that produced the \code{VariantFilteringResults} object \code{x}.
     }
-    \item{}{
-      \code{samples(object)}: active samples from which the current filtered variants were derived. If the
+    \item{\code{samples(object)}:}{ active samples from which the current filtered variants were derived. If the
       \code{x} was obtained with \code{\link{unrelatedIndividuals}()}, then the replace method
       \code{samples(object)<-} can be used to restrict the subset of active samples. In every other case
       (\code{\link{autosomalDominant}()}, etc. ) active samples cannot be changed.
     }
-    \item{}{
-      \code{resetSamples(object)}: set back as active samples the initial set of samples specified
+    \item{\code{resetSamples(object)}:}{ set back as active samples the initial set of samples specified
       in the input parameter object.
     }
-    \item{}{
-      \code{sog(x)}: Sequence Ontology (SO) graph (actually, an acyclic digraph)
+    \item{\code{sog(x)}:}{ Sequence Ontology (SO) graph (actually, an acyclic digraph)
       returned as a \code{\link[graph]{graphNEL}} object, whose vertices are SO terms,
       edges represent ontology relationships and vertex attributes \code{vcfIdx} and
       \code{varIdx} contain what variants are annotated to each SO term. These annotations
@@ -203,19 +197,16 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
       in this manual page allows one to tally the number of variants in each SO term throughout
       the entire SO hierarchy.
     }
-    \item{}{
-      \code{bamFiles(x)}: access and update the \code{\link[Rsamtools]{BamViews}} object containing
+    \item{\code{bamFiles(x)}:}{ access and update the \code{\link[Rsamtools]{BamViews}} object containing
       references to BAM files from which the input VCF files were derived. Initially this is empty.
     }
-    \item{}{
-      \code{allVariants(x, groupBy="sample")}: returns a \code{\link[VariantAnnotation]{VRangesList}}
+    \item{\code{allVariants(x, groupBy="sample")}:}{ returns a \code{\link[VariantAnnotation]{VRangesList}}
       object with all variants grouped by default by sample. Using the argument \code{groupBy}
       we can specify any metadata column to be used to group variants. If the value given to
       \code{groupBy} does not correspond to any such columns, a
       \code{\link[VariantAnnotation]{VRanges}} object with all variants together is returned.
     }
-    \item{}{
-      \code{filteredVariants(x, groupBy="sample")}: it works like \code{allVariants(x)}
+    \item{\code{filteredVariants(x, groupBy="sample")}:}{ it works like \code{allVariants(x)}
       but instead of returning all variants, it returns only those who pass the active
       filters; see \code{filters()} and \code{cutoffs()} below.
     }
@@ -231,69 +222,50 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
   of core annotations provided by \code{VariantFiltering}.
 
   \describe{
-    \item{}{
-      \code{filters(x)}: get the current \code{\link[S4Vectors]{FilterRules}} object that defines
+    \item{\code{filters(x)}:}{ get the current \code{\link[S4Vectors]{FilterRules}} object that defines
       the available set of filter criteria that one can use to filter the variants contained in
       \code{x}. This can also be used as a replacement function \code{filters(x)<-} to update
       this set of filters. The actual filtering is done when calling the function
       \code{filteredVariants()}.
     }
-    \item{}{
-      \code{filtersMetadata(x)}: metadata about the available filters.
+    \item{\code{filtersMetadata(x)}:}{ metadata about the available filters.
     }
-    \item{}{
-      \code{cutoffs(x)}: get cutoffs from the available filters.
+    \item{\code{cutoffs(x)}:}{ get cutoffs from the available filters.
     }
-    \item{}{
-      \code{change(x, cutoff)<-}: change cutoffs from the available filters. Here, argument \code{x}
+    \item{\code{change(x, cutoff)<-}:}{ change cutoffs from the available filters. Here, argument \code{x}
       is a \code{CutoffsList} object given by the method \code{cutoffs()}, and argument \code{cutoff}
       is a character string with the name of the cutoff.
     }
-    \item{}{
-      \code{softFilterMatrix(x)}: get and update the variant by filter matrix; see
+    \item{\code{softFilterMatrix(x)}:}{ get and update the variant by filter matrix; see
       \code{\link[VariantAnnotation]{softFilterMatrix}()} in the \code{VariantAnnotation} package.
     }
-    \item{}{
-      \code{dbSNPpresent(x)}: flag whether to filter variants present or absent from dbSNP (\code{NA} -do not filter-, \code{"Yes"}, \code{"No"}).
+    \item{\code{dbSNPpresent(x)}:}{ flag whether to filter variants present or absent from dbSNP (\code{NA} -do not filter-, \code{"Yes"}, \code{"No"}).
     }
-    \item{}{
-      \code{variantType(x)}: filter by type of variant ( \code{"SNV"}, \code{"Insertion"}, \code{"Deletion"}, \code{"MNV"}, \code{"Delins"}).
+    \item{\code{variantType(x)}:}{ filter by type of variant ( \code{"SNV"}, \code{"Insertion"}, \code{"Deletion"}, \code{"MNV"}, \code{"Delins"}).
     }
-    \item{}{
-      \code{variantLocation(x)}: filter by variant location (\code{"coding"}, \code{"intron"}, \code{"threeUTR"}, \code{"fiveUTR"}, \code{"intergenic"}, \code{"spliceSite"}, \code{"promoter"}).
+    \item{\code{variantLocation(x)}:}{ filter by variant location (\code{"coding"}, \code{"intron"}, \code{"threeUTR"}, \code{"fiveUTR"}, \code{"intergenic"}, \code{"spliceSite"}, \code{"promoter"}).
     }
-    \item{}{
-      \code{variantConsequence(x)}: filter by variant consequence (\code{"snynonymous"}, \code{"nonsynonymous"}, \code{"frameshift"}, \code{"nonsense"}, \code{"not translated"}).
+    \item{\code{variantConsequence(x)}:}{ filter by variant consequence (\code{"snynonymous"}, \code{"nonsynonymous"}, \code{"frameshift"}, \code{"nonsense"}, \code{"not translated"}).
     }
-    \item{}{
-      \code{aaChangeType(x)}: filter by type of change of amino acid (\code{"Radical"}, \code{"Conservative"}).
+    \item{\code{aaChangeType(x)}:}{ filter by type of change of amino acid (\code{"Radical"}, \code{"Conservative"}).
     }
-    \item{}{
-      \code{OMIMpresent(x)}: flag whether to filter variants whose associated genes are present or absent from OMIM (\code{NA} -do not filter-, \code{"Yes"}, \code{"No"}).
+    \item{\code{OMIMpresent(x)}:}{ flag whether to filter variants whose associated genes are present or absent from OMIM (\code{NA} -do not filter-, \code{"Yes"}, \code{"No"}).
     }
-    \item{}{
-      \code{naMAF(x)}: flag whether NA maximum MAF values should be included in the filtered variants.
+    \item{\code{naMAF(x)}:}{ flag whether NA maximum MAF values should be included in the filtered variants.
     }
-    \item{}{
-      \code{maxMAF(x)}: maximum MAF value that a variant may meet among the selected populations.
+    \item{\code{maxMAF(x)}:}{ maximum MAF value that a variant may meet among the selected populations.
     }
-    \item{}{
-      \code{minPhastCons(x)}: minimum phastCons score for nucleotide conservation (\code{NA} -do not filter-, [0-1]).
+    \item{\code{minPhastCons(x)}:}{ minimum phastCons score for nucleotide conservation (\code{NA} -do not filter-, [0-1]).
     }
-    \item{}{
-      \code{minPhylostratum(x)}: minimum phylostratum for gene conservation (\code{NA} -do not filter-, [1-20]).
+    \item{\code{minPhylostratum(x)}:}{ minimum phylostratum for gene conservation (\code{NA} -do not filter-, [1-20]).
     }
-    \item{}{
-      \code{MAFpop(x)}: selection of populations to use when filtering by maximum MAF value.
+    \item{\code{MAFpop(x)}:}{ selection of populations to use when filtering by maximum MAF value.
     }
-    \item{}{
-      \code{minScore5ss(x)}: minimum weight matrix score on a cryptic 5'ss. \code{NA} indicates this filter is not applied.
+    \item{\code{minScore5ss(x)}:}{ minimum weight matrix score on a cryptic 5'ss. \code{NA} indicates this filter is not applied.
     }
-    \item{}{
-      \code{minScore3ss(x)}: minimum weight matrix score on a cryptic 3'ss. \code{NA} indicates this filter is not applied.
+    \item{\code{minScore3ss(x)}:}{ minimum weight matrix score on a cryptic 3'ss. \code{NA} indicates this filter is not applied.
     }
-    \item{}{
-      \code{minCUFC(x)}: minimum absolute codon-usage log2 fold-change.
+    \item{\code{minCUFC(x)}:}{ minimum absolute codon-usage log2 fold-change.
     }
   }
 }
@@ -304,8 +276,7 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
   fiiltered variants.
 
   \describe{
-    \item{}{
-      \code{summary(object, method=c("SO", "SOfull", "bioc"))}: tally the current
+    \item{\code{summary(object, method=c("SO", "SOfull", "bioc"))}:}{ tally the current
       filtered set of variants to features. By default, features are Sequence
       Ontology (SO) terms to which variants are annotated by \code{VariantFiltering}.
       The \code{method} argument allows the user to change this default setting to
@@ -317,8 +288,7 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
       \code{\link[VariantAnnotation]{predictCoding}()} from the \code{VariantAnnotation}
       package. The result is returned as a \code{data.frame} object.
     }
-    \item{}{
-      \code{plot(x, what, sampleName, flankingNt=20, showAlnNtCutoff=200, isPaired=FALSE, ...)}:
+    \item{\code{plot(x, what, sampleName, flankingNt=20, showAlnNtCutoff=200, isPaired=FALSE, ...)}:}{
       Plot variants using the \code{Gviz} package. The argument \code{what} can be
       either a character vector specifying gene or variant identifiers or a
       chromosome name, or a \code{GRanges} object specifying a genomic region. The
@@ -335,8 +305,7 @@ Variants are stored within a \code{VariantFilteringResults} object using a \code
       \code{\link[Gviz]{plotTracks}()} and can be used to fine-tune the final plot; see
       the vignette of \code{Gviz} to find out what these arguments are.
     }
-    \item{}{
-      \code{reportVariants(x, type=c("shiny", "csv", "tsv"), file=NULL)}:
+    \item{\code{reportVariants(x, type=c("shiny", "csv", "tsv"), file=NULL)}:}{
       Builds a report from the \code{VariantFilteringResult} object \code{x}. Using
       the \code{type} argument, the report can take the form of a flat file in CSV
       or TSV format or a web \code{shiny} app (default) that enables applying

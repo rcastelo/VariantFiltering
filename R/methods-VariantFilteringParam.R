@@ -288,8 +288,8 @@ setMethod("show", signature(object="VariantFilteringParam"),
                 snpdbobj <- .loadAnnotationPackageObject(pkg, "snpdb",
                                                          strsplit(pkg, ".", fixed=TRUE)[[1]][1],
                                                          verbose=FALSE)
-                cat(sprintf("  Variant-centric annotation package: %s (%s %s)\n",
-                            pkg, provider(snpdbobj), releaseName(snpdbobj)), sep="")
+                cat(sprintf("  Variant-centric annotation package: %s (%s)\n",
+                            pkg, providerVersion(snpdbobj)), sep="")
               }
             }
             cat(sprintf("  Transcript-centric annotation package: %s\n", object$txdb))
