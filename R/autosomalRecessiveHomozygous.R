@@ -2,8 +2,7 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
           function(param, svparam=ScanVcfParam(),
                    use=c("everything", "complete.obs", "all.obs"),
                    includeHomRef=FALSE,
-                   age.of.onset=999,
-                   phenocopies=0,
+                   age.of.onset, phenocopies,
                    BPPARAM=bpparam("SerialParam")) {
             
   use <- match.arg(use)
@@ -129,8 +128,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
 .autosomalRecessiveHomozygousMask <- function(vObj, pedDf, bsgenome,
                                               use=c("everything", "complete.obs", "all.obs"),
                                               includeHomRef=FALSE,
-                                              phenocopies=0,  ## the phenocopies argument is experimental
-                                              age.of.onset=9999) { ## the age.of.onset argument is experimental
+                                              phenocopies,  ## the phenocopies argument is experimental
+                                              age.of.onset) { ## the age.of.onset argument is experimental
 
   use <- match.arg(use)
 
@@ -157,6 +156,8 @@ setMethod("autosomalRecessiveHomozygous", signature(param="VariantFilteringParam
       aff <- pedDf[pedDf$Phenotype == 2, ]
       
   } else {
+      if (is.null(pedDf$Age))
+        stop("If the 'age.of.onset' argument is given, the PED file should have an 'Age' column.")
       
       ## If age.of.onset is specified
       ## Healthy individuals below the age of disease onset show an uncertain phenotype which is rewritten as unknown.

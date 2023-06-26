@@ -13,8 +13,8 @@ This function works analyzing the variants of the unaffected individuals storing
                                                                svparam=ScanVcfParam(),
                                                                use=c("everything", "complete.obs", "all.obs"),
                                                                includeHomRef=FALSE,
-                                                               age.of.onset=999,
-                                                               phenocopies=0,
+                                                               age.of.onset,
+                                                               phenocopies,
                                                                BPPARAM=bpparam("SerialParam"))
 }
 \arguments{
@@ -31,7 +31,7 @@ This function works analyzing the variants of the unaffected individuals storing
   \item{includeHomRef}{logical value specifying whether the homozygous reference genotype determines the affected phenotype (\code{TRUE}) or not (\code{FALSE}, default).
   }
   \item{age.of.onset}{numerical value specifying the age of onset at which individuals below that age are set their phenotype to unknown. This argument is currently experimental.}
-  \item{phenocopies}{numerical value specifying the maximum fraction of affected individuals not sharing the homozygous genotype.}
+  \item{phenocopies}{numerical value specifying the maximum fraction of affected individuals not sharing the homozygous genotype. This argument is currently experimental}
   \item{BPPARAM}{
   An VariantFilteringParam object containing VCF file(s). From 1 to 5 independent files for affected individuals and 0 to 5 more for unaffected ones (up to 10 individuals). If the VCF is a multi-sample, it can contain the same amount of individuals divided likewise.
   }
