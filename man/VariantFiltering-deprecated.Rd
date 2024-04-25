@@ -74,31 +74,34 @@
 \title{Deprecated functions in package \sQuote{VariantFiltering}}
 
 \description{
-  These functions are provided for compatibility with older versions
-  of \sQuote{VariantFiltering} only, and will be defunct at the next release.
+  There are currently no deprecated functions in \sQuote{VariantFiltering}.
 }
+%%\description{
+%%  These functions are provided for compatibility with older versions
+%%  of \sQuote{VariantFiltering} only, and will be defunct at the next release.
+%%}
 
 \details{
-  %% There are currently no deprecated functions.
-  The following functions are deprecated and will be made defunct; use
-  the replacement indicated below:
-
-  \itemize{
-    \item{dbSNPpresent(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{OMIMpresent(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{variantType(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{aaChangeType(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{variantLocation(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{variantConsequence(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{naMAF(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{MAFpop(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{maxMAF(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{minPhastCons(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{minPhylostratum(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{minScore5ss(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{minScore3ss(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-    \item{minCUfc(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
-  }
+  There are currently no deprecated functions.
+%%  The following functions are deprecated and will be made defunct; use
+%%  the replacement indicated below:
+%%
+%%  \itemize{
+%%    \item{dbSNPpresent(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{OMIMpresent(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{variantType(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{aaChangeType(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{variantLocation(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{variantConsequence(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{naMAF(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{MAFpop(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{maxMAF(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{minPhastCons(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{minPhylostratum(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{minScore5ss(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{minScore3ss(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%    \item{minCUfc(): This functionality is now replaced by the combined used of functions \code{\link{filters}()}, \code{\link{active}()}, \code{\link{cutoffs}()}, code{\link{change}()}}
+%%  }
 }
 \author{
   Robert Castelo <robert.castelo@upf.edu>

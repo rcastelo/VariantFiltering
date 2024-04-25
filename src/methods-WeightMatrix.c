@@ -85,7 +85,7 @@ scoss_read_wm(SEXP fnameR) {
 
   if (errorflag) {
     destroy_wm(wmR);
-    error(errormsg);
+    error("%s", errormsg);
   }
 
   return(wmR);
