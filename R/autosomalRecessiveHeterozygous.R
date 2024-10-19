@@ -14,7 +14,7 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
   bsgenome <- get(param$bsgenome)
   sampleNames <- param$sampleNames
 
-  if (exists(as.character(substitute(BPPARAM))[1]))
+  if (!exists(as.character(substitute(BPPARAM))[1]))
     stop(sprintf("Parallel back-end function %s given in argument 'BPPARAM' does not exist in the current workspace. Either you did not write correctly the function name or you did not load the package 'BiocParallel'.", as.character(substitute(BPPARAM))))
 
   if (length(vcfFiles) > 1)

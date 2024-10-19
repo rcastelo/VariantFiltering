@@ -66,7 +66,7 @@ SEXP
 scoss_read_wm(SEXP fnameR) {
   char* fname = (char *) CHAR(STRING_ELT(fnameR, 0));
   SEXP wmR;
-  WeightMatrix* wm = Calloc(1, WeightMatrix);
+  WeightMatrix* wm = R_Calloc(1, WeightMatrix);
   char errormsg[MAXERRORMSG];
   Rboolean errorflag;
 
@@ -490,7 +490,7 @@ read_dwm(char* fname, WeightMatrix* wm, char* errormsg) {
             if (!ptreep->next[iv]) {
               int k;
 
-              ptreep->next[iv] = Calloc(1, Tree);
+              ptreep->next[iv] = R_Calloc(1, Tree);
 
               for (k=0;k<wm->nvals[wm->deps[ivar][nv]];k++)
                 ptreep->next[iv]->next[k] = NULL;
@@ -508,7 +508,7 @@ read_dwm(char* fname, WeightMatrix* wm, char* errormsg) {
 
           /* finally set weights in the right leaf of the tree */
 
-          ptreep->weights = Calloc(wm->nvals[ivar], double);
+          ptreep->weights = R_Calloc(wm->nvals[ivar], double);
           for (nv=0;nv<wm->nvals[ivar];nv++)
             ptreep->weights[nv] = w[nv];
 
@@ -615,7 +615,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
           while ((*q=tolower(*q))) q++;
 
           alen = strlen(alphabet);
-          bfreq = Calloc(alen, double);
+          bfreq = R_Calloc(alen, double);
           for (i=0; i < alen; i++)
             bfreq[i] = 1.0 / ((double) alen);
           
@@ -634,7 +634,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
           if (!fgets(buf,4096,fd)) {
             fclose(fd);
-            Free(bfreq);
+            R_Free(bfreq);
             strcpy(errormsg, "the background frequency line is incomplete in the MEME file\n");
             return(TRUE);
           }
@@ -645,7 +645,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
           while (sscanf(p," %[a-zA-Z] %lf%n", token, &bfreq[i], &n) == 2 && i < alen) {
             if (tolower(token[0]) != alphabet[i]) {
               fclose(fd);
-              Free(bfreq);
+              R_Free(bfreq);
               strcpy(errormsg, "background frequencies should be specified in the same order as the alphabet\n");
               return(TRUE);
             }
@@ -656,7 +656,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
           if (i != alen) {
             fclose(fd);
-            Free(bfreq);
+            R_Free(bfreq);
             strcpy(errormsg, "the background frequency line and alphabet line have different lengths in the MEME file\n");
             return(TRUE);
           }
@@ -676,7 +676,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
           if (sscanf(p, " %[a-zA-Z0-9-:.]", token) != 1) {
             fclose(fd);
-            Free(bfreq);
+            R_Free(bfreq);
             strcpy(errormsg, "the motif name line should include a motif identifier in the MEME file\n");
             return(TRUE);
           }
@@ -697,7 +697,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
           if (sscanf(p, " matrix: alength= %d%n", &nv, &n) != 1) {
             fclose(fd);
-            Free(bfreq);
+            R_Free(bfreq);
             strcpy(errormsg, "alphabet length not found in the letter probability matrix line of the MEME file\n");
             return(TRUE);
           }
@@ -705,14 +705,14 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
           if (alen != nv) {
             fclose(fd);
-            Free(bfreq);
+            R_Free(bfreq);
             snprintf(errormsg, MAXERRORMSG, "number of letters in the ALPHABET line (%d) differs from alphabet length (%d) in the letter probability matrix line of the MEME file\n", alen, nv);
             return(TRUE);
           }
 
           if (sscanf(p, " w= %d%n", &(wm->nvars), &n) != 1) {
             fclose(fd);
-            Free(bfreq);
+            R_Free(bfreq);
             strcpy(errormsg, "motif length not found in the letter probability matrix line of the a MEME file\n");
             return(TRUE);
           }
@@ -778,7 +778,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
       /* set weights in the right leaf of the tree */
 
-      ptreep->weights = Calloc(wm->nvals[i], double);
+      ptreep->weights = R_Calloc(wm->nvals[i], double);
       for (nv=0;nv<wm->nvals[i];nv++)
         ptreep->weights[nv] = logodds ? w[nv] : log(w[nv]) - log(bfreq[nv]);
 
@@ -788,7 +788,7 @@ read_meme(char* fname, WeightMatrix* wm, char* errormsg) {
 
   }
 
-  Free(bfreq);
+  R_Free(bfreq);
   fclose(fd);
 
   return(FALSE);
@@ -971,18 +971,18 @@ destroy_wm(SEXP wmR) {
           }
 
           if (p)
-            Free(p);
+            R_Free(p);
 
        } else if (p->weights != NULL)
-          Free(p->weights);
+          R_Free(p->weights);
       }
 
     } else if (wm->w[i].weights != NULL)
-      Free(wm->w[i].weights);
+      R_Free(wm->w[i].weights);
 
   }
 
-  Free(wm);
+  R_Free(wm);
   R_ClearExternalPtr(wmR);
 }
 
