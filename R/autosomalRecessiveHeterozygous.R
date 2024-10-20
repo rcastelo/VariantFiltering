@@ -104,23 +104,23 @@ setMethod("autosomalRecessiveHeterozygous", signature(param="VariantFilteringPar
       stop("Mother is not genotyped.")
 
     ## heterozygous mask for *all* affected individuals
-    affectedMask <- gt[, aff$IndividualID, drop=FALSE] == "0/1" ||
-                    gt[, aff$IndividualID, drop=FALSE] == "0|1" ||
+    affectedMask <- gt[, aff$IndividualID, drop=FALSE] == "0/1" |
+                    gt[, aff$IndividualID, drop=FALSE] == "0|1" |
                     gt[, aff$IndividualID, drop=FALSE] == "1|0"
     affectedMask <- apply(affectedMask, 1, all)
 
     ## heterozygous mask for mother
-    motherHetMask <- gt[, motherID, drop=FALSE] == "0/1" ||
-                     gt[, motherID, drop=FALSE] == "0|1" ||
+    motherHetMask <- gt[, motherID, drop=FALSE] == "0/1" |
+                     gt[, motherID, drop=FALSE] == "0|1" |
                      gt[, motherID, drop=FALSE] == "1|0"
 
     ## heterozygous mask for father
-    fatherHetMask <- gt[, fatherID, drop=FALSE] == "0/1" ||
-                     gt[, fatherID, drop=FALSE] == "0|1" ||
+    fatherHetMask <- gt[, fatherID, drop=FALSE] == "0/1" |
+                     gt[, fatherID, drop=FALSE] == "0|1" |
                      gt[, fatherID, drop=FALSE] == "1|0"
 
     ## homozygous alternative mask for *any* of the unaffected individuals
-    unaffHomMask <- gt[, unaff$IndividualID, drop=FALSE] == "1/1" ||
+    unaffHomMask <- gt[, unaff$IndividualID, drop=FALSE] == "1/1" |
                     gt[, unaff$IndividualID, drop=FALSE] == "1|1"
     unaffHomMask <- apply(unaffHomMask, 1, any)
 
