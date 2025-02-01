@@ -130,6 +130,20 @@ jobs:
           git --version
         shell: bash {0}
 
+      - name: Install LaTeX to build Sweave vignettes
+        run: |
+          sudo apt-get install -y --no-install-recommends apt-utils \
+                               texlive \
+                               texlive-plain-generic \
+                               texlive-latex-extra \
+                               texlive-fonts-extra \
+                               texlive-bibtex-extra \
+                               texlive-science \
+                               texi2html \
+                               texinfo \
+                               qpdf
+        shell: bash {0}
+
       ## Most of these steps are the same as the ones in
       ## https://github.com/r-lib/actions/blob/master/examples/check-standard.yaml
       ## If they update their steps, we will also need to update ours.
