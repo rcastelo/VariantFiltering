@@ -12,7 +12,7 @@ importClassesFrom(graph, graphNEL)
 importClassesFrom(VariantAnnotation, VariantType, SpliceSiteVariants,
                   PromoterVariants, FiveUTRVariants, ThreeUTRVariants,
                   IntergenicVariants, PolyPhenDb)
-importClassesFrom(GenomeInfoDb, Seqinfo, GenomeDescription)
+importClassesFrom(Seqinfo, Seqinfo, GenomeDescription)
 importClassesFrom(GenomicRanges, GRanges, GRangesList, GPos)
 importClassesFrom(Biostrings, DNAStringSet, DNAStringSetList)
 importClassesFrom(Rsamtools, TabixFile, TabixFileList, BamViews)
@@ -31,19 +31,19 @@ importMethodsFrom(BSgenome, snpcount,
                             snplocs,
                             snpsByOverlaps,
                             referenceGenome)
-importMethodsFrom(GenomeInfoDb, "seqinfo<-",
-                                seqlevels,
-                                "seqlevels<-",
-                                seqlevelsStyle,
-                                "seqlevelsStyle<-",
-                                "isCircular",
-                                "isCircular<-",
-                                genome,
-                                "genome<-",
-                                provider,
-                                providerVersion,
-                                commonName,
-                                releaseDate)
+importMethodsFrom(Seqinfo, "seqinfo<-",
+                           seqlevels,
+                           "seqlevels<-",
+                           "isCircular",
+                           "isCircular<-",
+                           genome,
+                           "genome<-",
+                           provider,
+                           providerVersion,
+                           commonName,
+                           releaseDate)
+importMethodsFrom(GenomeInfoDb, seqlevelsStyle,
+                                "seqlevelsStyle<-")
 importMethodsFrom(VariantAnnotation, fixed,
                                      readVcf,
                                      scanVcfHeader,
@@ -133,16 +133,16 @@ importFrom(Rsamtools, TabixFile,
                       scanBamFlag,
                       scanBamHeader,
                       bgzip)
-importFrom(GenomeInfoDb, seqnames,
-                         keepStandardChromosomes,
+importFrom(Seqinfo, seqnames,
+                    seqlengths,
+                    seqinfo,
+                    Seqinfo,
+                    GenomeDescription)
+importFrom(GenomeInfoDb, keepStandardChromosomes,
                          keepSeqlevels,
                          renameSeqlevels,
                          restoreSeqlevels,
-                         extractSeqlevelsByGroup,
-                         seqlengths,
-                         seqinfo,
-                         Seqinfo,
-                         GenomeDescription)
+                         extractSeqlevelsByGroup)
 importFrom(BSgenome, snpcount,
                      snplocs)
 importFrom(SummarizedExperiment, rowRanges)
