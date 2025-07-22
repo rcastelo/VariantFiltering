@@ -137,11 +137,10 @@ importFrom(Seqinfo, seqnames,
                     seqlengths,
                     seqinfo,
                     Seqinfo,
+                    restoreSeqlevels,
                     GenomeDescription)
 importFrom(GenomeInfoDb, keepStandardChromosomes,
                          keepSeqlevels,
-                         renameSeqlevels,
-                         restoreSeqlevels,
                          extractSeqlevelsByGroup)
 importFrom(BSgenome, snpcount,
                      snplocs)
@@ -188,7 +187,7 @@ importFrom(shinyjs, hide,
                     disable,
                     disabled,
                     useShinyjs,
-		    alert)
+                    alert)
 
 importFrom(DT, dataTableProxy,
                selectPage,

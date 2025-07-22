@@ -5,7 +5,7 @@ Description: Filter genetic variants using different criteria such as
              inheritance model, amino acid change consequence, minor
              allele frequencies across human populations, splice site
              strength, conservation, etc.
-Version: 1.45.1
+Version: 1.45.2
 Authors@R: c(person("Robert", "Castelo", role=c("aut", "cre"), email="robert.castelo@upf.edu"),
              person("Dei", "Martinez Elurbe", role="ctb"),
              person("Pau", "Puigdevall", role="ctb"),
@@ -14,10 +14,10 @@ License: Artistic-2.0
 Depends: R (>= 3.5.0), methods, BiocGenerics (>= 0.25.1), VariantAnnotation (>= 1.13.29)
 Imports: utils, stats, Biobase, S4Vectors (>= 0.9.25),
          IRanges (>= 2.3.23), RBGL, graph, AnnotationDbi, BiocParallel,
-         Seqinfo, GenomeInfoDb (>= 1.45.5), Biostrings (>= 2.77.2),
+         Seqinfo (>= 0.99.2), GenomeInfoDb (>= 1.45.7), Biostrings (>= 2.77.2),
          GenomicRanges (>= 1.61.1), SummarizedExperiment (>= 1.39.1),
          GenomicFeatures (>= 1.61.4), Rsamtools (>= 2.25.1),
-         BSgenome (>= 1.77.1), GenomicScores (>= 2.21.1), Gviz (>= 1.53.1),
+         BSgenome (>= 1.77.1), GenomicScores (>= 2.21.4), Gviz (>= 1.53.1),
          shiny, shinythemes, shinyjs, DT, shinyTree
 Suggests: RUnit, BiocStyle, org.Hs.eg.db, BSgenome.Hsapiens.1000genomes.hs37d5,
           TxDb.Hsapiens.UCSC.hg19.knownGene, SNPlocs.Hsapiens.dbSNP144.GRCh37,
