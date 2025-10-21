@@ -9,17 +9,24 @@ test_location_annotations <- function() {
   fv <- filteredVariants(uind)
 
   ## these are variants that pass quality filters and affect 5' and 3' ss
-  idsFive <- c("rs760352870", "rs11910504", "rs3764880")
+  ## idsFive <- c("rs760352870", "rs11910504", "rs3764880") TxDb.Hsapiens.UCSC.hg19.knownGene rel 3.21
+  idsFive <- c("rs760352870", "rs34310744", "rs11910504", "rs3764880") ## rel 3.22
   checkTrue(all(fv[[1]]$VARID[fv[[1]]$LOCATION == "fiveSpliceSite"] == idsFive))
 
-  idsThree <- c("rs1153275", "rs144475501", "rs220312", "rs2839260",
-                "rs6003299", "rs11568185")
-  checkTrue(all(fv[[1]]$VARID[fv[[1]]$LOCATION == "threeSpliceSite"] == idsThree))
+  ## rel 3.21
+  ## idsThree <- c("rs1153275", "rs144475501", "rs220312", "rs2839260",
+  ##               "rs6003299", "rs11568185")
+  idsThree <- c("rs1015518", "rs3761264", "rs1153275", "rs144475501", "rs220312",
+		"rs1475891", "rs2839260", "rs11568185") ## rel 3.22
+  checkTrue(all(unique(fv[[1]]$VARID[fv[[1]]$LOCATION == "threeSpliceSite"]) == idsThree))
 
-  ## rs5840900 introduces a frameshift
-  checkTrue(fv[[1]]$VARID[fv[[1]]$CONSEQUENCE %in% "frameshift"] == "rs5840900")
+  ## frameshifts
+  ## idsFrameshift <- "rs5840900" ## rel 3.21
+  idsFrameshift <- c("rs5840900", "rs140511")
+  checkTrue(all(fv[[1]]$VARID[fv[[1]]$CONSEQUENCE %in% "frameshift"] == idsFrameshift))
 
   ## rs73105200 and rs233303 introduce a stop codon
-  idsNonsense <- c("rs73105200", "rs233303")
+  ## idsNonsense <- c("rs73105200", "rs233303") rel 3.21
+  idsNonsense <- "rs73105200"
   checkTrue(all(fv[[1]]$VARID[fv[[1]]$CONSEQUENCE %in% "nonsense"] == idsNonsense))
 }
